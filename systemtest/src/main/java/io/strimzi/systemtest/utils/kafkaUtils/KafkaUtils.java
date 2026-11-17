@@ -30,6 +30,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.ClusterSecuritySTUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -368,11 +369,22 @@ public class KafkaUtils {
         }
     }
 
-    public static String changeOrRemoveKafkaInKRaft(File file, String version) {
-        return changeOrRemoveKafkaConfigurationInKRaft(file, version, null);
+    public static String changeOrRemoveKafkaConfigurationInKRaft(File file, String version, String metadataVersion) {
+        return changeOrRemoveKafkaConfigurationInKRaft(file, version, metadataVersion, null);
     }
 
-    public static String changeOrRemoveKafkaConfigurationInKRaft(File file, String version, String metadataVersion) {
+    /**
+     * Loads the Kafka and KafkaNodePool resources from the example file and changes the Kafka version, metadata
+     * version, and the internal cluster security annotation of the Kafka resource.
+     *
+     * @param file                          Example file with the KafkaNodePool and Kafka resources
+     * @param version                       Kafka version (null to remove the version and metadata version, empty to keep it unchanged)
+     * @param metadataVersion               Metadata version (null to keep it as is)
+     * @param clusterSecurityAnnotation     Value of the internal cluster security annotation (null to keep the annotations unchanged)
+     *
+     * @return  The modified resources as a YAML string
+     */
+    public static String changeOrRemoveKafkaConfigurationInKRaft(File file, String version, String metadataVersion, String clusterSecurityAnnotation) {
         YAMLMapper yamlMapper = new YAMLMapper();
 
         try (JsonParser yamlParser = yamlMapper.createParser(file)) {
@@ -394,6 +406,12 @@ public class KafkaUtils {
 
             if (metadataVersion != null) {
                 kafkaNode.put("metadataVersion", metadataVersion);
+            }
+
+            if (clusterSecurityAnnotation != null) {
+                ObjectNode metadataNode = (ObjectNode) kafkaResourceNode.get("metadata");
+                ObjectNode annotationsNode = metadataNode.has("annotations") ? (ObjectNode) metadataNode.get("annotations") : metadataNode.putObject("annotations");
+                annotationsNode.put(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurityAnnotation);
             }
 
             StringBuilder output = new StringBuilder();

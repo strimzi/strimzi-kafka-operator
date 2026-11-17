@@ -107,7 +107,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected static final String TOPIC_NAME = "my-topic";
     protected static final String USER_NAME = "my-user";
     protected static final int UPGRADE_TOPIC_COUNT = 20;
-    protected static final int BTO_KAFKA_TOPICS_ONLY_COUNT = 3;
 
     protected final LabelSelector controllerSelector = LabelSelectors.nodePoolLabelSelector(CLUSTER_NAME, CONTROLLER_NODE_NAME, ProcessRoles.CONTROLLER);
     protected final LabelSelector brokerSelector = LabelSelectors.nodePoolLabelSelector(CLUSTER_NAME, BROKER_NODE_NAME, ProcessRoles.BROKER);
@@ -264,6 +263,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         this.deployCoWithWaitForReadiness(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeData);
         this.deployKafkaClusterWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData, upgradeKafkaVersion);
+        verifyClusterSecurityStatus(testStorage.getNamespaceName());
         this.deployKafkaUserWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData);
         this.deployKafkaTopicWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData);
 
@@ -358,14 +358,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 KubeResourceManager.get().createResourceWithWait(
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(componentsNamespaceName, CONTROLLER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(componentsNamespaceName, BROKER_NODE_NAME, CLUSTER_NAME, 3).build(),
+                    // The Cluster Security annotation is set by the template based on the configuration of the whole test run
                     KafkaTemplates.kafka(componentsNamespaceName, CLUSTER_NAME, 3)
-                        // The operator is upgraded / downgraded underneath this cluster. Older operators do not know
-                        // the Cluster Security annotation and would reconcile the cluster back to the default TLS and
-                        // mTLS configuration. So these tests always run with the default configuration and drop any
-                        // annotation added based on the Cluster Security configuration of the whole test run.
-                        .editMetadata()
-                            .removeFromAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION)
-                        .endMetadata()
                         .editSpec()
                             .editKafka()
                                 .withVersion(upgradeKafkaVersion.getVersion())
@@ -381,9 +375,9 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
                 // Change kafka version of it's empty (null is for remove the version)
                 if (upgradeKafkaVersion == null) {
-                    kafkaCr = KafkaUtils.changeOrRemoveKafkaInKRaft(kafkaYaml, null);
+                    kafkaCr = KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, null, null, clusterSecurityAnnotationIfNeeded());
                 } else {
-                    kafkaCr = KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, upgradeKafkaVersion.getVersion(), upgradeKafkaVersion.getMetadataVersion());
+                    kafkaCr = KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, upgradeKafkaVersion.getVersion(), upgradeKafkaVersion.getMetadataVersion(), clusterSecurityAnnotationIfNeeded());
                 }
 
                 KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).applyContent(kafkaCr);
@@ -722,7 +716,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         kafkaYaml = new File(kafkaFilePath);
         LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, kafkaVersionFromCR, metadataVersion));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, kafkaVersionFromCR, metadataVersion, clusterSecurityAnnotationIfNeeded()));
     }
 
     protected void applyCustomResourcesFromPath(String namespaceName, String examplesPath, String kafkaFilePath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
@@ -744,8 +738,30 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         return ReadWriteUtils.readFile(kafkaTopicYaml).replace(initialName, newName);
     }
-    
+
+    /**
+     * Returns the value of the internal cluster security annotation that should be set on the Kafka custom resources
+     * deployed from the release examples. Same as with the KafkaTemplates, the annotation is set only when a non-default
+     * internal cluster security is configured for the test run.
+     *
+     * @return  The value of the internal cluster security annotation or null if the annotation should not be set
+     */
+    protected String clusterSecurityAnnotationIfNeeded() {
+        return Environment.isDefaultClusterSecurity() ? null : ClusterSecuritySTUtils.clusterSecurityAnnotation();
+    }
+
+    /**
+     * Checks that the Kafka cluster uses the internal cluster security configured for the test run.
+     *
+     * @param componentsNamespaceName   Namespace of the Kafka cluster
+     */
+    protected void verifyClusterSecurityStatus(String componentsNamespaceName) {
+        LOGGER.info("Verifying internal cluster security status of Kafka: {}/{} ({}/{})", componentsNamespaceName, CLUSTER_NAME, Environment.CLUSTER_SECURITY_ENCRYPTION, Environment.CLUSTER_SECURITY_AUTHENTICATION);
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(componentsNamespaceName, CLUSTER_NAME, Environment.CLUSTER_SECURITY_ENCRYPTION, Environment.CLUSTER_SECURITY_AUTHENTICATION);
+    }
+
     protected void verifyProcedure(String componentsNamespaceNames, BundleVersionModificationData upgradeData, String producerName, String consumerName) {
+        verifyClusterSecurityStatus(componentsNamespaceNames);
 
         if (upgradeData.getAdditionalTopics() != null) {
             // Check that topics weren't deleted/duplicated during upgrade procedures

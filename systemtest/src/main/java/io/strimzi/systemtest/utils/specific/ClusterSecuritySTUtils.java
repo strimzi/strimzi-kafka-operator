@@ -56,7 +56,19 @@ public class ClusterSecuritySTUtils {
      * @param authentication    Expected authentication type
      */
     public static void assertClusterSecurityStatus(TestStorage testStorage, ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
-        assertThat(CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName())
+        assertClusterSecurityStatus(testStorage.getNamespaceName(), testStorage.getClusterName(), encryption, authentication);
+    }
+
+    /**
+     * Checks that the cluster security status corresponds to the desired encryption and authentication types.
+     *
+     * @param namespaceName     Namespace of the Kafka cluster
+     * @param clusterName       Name of the Kafka cluster
+     * @param encryption        Expected encryption type
+     * @param authentication    Expected authentication type
+     */
+    public static void assertClusterSecurityStatus(String namespaceName, String clusterName, ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
+        assertThat(CrdClients.kafkaClient().inNamespace(namespaceName).withName(clusterName)
                         .get().getStatus().getClusterSecurity(),
                 CoreMatchers.is(Map.of(
                         "encryption", Map.of("type", encryption.toValue()),
