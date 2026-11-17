@@ -156,7 +156,7 @@ public class KafkaUserOperatorGatekeeperTest {
     public void testEntryMutationFlowsIntoReconciliation() {
         // The entry plugin adds a consumer byte rate quota to a user which originally has none. If the mutated resource
         // is really the one being reconciled, the quota operator must receive the added quota.
-        GatekeeperPluginFactory.initializeForTests(List.of(new QuotaAddingEntryPlugin(4242)));
+        GatekeeperPluginFactory.initializeForTests(List.of(new QuotaAddingEntryPlugin(4242L)));
 
         operator()
                 .reconcile(reconciliation(), scramUser(), null)
@@ -164,7 +164,7 @@ public class KafkaUserOperatorGatekeeperTest {
 
         // One of the quotas passed to the quota operator must carry the byte rate added by the entry plugin
         boolean quotaFromPluginReconciled = quotasCaptor.getAllValues().stream()
-                .anyMatch(quotas -> quotas != null && Integer.valueOf(4242).equals(quotas.getConsumerByteRate()));
+                .anyMatch(quotas -> quotas != null && Long.valueOf(4242).equals(quotas.getConsumerByteRate()));
         assertThat(quotaFromPluginReconciled, is(true));
     }
 
@@ -293,9 +293,9 @@ public class KafkaUserOperatorGatekeeperTest {
      * flows into the reconciliation.
      */
     private static final class QuotaAddingEntryPlugin implements GatekeeperKafkaUserMutatingPlugin {
-        private final int consumerByteRate;
+        private final long consumerByteRate;
 
-        private QuotaAddingEntryPlugin(int consumerByteRate) {
+        private QuotaAddingEntryPlugin(long consumerByteRate) {
             this.consumerByteRate = consumerByteRate;
         }
 

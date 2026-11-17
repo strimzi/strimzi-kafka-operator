@@ -235,8 +235,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -362,8 +362,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -378,8 +378,8 @@ public class KafkaUserOperatorMockTest {
                     .withNewKafkaUserTlsClientAuthentication()
                     .endKafkaUserTlsClientAuthentication()
                     .withNewQuotas()
-                        .withConsumerByteRate(1_024 * 1_024)
-                        .withProducerByteRate(1_024 * 1_024)
+                        .withConsumerByteRate(1_024L * 1_024)
+                        .withProducerByteRate(1_024L * 1_024)
                     .endQuotas()
                 .endSpec()
                 .build();
@@ -437,8 +437,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -504,8 +504,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(0), is(nullValue()));
     }
 
@@ -571,8 +571,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(0), is(nullValue()));
     }
 
@@ -658,8 +658,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(0), is(nullValue()));
     }
 
@@ -756,8 +756,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -826,8 +826,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -959,8 +959,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -1034,8 +1034,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -1101,8 +1101,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
     }
 
@@ -1171,8 +1171,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(0), is(nullValue()));
     }
 
@@ -1238,8 +1238,8 @@ public class KafkaUserOperatorMockTest {
 
         List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
         assertThat(capturedQuotas, hasSize(2));
-        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024 * 1_024));
-        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024 * 1_024));
+        assertThat(capturedQuotas.get(1).getConsumerByteRate(), is(1_024L * 1_024));
+        assertThat(capturedQuotas.get(1).getProducerByteRate(), is(1_024L * 1_024));
         assertThat(capturedQuotas.get(0), is(nullValue()));
     }
 

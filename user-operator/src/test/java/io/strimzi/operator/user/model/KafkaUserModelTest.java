@@ -55,7 +55,7 @@ public class KafkaUserModelTest {
 
     private final KafkaUser tlsUser = ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE);
     private final KafkaUser scramShaUser = ResourceUtils.createKafkaUserScramSha(ResourceUtils.NAMESPACE);
-    private final KafkaUser quotasUser = ResourceUtils.createKafkaUserQuotas(ResourceUtils.NAMESPACE, 1000, 2000, 42, 10d);
+    private final KafkaUser quotasUser = ResourceUtils.createKafkaUserQuotas(ResourceUtils.NAMESPACE, 1000L, 2000L, 42, 10d);
     private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret(ResourceUtils.NAMESPACE);
     private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret(ResourceUtils.NAMESPACE);
     private final CertIssuer mockCertIssuer = new MockCertIssuer();
@@ -123,7 +123,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testFromCrdQuotaUserWithNullValues() {
-        KafkaUser quotasUserWithNulls = ResourceUtils.createKafkaUserQuotas(ResourceUtils.NAMESPACE, null, 2000, null, 10d);
+        KafkaUser quotasUserWithNulls = ResourceUtils.createKafkaUserQuotas(ResourceUtils.NAMESPACE, null, 2000L, null, 10d);
         KafkaUserModel model = KafkaUserModel.fromCrd(quotasUserWithNulls, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
@@ -135,7 +135,7 @@ public class KafkaUserModelTest {
                 .withKubernetesPartOf(ResourceUtils.NAME)
                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         assertThat(model.getQuotas().getConsumerByteRate(), is(nullValue()));
-        assertThat(model.getQuotas().getProducerByteRate(), is(2000));
+        assertThat(model.getQuotas().getProducerByteRate(), is(2000L));
         assertThat(model.getQuotas().getRequestPercentage(), is(nullValue()));
         assertThat(model.getQuotas().getControllerMutationRate(), is(10d));
 

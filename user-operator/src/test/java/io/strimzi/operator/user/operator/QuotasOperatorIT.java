@@ -27,8 +27,8 @@ public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<St
     KafkaUserQuotas getOriginal() {
         KafkaUserQuotas quotas = new KafkaUserQuotas();
 
-        quotas.setProducerByteRate(1024 * 1024);
-        quotas.setConsumerByteRate(10 * 1024 * 1024);
+        quotas.setProducerByteRate(1024L * 1024 * 1024);
+        quotas.setConsumerByteRate(10L * 1024 * 1024);
         quotas.setRequestPercentage(55);
         quotas.setControllerMutationRate(100.0);
 
@@ -39,8 +39,8 @@ public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<St
     KafkaUserQuotas getModified() {
         KafkaUserQuotas quotas = new KafkaUserQuotas();
 
-        quotas.setProducerByteRate(2 * 1024 * 1024);
-        quotas.setConsumerByteRate(5 * 1024 * 1024);
+        quotas.setProducerByteRate(2L * 1024 * 1024 * 1024);
+        quotas.setConsumerByteRate(5L * 1024 * 1024);
         quotas.setRequestPercentage(10);
 
         return quotas;

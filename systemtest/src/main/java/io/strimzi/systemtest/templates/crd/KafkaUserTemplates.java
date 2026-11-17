@@ -55,7 +55,7 @@ public class KafkaUserTemplates {
             .endMetadata();
     }
 
-    public static KafkaUserBuilder userWithQuotas(KafkaUser user, Integer prodRate, Integer consRate, Integer requestPerc, Double mutRate) {
+    public static KafkaUserBuilder userWithQuotas(KafkaUser user, Long prodRate, Long consRate, Integer requestPerc, Double mutRate) {
         return new KafkaUserBuilder(user)
                 .editSpec()
                     .withNewQuotas()
