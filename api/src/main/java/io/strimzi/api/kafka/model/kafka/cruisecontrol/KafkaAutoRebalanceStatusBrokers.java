@@ -35,8 +35,8 @@ public class KafkaAutoRebalanceStatusBrokers implements UnknownPropertyPreservin
     private List<Integer> brokers;
     private Map<String, Object> additionalProperties;
 
-    @Description("Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. " +
-            "The possible modes are `add-brokers` and `remove-brokers`.")
+    @Description("Mode for which there is an auto-rebalancing operation in progress or queued. " +
+            "The possible modes are `add-brokers`, `remove-brokers`, and `imbalance`.")
     public KafkaAutoRebalanceMode getMode() {
         return mode;
     }
