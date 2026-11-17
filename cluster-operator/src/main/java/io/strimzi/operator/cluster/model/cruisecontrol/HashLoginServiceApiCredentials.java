@@ -134,8 +134,8 @@ public class HashLoginServiceApiCredentials {
         }
 
         List<String> lines = config.lines().toList();
-        for (int lineNumber = 1; lineNumber <= lines.size(); lineNumber++) {
-            String line = lines.get(lineNumber - 1);
+        for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
+            String line = lines.get(lineNumber);
             Matcher matcher = HASH_LOGIN_SERVICE_PATTERN.matcher(line);
             if (matcher.matches()) {
                 String[] parts = line.replaceAll("\\s", "").split(":");
@@ -143,12 +143,12 @@ public class HashLoginServiceApiCredentials {
                 String password = parts[1].split(",")[0];
                 Role role = Role.fromString(parts[1].split(",")[1]);
                 if (entries.containsKey(username)) {
-                    throw new InvalidConfigurationException("Duplicate username found on line " + lineNumber + ". "
+                    throw new InvalidConfigurationException("Duplicate username found on line " + (lineNumber + 1) + ". "
                             + "Cruise Control API credentials config must contain unique usernames.");
                 }
                 entries.put(username, new UserEntry(username, password, role));
             } else {
-                throw new InvalidConfigurationException("Invalid configuration provided on line " + lineNumber + ". " +
+                throw new InvalidConfigurationException("Invalid configuration provided on line " + (lineNumber + 1) + ". " +
                         "Cruise Control API credentials config must follow " +
                         "HashLoginService's file format `username: password [,rolename ...]`.");
             }
