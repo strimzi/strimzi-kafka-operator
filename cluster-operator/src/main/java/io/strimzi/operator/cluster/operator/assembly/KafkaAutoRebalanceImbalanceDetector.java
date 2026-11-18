@@ -16,13 +16,13 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecur
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.GoalViolationInfo;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlApi;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlApiImpl;
+import io.strimzi.operator.common.cruisecontrol.GoalViolationInfo;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;

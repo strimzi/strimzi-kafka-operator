@@ -7,9 +7,9 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlApi;
+import io.strimzi.operator.common.cruisecontrol.ExecutorStatus;
 import io.vertx.core.Future;
 
 import java.time.Instant;

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
+package io.strimzi.operator.common.cruisecontrol;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.certs.StrimziSubject;
@@ -25,9 +25,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
-import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
+import static io.strimzi.operator.common.JSONObjectMatchers.hasEntry;
+import static io.strimzi.operator.common.JSONObjectMatchers.hasKeys;
+import static io.strimzi.operator.common.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

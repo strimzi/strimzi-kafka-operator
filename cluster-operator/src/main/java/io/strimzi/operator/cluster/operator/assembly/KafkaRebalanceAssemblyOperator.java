@@ -37,20 +37,20 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConf
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AbstractRebalanceOptions;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AddBrokerOptions;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRebalanceResponse;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTasksResponse;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveDisksOptions;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.cruisecontrol.AbstractRebalanceOptions;
+import io.strimzi.operator.common.cruisecontrol.AddBrokerOptions;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlApi;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlApiImpl;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlRebalanceResponse;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlRestException;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlUserTasksResponse;
+import io.strimzi.operator.common.cruisecontrol.RebalanceOptions;
+import io.strimzi.operator.common.cruisecontrol.RemoveBrokerOptions;
+import io.strimzi.operator.common.cruisecontrol.RemoveDisksOptions;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -83,9 +83,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE_TEMPLATE;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL;
+import static io.strimzi.operator.common.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 
 /**
  * <p>Assembly operator for a "KafkaRebalance" assembly, which interacts with the Cruise Control REST API</p>

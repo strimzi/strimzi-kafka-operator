@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
+package io.strimzi.operator.common.cruisecontrol;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -15,8 +15,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.StrimziSubject;
-import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
@@ -31,7 +29,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -51,7 +48,7 @@ import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTa
  * Cruise Control mock.
  */
 public class MockCruiseControl {
-    private static final String CC_JSON_ROOT = "io/strimzi/operator/cluster/operator/assembly/CruiseControlJSON/";
+    private static final String CC_JSON_ROOT = "io/strimzi/operator/common/cruisecontrol/CruiseControlJSON/";
 
     private static final String SEP = "-";
     private static final String REBALANCE = "rebalance";
@@ -90,8 +87,14 @@ public class MockCruiseControl {
             .build();
 
     private static Map<String, String> apiSecretData = Map.of(CruiseControlApiProperties.REBALANCE_OPERATOR_PASSWORD_KEY, "password");
-    public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
-           apiSecretData, Collections.emptyMap(), Collections.emptyMap());
+    public static final Secret CC_API_SECRET = new SecretBuilder()
+            .withNewMetadata()
+                .withName(CruiseControlResources.apiSecretName(CLUSTER))
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .withType("Opaque")
+            .withData(apiSecretData)
+            .build();
     private static final String AUTH_HEADER_VALUE = CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET).getValue();
 
     private static final String KEYSTORE_PASSWORD = "changeit";
@@ -188,7 +191,7 @@ public class MockCruiseControl {
     }
 
     private String readJsonResource(String fileName) {
-        return ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + fileName);
+        return ReadWriteUtils.readInputStream(getClass().getResourceAsStream("/" + CC_JSON_ROOT + fileName));
     }
 
     private MappingBuilder stateRequestMatcher(boolean requireAuth) {
