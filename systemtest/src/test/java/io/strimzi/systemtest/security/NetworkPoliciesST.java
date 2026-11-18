@@ -52,6 +52,7 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -281,8 +282,26 @@ public class NetworkPoliciesST extends AbstractST {
             .withScraperPodName(scraperPodName)
             .withComponent(SovaMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
             .build();
-        sovaMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        assertThat("Sova metrics should be non-empty", sovaMetricsCollector.getCollectedData().size() > 0);
+        // Sova serves an empty snapshot until its first collection cycle finishes, so wait for the topic metrics
+        TestUtils.waitFor("Sova to expose metrics for topic " + topicNameAccessedTls, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
+            sovaMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+            return sovaMetricsCollector.getCollectedData().values().stream()
+                .flatMap(List::stream)
+                .anyMatch(metric -> metric.getName().contains("kafka_topic_partitions") && topicNameAccessedTls.equals(metric.getLabels().get("topic")));
+        });
+
+        for (Map.Entry<String, List<Metric>> entry : sovaMetricsCollector.getCollectedData().entrySet()) {
+            assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
+            MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_consumergroup_current_offset");
+
+            List<Metric> topicPartitionsMetrics = entry.getValue().stream().filter(metrics -> metrics.getName().contains("kafka_topic_partitions")).toList();
+
+            Gauge topicAccessedTlsMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> topicNameAccessedTls.equals(metric.getLabels().get("topic"))).findFirst().orElseThrow();
+            Gauge topicAccessedPlainMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> topicNameAccessedPlain.equals(metric.getLabels().get("topic"))).findFirst().orElseThrow();
+
+            assertThat(topicAccessedTlsMetric.getValue(), is(1.0));
+            assertThat(topicAccessedPlainMetric.getValue(), is(1.0));
+        }
 
         for (Map.Entry<String, List<Metric>> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());

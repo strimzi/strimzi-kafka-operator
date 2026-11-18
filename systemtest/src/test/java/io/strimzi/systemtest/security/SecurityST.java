@@ -197,7 +197,7 @@ class SecurityST extends AbstractST {
     void autoRenewSomeCaCertsTriggeredByAnno(
             boolean kafkaShouldRoll,
             boolean eoShouldRoll,
-            boolean keAndCCShouldRoll) {
+            boolean deploymentsShouldRoll) {
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         createKafkaCluster(testStorage);
@@ -272,7 +272,7 @@ class SecurityST extends AbstractST {
             LOGGER.info("Waiting for EO rolling restart");
             eoPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
         }
-        if (keAndCCShouldRoll) {
+        if (deploymentsShouldRoll) {
             LOGGER.info("Waiting for CC, KE and Sova rolling restart");
             kePod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName()), 1, kePod);
             sovaPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName()), 1, sovaPod);
@@ -312,7 +312,7 @@ class SecurityST extends AbstractST {
         if (!eoShouldRoll) {
             assertThat("EO Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName()), is(eoPod));
         }
-        if (!keAndCCShouldRoll) {
+        if (!deploymentsShouldRoll) {
             assertThat("CC Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())), is(ccPod));
             assertThat("KE Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName())), is(kePod));
             assertThat("Sova Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName())), is(sovaPod));
@@ -398,7 +398,7 @@ class SecurityST extends AbstractST {
     void autoReplaceSomeKeysTriggeredByAnno(int expectedRolls,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll,
-                                            boolean keAndCCShouldRoll) {
+                                            boolean deploymentsShouldRoll) {
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -490,7 +490,7 @@ class SecurityST extends AbstractST {
                     DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
             }
 
-            if (keAndCCShouldRoll) {
+            if (deploymentsShouldRoll) {
                 LOGGER.info("Waiting for KafkaExporter, Sova and CruiseControl rolling restart ({})", i);
                 kePod = i < expectedRolls ?
                     DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName()), kePod) :
@@ -542,7 +542,7 @@ class SecurityST extends AbstractST {
             assertThat("EO Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName()), is(eoPod));
         }
 
-        if (!keAndCCShouldRoll) {
+        if (!deploymentsShouldRoll) {
             assertThat("CC Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())), is(ccPod));
             assertThat("KE Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName())), is(kePod));
             assertThat("Sova Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName())), is(sovaPod));

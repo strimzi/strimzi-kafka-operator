@@ -48,6 +48,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
+import io.strimzi.api.kafka.model.kafka.sova.SovaSpec;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
@@ -520,6 +521,8 @@ public class KafkaAssemblyOperatorTest {
                     }
                 } else if (name.contains("exporter"))   {
                     context.verify(() -> assertThat(metrics, is(true)));
+                } else if (name.equals(SovaResources.componentName(CLUSTER_NAME)))   {
+                    context.verify(() -> assertThat(metrics, is(true)));
                 }
             }
             return CompletableFuture.completedFuture(desired != null ? ReconcileResult.created(desired) : ReconcileResult.deleted());
@@ -543,6 +546,7 @@ public class KafkaAssemblyOperatorTest {
 
         if (metrics)    {
             expectedSecrets.add(KafkaExporterResources.secretName(CLUSTER_NAME));
+            expectedSecrets.add(SovaResources.secretName(CLUSTER_NAME));
         }
 
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
@@ -748,6 +752,7 @@ public class KafkaAssemblyOperatorTest {
                     .endKafka()
                     .withEntityOperator(eoConfig)
                     .withKafkaExporter(metrics ? new KafkaExporterSpec() : null)
+                    .withExtraMetrics(metrics ? new SovaSpec() : null)
                 .endSpec()
                 .build();
 
@@ -1023,6 +1028,7 @@ public class KafkaAssemblyOperatorTest {
                 .addToData("entity-operator.crt", Base64.getEncoder().encodeToString(dummyCert.getBytes()))
                 .build()));
         when(mockSecretOps.getAsync(NAMESPACE, KafkaExporterResources.secretName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(NAMESPACE, SovaResources.secretName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(null));
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))).thenReturn(
                 CompletableFuture.completedFuture(new SecretBuilder()
                         .withNewMetadata().withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).endMetadata()

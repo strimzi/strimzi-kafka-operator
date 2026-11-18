@@ -1,6 +1,6 @@
 # SovaST
 
-**Description:** This test suite verifies the Sova consumer lag exporter configured through `spec.extraMetrics` in the Kafka custom resource. A single small Kafka cluster is shared by all test cases and each test case only changes the Sova configuration and restores it at the end.
+**Description:** This test suite verifies the Sova consumer lag exporter configured through `spec.extraMetrics` in the Kafka custom resource. A single small Kafka cluster is shared by all test cases. Each test case only changes the Sova configuration, and the default Sova configuration is restored after each test case.
 
 **Before test execution steps:**
 
@@ -14,7 +14,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Common cleaning of all resources created by this test class. | All resources deleted. |
+| 1. | Restore the default Sova configuration after each test case if it was changed. | Sova runs with the default configuration and has collected the metrics. |
+| 2. | Common cleaning of all resources created by this test class. | All resources deleted. |
 
 **Labels:**
 
@@ -32,7 +33,6 @@
 | - | - | - |
 | 1. | Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 60000 and wait for the Sova rolling update. | Sova starts with a 10 second collection interval and the Admin client configuration contains the timeout. |
 | 2. | Wait for the first collection cycle of the new Pod. | Sova exposes freshly collected metrics. |
-| 3. | Restore the default configuration. | Sova rolls back to the default configuration. |
 
 **Labels:**
 
@@ -65,7 +65,6 @@
 | - | - | - |
 | 1. | Set a memory limit of 256Mi and wait for the Sova rolling update. | Sova starts with the heap derived from the memory limit (-Xmx set). |
 | 2. | Set `jvmOptions` with `-Xmx` of 128m and `-XX` option `MaxMetaspaceSize` of 128m. | Sova starts with the configured options. |
-| 3. | Restore the default configuration. | Sova rolls back to the default configuration. |
 
 **Labels:**
 
@@ -100,7 +99,6 @@
 | 1. | Set `groupRegex` to `sova-or.*` and `topicRegex` to `sova-checkout` and wait for the Sova rolling update. | Only group `sova-orders` and topic `sova-checkout` are exposed. |
 | 2. | Set `topicRegex` to `sova` (a prefix of the topic names, not a full match). | No topic is exposed, because the expression must match the whole name. |
 | 3. | Set `groupRegex` to `sova-.*` with `groupExcludeRegex` `sova-audit` and `topicRegex` to `sova-.*` with `topicExcludeRegex` `sova-audit`. | Group and topic `sova-audit` are not exposed, the others are. |
-| 4. | Restore the default configuration. | Sova rolls and exposes everything again. |
 
 **Labels:**
 

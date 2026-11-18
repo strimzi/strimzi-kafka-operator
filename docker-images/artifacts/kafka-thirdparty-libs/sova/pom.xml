@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <kafka-kubernetes-config-provider.version>1.3.0</kafka-kubernetes-config-provider.version>
+        <kafka-kubernetes-config-provider.version>1.3.1</kafka-kubernetes-config-provider.version>
         <!-- Jackson data format and data type modules have to be on the same version as the Jackson databind
              which Sova brings => keep this in sync with the Jackson version used by Sova -->
         <jackson.version>2.22.1</jackson.version>
