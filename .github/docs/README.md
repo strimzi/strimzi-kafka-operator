@@ -1,6 +1,6 @@
 # Build & Test Strimzi in GitHub Actions
 The following lines put together basic information how is Strimzi built and tested via GitHub Actions.
-All the steps mentioned bellow re-use scripts from our [azure](../../.azure) directory and thus all the steps are more or less the same on both systems.
+All the steps mentioned below re-use scripts from our [azure](../../.azure) directory and thus all the steps are more or less the same on both systems.
 
 ## Build jar artifacts
 Building Strimzi is exactly the same as we have in Azure pipelines.
@@ -26,7 +26,7 @@ Usage example can be like this:
 ## Build images
 In the same manner as on Azure we build multi-arch images as part of our workflows.
 To build the images we use [build-containers](../actions/build/build-containers) action that produce container images for each specific architecture.
-This actions has to be called separately for each architecture with matrix strategy you can see bellow:
+This actions has to be called separately for each architecture with matrix strategy you can see below:
 
 ```yaml
   build-images:
