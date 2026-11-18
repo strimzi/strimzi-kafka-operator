@@ -13,6 +13,8 @@
             <filtered>true</filtered>
             <outputDirectory>bin</outputDirectory>
             <directory>scripts</directory>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
         </fileSet>
     </fileSets>
     <dependencySets>
