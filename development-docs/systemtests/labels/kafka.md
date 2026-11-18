@@ -38,7 +38,6 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testDynamicConfiguration](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfSharedST.md)
 - [testDynamicInPlaceConnectResourceUpdates](../io.strimzi.systemtest.rollingupdate.InPlacePodResizingST.md)
 - [testDynamicInPlaceKafkaResourceUpdates](../io.strimzi.systemtest.rollingupdate.InPlacePodResizingST.md)
-- [testDynamicReconfigurationAllowList](../io.strimzi.systemtest.metrics.StrimziMetricsReporterST.md)
 - [testDynamicallyAndNonDynamicSetConnectLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetBridgeLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetClusterOperatorLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)

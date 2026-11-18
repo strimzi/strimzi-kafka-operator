@@ -57,7 +57,6 @@ public class KafkaConfigModelGenerator {
     public static void main(String[] args) throws Exception {
         String version = kafkaVersion();
         Map<String, ConfigModel> configs = configs(version);
-        addPrometheusMetricsReporterAllowListConfig(configs);
 
         JsonMapper jsonMapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY).build();
         ConfigModels root = new ConfigModels();
@@ -131,21 +130,6 @@ public class KafkaConfigModelGenerator {
             result.put(configName, descriptor);
         }
         return result;
-    }
-
-    /**
-     * Adds `prometheus.metrics.reporter.allowlist` with its configuration to the ConfigModel,
-     * so we are able to update it dynamically in Kafka brokers/controllers.
-     *
-     * @param configs   config models of the Kafka version that should be updated with another config model
-     */
-    private static void addPrometheusMetricsReporterAllowListConfig(Map<String, ConfigModel> configs) {
-        String prometheusMetricAllowListName = "prometheus.metrics.reporter.allowlist";
-        ConfigModel prometheusMetricConfigModel = new ConfigModel();
-        prometheusMetricConfigModel.setScope(Scope.CLUSTER_WIDE);
-        prometheusMetricConfigModel.setType(Type.LIST);
-
-        configs.put(prometheusMetricAllowListName, prometheusMetricConfigModel);
     }
 
     private static Type parseType(String typeStr) {
