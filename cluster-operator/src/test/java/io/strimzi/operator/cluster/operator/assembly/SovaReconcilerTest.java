@@ -4,7 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
@@ -19,7 +21,10 @@ import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.CertSecretUtils;
+import io.strimzi.operator.cluster.model.Sova;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -48,6 +53,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -166,7 +174,18 @@ public class SovaReconcilerTest {
         assertThat(roleBindingCaptor.getValue(), is(notNullValue()));
         assertThat(roleBindingCaptor.getValue().getSubjects().get(0).getName(), is(SovaResources.componentName(NAME)));
 
-        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), isNotNull());
+        ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), cmCaptor.capture());
+        assertThat(cmCaptor.getValue(), is(notNullValue()));
+        assertThat(cmCaptor.getValue().getMetadata().getName(), is(SovaResources.configMapName(NAME)));
+        assertThat(cmCaptor.getValue().getData(), hasKey(LoggingModel.LOG4J2_CONFIG_MAP_KEY));
+
+        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), secretCaptor.capture());
+        Secret certSecret = secretCaptor.getValue();
+        assertThat(certSecret, is(notNullValue()));
+        assertThat(certSecret.getData(), hasKey(Ca.SecretEntry.CRT.asKey(Sova.COMPONENT_TYPE)));
+        assertThat(certSecret.getData(), hasKey(Ca.SecretEntry.KEY.asKey(Sova.COMPONENT_TYPE)));
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
         verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), netPolicyCaptor.capture());
@@ -179,7 +198,11 @@ public class SovaReconcilerTest {
         assertThat(depCaptor.getValue(), is(notNullValue()));
         assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
         assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
-        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is(notNullValue()));
+        String certHash = depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
+        assertThat(certHash, is(not(emptyOrNullString())));
+        assertThat(certHash, is(CertSecretUtils.getCertificateShortThumbprint(certSecret, Ca.SecretEntry.CRT.asKey(Sova.COMPONENT_TYPE))));
+        verify(mockDepOps, times(1)).waitForObserved(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong());
+        verify(mockDepOps, times(1)).readiness(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), pdbCaptor.capture());
@@ -236,11 +259,68 @@ public class SovaReconcilerTest {
         verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
         verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
         verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), isNull());
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), isNull());
         verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), isNull());
         verify(clusterCa, times(1)).cleanupEndEntityCert(SovaResources.secretName(NAME));
         verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
         verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
+        verify(mockDepOps, never()).readiness(any(), any(), any(), anyLong(), anyLong());
         verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
+    }
+
+    /**
+     * Tests Sova reconciliation when disabled and network policy and PodDisruptionBudget generation is disabled.
+     * The other resources should be deleted, but network policies and PodDisruptionBudgets should not be touched.
+     */
+    @Test
+    public void reconcileWithDisabledSovaWithoutNetworkPoliciesAndPdbs() {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        RoleOperator mockRoleOps = supplier.roleOperations;
+        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        Ca clusterCa = spy(CLUSTER_CA);
+        SovaReconciler reconciler = new SovaReconciler(
+                Reconciliation.DUMMY_RECONCILIATION,
+                new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                        .with(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), "false")
+                        .with(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key(), "false")
+                        .build(),
+                supplier,
+                KAFKA,
+                KafkaVersionTestUtils.getKafkaVersionLookup(),
+                clusterCa,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
+
+        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
+        verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
+        verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), isNull());
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), isNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), isNull());
+        verify(clusterCa, times(1)).cleanupEndEntityCert(SovaResources.secretName(NAME));
+        verify(mockNetPolicyOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
+        verify(mockPodDisruptionBudgetOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
     }
 
     /**

@@ -181,7 +181,7 @@ public class CaReconcilerTest {
         long countWithPodStuck = mockCaReconciler.kafkaRestartReasons.values().stream().filter(r -> r.contains(RestartReason.POD_STUCK)).count();
         assertThat("Mutating one pod's restart reasons must not affect other pods", countWithPodStuck, is(1L));
 
-        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
+        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(4));
         mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
                 assertThat("Deployment restart reason for " + deploymentName, restartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote())));
 
@@ -294,7 +294,7 @@ public class CaReconcilerTest {
             }
         });
 
-        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
+        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(4));
         mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
                 assertThat("Deployment restart reason for " + deploymentName, restartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote())));
 
@@ -754,6 +754,7 @@ public class CaReconcilerTest {
         deps.put("my-cluster-entity-operator", deploymentWithName("my-cluster-entity-operator"));
         deps.put("my-cluster-cruise-control", deploymentWithName("my-cluster-cruise-control"));
         deps.put("my-cluster-kafka-exporter", deploymentWithName("my-cluster-kafka-exporter"));
+        deps.put("my-cluster-sova", deploymentWithName("my-cluster-sova"));
         DeploymentOperator depsOperator = supplier.deploymentOperations;
         when(depsOperator.getAsync(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(deps.get(i.getArgument(1, String.class))));
     }

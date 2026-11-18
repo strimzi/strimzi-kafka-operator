@@ -38,6 +38,9 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -46,6 +49,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.METRICS;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.resources.types.KafkaType.kafkaClient;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNotNull;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.createPatternAndCollect;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.createPatternAndCollectWithoutWait;
@@ -58,13 +62,14 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(REGRESSION)
 @Tag(METRICS)
 @SuiteDoc(
-    description = @Desc("This test suite verifies the Sova consumer lag exporter configured through `spec.extraMetrics` in the Kafka custom resource. A single small Kafka cluster is shared by all test cases and each test case only changes the Sova configuration and restores it at the end."),
+    description = @Desc("This test suite verifies the Sova consumer lag exporter configured through `spec.extraMetrics` in the Kafka custom resource. A single small Kafka cluster is shared by all test cases. Each test case only changes the Sova configuration, and the default Sova configuration is restored after each test case."),
     beforeTestSteps = {
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed."),
         @Step(value = "Deploy Kafka with Sova enabled and a scraper Pod.", expected = "Kafka and Sova are deployed."),
         @Step(value = "Create three topics and exchange messages on each of them with three consumer groups.", expected = "Topics and consumer groups exist and Sova exposes the first metrics.")
     },
     afterTestSteps = {
+        @Step(value = "Restore the default Sova configuration after each test case if it was changed.", expected = "Sova runs with the default configuration and has collected the metrics."),
         @Step(value = "Common cleaning of all resources created by this test class.", expected = "All resources deleted.")
     },
     labels = {
@@ -72,6 +77,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
     }
 )
 public class SovaST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(SovaST.class);
 
     private static final String TOPIC_CHECKOUT = "sova-checkout";
     private static final String TOPIC_PAYMENTS = "sova-payments";
@@ -90,8 +96,7 @@ public class SovaST extends AbstractST {
         steps = {
             @Step(value = "Set `groupRegex` to `sova-or.*` and `topicRegex` to `sova-checkout` and wait for the Sova rolling update.", expected = "Only group `sova-orders` and topic `sova-checkout` are exposed."),
             @Step(value = "Set `topicRegex` to `sova` (a prefix of the topic names, not a full match).", expected = "No topic is exposed, because the expression must match the whole name."),
-            @Step(value = "Set `groupRegex` to `sova-.*` with `groupExcludeRegex` `sova-audit` and `topicRegex` to `sova-.*` with `topicExcludeRegex` `sova-audit`.", expected = "Group and topic `sova-audit` are not exposed, the others are."),
-            @Step(value = "Restore the default configuration.", expected = "Sova rolls and exposes everything again.")
+            @Step(value = "Set `groupRegex` to `sova-.*` with `groupExcludeRegex` `sova-audit` and `topicRegex` to `sova-.*` with `topicExcludeRegex` `sova-audit`.", expected = "Group and topic `sova-audit` are not exposed, the others are.")
         },
         labels = {
             @Label(value = TestDocsLabels.METRICS),
@@ -126,22 +131,12 @@ public class SovaST extends AbstractST {
             kafka.getSpec().getExtraMetrics().setTopicRegex("sova-.*");
             kafka.getSpec().getExtraMetrics().setTopicExcludeRegex(TOPIC_AUDIT);
         });
-        snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
         waitForCollectionAfterRoll();
         waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_BILLING + "\".*\\}", true);
         waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_AUDIT + "\".*\\}", false);
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_PAYMENTS + "\"\\}", true);
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_AUDIT + "\"\\}", false);
-
-        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
-            kafka.getSpec().getExtraMetrics().setGroupRegex(".*");
-            kafka.getSpec().getExtraMetrics().setGroupExcludeRegex(null);
-            kafka.getSpec().getExtraMetrics().setTopicRegex(".*");
-            kafka.getSpec().getExtraMetrics().setTopicExcludeRegex(null);
-        });
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
-        waitForCollectionAfterRoll();
-        waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_AUDIT + "\"\\}", true);
     }
 
     @IsolatedTest
@@ -179,8 +174,7 @@ public class SovaST extends AbstractST {
         description = @Desc("This test case checks that `collectionIntervalMs` and the Kafka Admin client options in `config` are passed to Sova."),
         steps = {
             @Step(value = "Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 60000 and wait for the Sova rolling update.", expected = "Sova starts with a 10 second collection interval and the Admin client configuration contains the timeout."),
-            @Step(value = "Wait for the first collection cycle of the new Pod.", expected = "Sova exposes freshly collected metrics."),
-            @Step(value = "Restore the default configuration.", expected = "Sova rolls back to the default configuration.")
+            @Step(value = "Wait for the first collection cycle of the new Pod.", expected = "Sova exposes freshly collected metrics.")
         },
         labels = {
             @Label(value = TestDocsLabels.METRICS),
@@ -197,7 +191,7 @@ public class SovaST extends AbstractST {
             // The Admin client refuses a default.api.timeout.ms lower than request.timeout.ms (30000 by default)
             kafka.getSpec().getExtraMetrics().setConfig(Map.of("default.api.timeout.ms", 60000));
         });
-        snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
 
         final String podName = PodUtils.getPodNameByPrefix(namespaceName, sovaName);
         assertThat("Collection interval is not applied",
@@ -213,12 +207,6 @@ public class SovaST extends AbstractST {
         assertThat("Admin client option from config is missing", adminClientConfiguration, containsString("default.api.timeout.ms=60000"));
 
         waitForCollectionAfterRoll();
-
-        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
-            kafka.getSpec().getExtraMetrics().setCollectionIntervalMs(null);
-            kafka.getSpec().getExtraMetrics().setConfig(null);
-        });
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
     }
 
     @IsolatedTest
@@ -226,8 +214,7 @@ public class SovaST extends AbstractST {
         description = @Desc("This test case checks that the memory limit and `jvmOptions` are passed to the Sova JVM."),
         steps = {
             @Step(value = "Set a memory limit of 256Mi and wait for the Sova rolling update.", expected = "Sova starts with the heap derived from the memory limit (-Xmx set)."),
-            @Step(value = "Set `jvmOptions` with `-Xmx` of 128m and `-XX` option `MaxMetaspaceSize` of 128m.", expected = "Sova starts with the configured options."),
-            @Step(value = "Restore the default configuration.", expected = "Sova rolls back to the default configuration.")
+            @Step(value = "Set `jvmOptions` with `-Xmx` of 128m and `-XX` option `MaxMetaspaceSize` of 128m.", expected = "Sova starts with the configured options.")
         },
         labels = {
             @Label(value = TestDocsLabels.METRICS),
@@ -257,15 +244,12 @@ public class SovaST extends AbstractST {
                 .withXx(Map.of("MaxMetaspaceSize", "128m"))
                 .build());
         });
-        snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
 
         podName = PodUtils.getPodNameByPrefix(namespaceName, sovaName);
         String startLog = StUtils.getLogFromPodByTime(namespaceName, podName, sovaName, "10m");
         assertThat("Xmx from jvmOptions is missing", startLog, containsString("-Xmx128m"));
         assertThat("XX option from jvmOptions is missing", startLog, containsString("-XX:MaxMetaspaceSize=128m"));
-
-        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setJvmOptions(null));
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
     }
 
     @IsolatedTest
@@ -301,6 +285,8 @@ public class SovaST extends AbstractST {
             () -> StUtils.getLogFromPodByTime(namespaceName, podName, sovaName, "30s").contains(" DEBUG "));
 
         KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setLogging(null));
+        // Wait until the Cluster Operator reconciled the change, otherwise the check below could pass before any roll started
+        KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
         assertThat("Sova Pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, sovaName), is(snapshot));
     }
 
@@ -332,6 +318,30 @@ public class SovaST extends AbstractST {
             });
             assertThat("Metric " + metric + " should not be exposed", createPatternAndCollectWithoutWait(sovaCollector, metric), is(empty()));
         }
+    }
+
+    /**
+     * All test cases share one Kafka cluster, so the default Sova configuration is restored after each test case. This
+     * happens also when the test case fails, so the following test cases always start from the default configuration.
+     */
+    @AfterEach
+    void restoreDefaultSovaConfiguration() {
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String sovaName = SovaResources.componentName(clusterName);
+        final SovaSpec current = kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getExtraMetrics();
+
+        // Check whether current config is the same as default used for the test class
+        if (new SovaSpec().equals(current)) {
+            LOGGER.debug("Current Sova configuration in Kafka: {}/{} is the same as default one, no need to restore it", namespaceName, clusterName);
+            return;
+        }
+
+        LOGGER.info("Restoring the default Sova configuration in Kafka: {}/{}", namespaceName, clusterName);
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().setExtraMetrics(new SovaSpec()));
+        KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, sovaName, 1);
+        waitForCollectionAfterRoll();
     }
 
     @BeforeAll

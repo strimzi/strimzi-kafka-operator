@@ -11,6 +11,7 @@ rm -rfv /tmp/* || true
 MYPATH="$(dirname "$0")"
 
 # Configure heap based on the available resources if needed (script is shared with the Kafka image and runs from KAFKA_HOME)
+# shellcheck source=../scripts/dynamic_resources.sh
 . ./dynamic_resources.sh
 if [ -n "$KAFKA_HEAP_OPTS" ]; then
     JAVA_OPTS="${JAVA_OPTS} ${KAFKA_HEAP_OPTS}"
@@ -36,4 +37,5 @@ fi
 
 echo "Starting Sova with JAVA_OPTS: ${JAVA_OPTS}"
 
+# shellcheck disable=SC2086
 exec /usr/bin/tini -s -w -e 143 -- java $JAVA_OPTS -classpath "${MYPATH}/../libs/*" io.strimzi.sova.Main "$@"

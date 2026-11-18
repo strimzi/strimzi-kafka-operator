@@ -4,19 +4,37 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -26,6 +44,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
@@ -36,10 +55,13 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConf
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -56,7 +78,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:NoFullyQualifiedClassNames"}) // Fully qualified class names are used in the expected config strings
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:NoFullyQualifiedClassNames"}) // Fully qualified class names are used in the expected config strings
 public class SovaTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -426,6 +448,262 @@ public class SovaTest {
     }
 
     @Test
+    public void testGenerateDeploymentWithTmpDirSizeLimit() {
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+
+        assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME).getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
+    }
+
+    @Test
+    public void testImagePullPolicy() {
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        Deployment dep = sova.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
+
+        dep = sova.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+    }
+
+    @Test
+    public void testContainerTemplateEnvVars() {
+        ContainerEnvVar envVar1 = new ContainerEnvVarBuilder().withName("TEST_ENV_1").withValue("test.env.one").build();
+        ContainerEnvVar envVar2 = new ContainerEnvVarBuilder().withName("TEST_ENV_2").withValue("test.env.two").build();
+
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .editTemplate()
+                            .withNewContainer()
+                                .withEnv(envVar1, envVar2)
+                            .endContainer()
+                        .endTemplate()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        List<EnvVar> envVars = sova.getEnvVars();
+        assertThat(envVars.stream().filter(v -> "TEST_ENV_1".equals(v.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("test.env.one"));
+        assertThat(envVars.stream().filter(v -> "TEST_ENV_2".equals(v.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("test.env.two"));
+    }
+
+    @Test
+    public void testContainerTemplateEnvVarsWithKeyConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVarBuilder().withName("TEST_ENV_1").withValue("test.env.one").build();
+        ContainerEnvVar envVar2 = new ContainerEnvVarBuilder().withName(Sova.ENV_VAR_GROUP_REGEX).withValue("my-special-value").build();
+
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .editTemplate()
+                            .withNewContainer()
+                                .withEnv(envVar1, envVar2)
+                            .endContainer()
+                        .endTemplate()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        List<EnvVar> envVars = sova.getEnvVars();
+        assertThat(envVars.stream().filter(v -> "TEST_ENV_1".equals(v.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("test.env.one"));
+        assertThat(envVars.stream().filter(v -> Sova.ENV_VAR_GROUP_REGEX.equals(v.getName())).map(EnvVar::getValue).toList(), contains("my-group-.*"));
+    }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> depLabels = Map.of("l1", "v1", "l2", "v2",
+                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
+                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
+        Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
+        expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
+        Map<String, String> depAnots = Map.of("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = Map.of("a3", "v3", "a4", "v4");
+
+        Map<String, String> saLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> saAnots = Map.of("a5", "v5", "a6", "v6");
+
+        Map<String, String> pdbLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> pdbAnots = Map.of("a7", "v7", "a8", "v8");
+
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key1")
+                                    .withOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        List<Toleration> tolerations = List.of(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
+
+        TopologySpreadConstraint tsc1 = new TopologySpreadConstraintBuilder()
+                .withTopologyKey("kubernetes.io/zone")
+                .withMaxSkew(1)
+                .withWhenUnsatisfiable("DoNotSchedule")
+                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(Map.of("label", "value")).build())
+                .build();
+
+        TopologySpreadConstraint tsc2 = new TopologySpreadConstraintBuilder()
+                .withTopologyKey("kubernetes.io/hostname")
+                .withMaxSkew(2)
+                .withWhenUnsatisfiable("ScheduleAnyway")
+                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(Map.of("label", "value")).build())
+                .build();
+
+        ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
+                .withName("configMap1")
+                .build();
+
+        AdditionalVolume additionalVolumeConfigMap = new AdditionalVolumeBuilder()
+                .withName("config-map-volume-name")
+                .withConfigMap(configMap)
+                .build();
+
+        VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
+                .withName("config-map-volume-name-2")
+                .withMountPath("/mnt/config-map-path")
+                .withSubPath("def")
+                .build();
+
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withNewTemplate()
+                            .withNewDeployment()
+                                .withNewMetadata()
+                                    .withLabels(depLabels)
+                                    .withAnnotations(depAnots)
+                                .endMetadata()
+                            .endDeployment()
+                            .withNewPod()
+                                .withNewMetadata()
+                                    .withLabels(podLabels)
+                                    .withAnnotations(podAnots)
+                                .endMetadata()
+                                .withPriorityClassName("top-priority")
+                                .withSchedulerName("my-scheduler")
+                                .withAffinity(affinity)
+                                .withTolerations(tolerations)
+                                .withTopologySpreadConstraints(tsc1, tsc2)
+                                .withEnableServiceLinks(false)
+                                .withVolumes(additionalVolumeConfigMap)
+                                .withHostUsers(false)
+                            .endPod()
+                            .withNewContainer()
+                                .withVolumeMounts(additionalVolumeMountConfigMap)
+                            .endContainer()
+                            .withNewServiceAccount()
+                                .withNewMetadata()
+                                    .withLabels(saLabels)
+                                    .withAnnotations(saAnots)
+                                .endMetadata()
+                            .endServiceAccount()
+                            .withNewPodDisruptionBudget()
+                                .withNewMetadata()
+                                    .withLabels(pdbLabels)
+                                    .withAnnotations(pdbAnots)
+                                .endMetadata()
+                            .endPodDisruptionBudget()
+                        .endTemplate()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        // Check Deployment
+        Deployment dep = sova.generateDeployment(Map.of(), true, null, null);
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
+
+        // Check Pods
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
+        assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));
+        assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
+
+        // Check Service Account
+        ServiceAccount sa = sova.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+
+        // Check Pod Disruption Budget
+        PodDisruptionBudget pdb = sova.generatePodDisruptionBudget();
+        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithRecreateDeploymentStrategy() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withNewTemplate()
+                            .withNewDeployment()
+                                .withDeploymentStrategy(StrimziDeploymentStrategy.RECREATE)
+                            .endDeployment()
+                        .endTemplate()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        Deployment dep = sova.generateDeployment(Map.of(), true, null, null);
+        assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
+    }
+
+    @Test
+    public void testSecurityProvider() {
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+        sova.securityProvider = new TestPodSecurityProvider();
+        sova.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Deployment dep = sova.generateDeployment(Map.of(), true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
+    }
+
+    @Test
     public void testGenerateNetworkPolicy() {
         // Sova always produces exactly one ingress rule (port 9404).
         // Kubelet probes hit port 8080 directly and do not require an ingress rule.
@@ -640,5 +918,13 @@ public class SovaTest {
     private static void assertNoEnvVar(List<EnvVar> envVars, String name) {
         assertThat("Unexpected env var " + name,
                 envVars.stream().noneMatch(v -> name.equals(v.getName())), is(true));
+    }
+
+    private static Volume getVolume(PodSpec podSpec, String volumeName) {
+        return podSpec.getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 }
