@@ -405,7 +405,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureControlPlaneListener(String clusterName) {
         printSectionHeader("Control Plane listener");
-        // Only Kafka and CO connect to the control plane lisener. So we use KafkaClusterDeployedComponents.NONE here.
+        // Only Kafka and CO connect to the control plane listener. So we use KafkaClusterDeployedComponents.NONE here.
         configureReplicationOrControlPlaneListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName, KafkaClusterDeployedComponents.NONE);
     }
 
