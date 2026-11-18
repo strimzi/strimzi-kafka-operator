@@ -13,7 +13,6 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
@@ -36,9 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.PERFORMANCE;
 import static io.strimzi.systemtest.TestTags.SCALABILITY;
@@ -55,8 +52,6 @@ import static io.strimzi.systemtest.TestTags.SCALABILITY;
 @Tag(PERFORMANCE)
 @Tag(SCALABILITY)
 public class UserOperatorScalabilityPerformance extends AbstractST {
-
-    protected static final String REPORT_DIRECTORY = "user-operator";
 
     protected UserOperatorPerformanceReporter userOperatorPerformanceReporter = new UserOperatorPerformanceReporter();
 
@@ -137,17 +132,14 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
             } finally {
                 UserOperatorPerformanceUtils.cleanupKafkaUsers(testStorage);
 
-                final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, maxWorkQueueSize);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS, numberOfKafkaUsers);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_TIME_MS, maxBatchLingerMs);
-
-                performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_RECONCILIATION_INTERVAL, reconciliationTimeMs);
-
                 try {
-                    this.userOperatorPerformanceReporter.logPerformanceData(testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_SCALABILITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
+                    this.userOperatorPerformanceReporter.scalability()
+                        .workQueueSize(maxWorkQueueSize)
+                        .batchMaximumBlockSize(maxBatchSize)
+                        .numberOfKafkaUsers(numberOfKafkaUsers)
+                        .batchMaximumBlockTimeMs(maxBatchLingerMs)
+                        .reconciliationIntervalMs(reconciliationTimeMs)
+                        .log(testStorage);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -248,28 +240,17 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                 UserOperatorPerformanceUtils.cleanupKafkaUsers(testStorage);
 
                 if (latencyMetrics != null) {
-                    final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-
-                    // Input parameters
-                    performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, maxWorkQueueSize);
-                    performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_SIZE, maxBatchSize);
-                    performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS, numberOfExistingUsers);
-                    performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_TIME_MS, maxBatchLingerMs);
-
-                    // Latency metrics
-                    performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_MIN_LATENCY, latencyMetrics.min());
-                    performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_MAX_LATENCY, latencyMetrics.max());
-                    performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_AVERAGE_LATENCY, latencyMetrics.average());
-                    performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_P50_LATENCY, latencyMetrics.p50());
-                    performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_P95_LATENCY, latencyMetrics.p95());
-                    performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_P99_LATENCY, latencyMetrics.p99());
-
                     userOperatorMetricsGatherer.stopCollecting();
 
-                    performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
-
                     try {
-                        this.userOperatorPerformanceReporter.logPerformanceData(testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_LATENCY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
+                        this.userOperatorPerformanceReporter.latency()
+                            .workQueueSize(maxWorkQueueSize)
+                            .batchMaximumBlockSize(maxBatchSize)
+                            .numberOfKafkaUsers(numberOfExistingUsers)
+                            .batchMaximumBlockTimeMs(maxBatchLingerMs)
+                            .latencyMetrics(latencyMetrics)
+                            .metricsHistory(userOperatorMetricsGatherer.getMetricsStore())
+                            .log(testStorage);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

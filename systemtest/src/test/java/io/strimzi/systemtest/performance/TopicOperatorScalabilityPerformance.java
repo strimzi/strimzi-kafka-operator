@@ -14,7 +14,6 @@ import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
@@ -34,9 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.PERFORMANCE;
 import static io.strimzi.systemtest.TestTags.SCALABILITY;
@@ -53,8 +50,6 @@ import static io.strimzi.systemtest.TestTags.SCALABILITY;
 @Tag(PERFORMANCE)
 @Tag(SCALABILITY)
 public class TopicOperatorScalabilityPerformance extends AbstractST {
-
-    protected static final String REPORT_DIRECTORY = "topic-operator";
 
     protected TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
 
@@ -98,19 +93,16 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
                 KubeResourceManager.get().deleteResourceAsyncWait(kafkaTopics.toArray(new KafkaTopic[0]));
                 KafkaTopicUtils.waitForTopicWithPrefixDeletion(suiteTestStorage.getNamespaceName(), suiteTestStorage.getTopicName());
 
-                final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTasks);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_EVENTS, (numberOfTasks * 3) + numSpareEvents);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, "TOPIC-CONCURRENT");
-
-                performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_RECONCILIATION_INTERVAL, reconciliationTimeMs);
-
                 try {
-                    this.topicOperatorPerformanceReporter.logPerformanceData(this.suiteTestStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_SCALABILITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
+                    this.topicOperatorPerformanceReporter.scalability()
+                        .maxQueueSize(maxQueueSize)
+                        .maxBatchSize(maxBatchSize)
+                        .numberOfTopics(numberOfTasks)
+                        .numberOfEvents((numberOfTasks * 3) + numSpareEvents)
+                        .maxBatchLingerMs(maxBatchLingerMs)
+                        .processType("TOPIC-CONCURRENT")
+                        .reconciliationIntervalMs(reconciliationTimeMs)
+                        .log(this.suiteTestStorage);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
