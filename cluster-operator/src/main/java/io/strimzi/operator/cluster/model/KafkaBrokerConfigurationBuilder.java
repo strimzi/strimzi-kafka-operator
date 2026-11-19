@@ -95,19 +95,23 @@ public class KafkaBrokerConfigurationBuilder {
     private final Reconciliation reconciliation;
     private final NodeRef node;
     private final KafkaClusterSecurityContext securityContext;
+    private final KafkaClusterDeployedComponents deployedComponents;
 
     /**
      * Broker configuration template constructor
      *
-     * @param reconciliation    The reconciliation
-     * @param node              NodeRef instance
-     * @param securityContext   The Kafka cluster security context
+     * @param reconciliation        The reconciliation
+     * @param node                  NodeRef instance
+     * @param securityContext       The Kafka cluster security context
+     * @param deployedComponents    Information about which optional components (Topic and User Operators, Kafka
+     *                              Exporter, Cruise Control) are deployed and need access to the Kafka cluster
      */
-    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, NodeRef node, KafkaClusterSecurityContext securityContext) {
+    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, NodeRef node, KafkaClusterSecurityContext securityContext, KafkaClusterDeployedComponents deployedComponents) {
         printHeader();
         this.reconciliation = reconciliation;
         this.node = node;
         this.securityContext = securityContext;
+        this.deployedComponents = deployedComponents;
 
         // Render the node/broker ID into the config file
         configureNodeOrBrokerId();
@@ -401,7 +405,8 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureControlPlaneListener(String clusterName) {
         printSectionHeader("Control Plane listener");
-        configureReplicationOrControlPlaneListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName, controlPlaneServiceAccountPrincipals(reconciliation.namespace(), clusterName));
+        // Only Kafka and CO connect to the control plane listener. So we use KafkaClusterDeployedComponents.NONE here.
+        configureReplicationOrControlPlaneListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName, KafkaClusterDeployedComponents.NONE);
     }
 
     /**
@@ -410,7 +415,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureReplicationListener(String clusterName) {
         printSectionHeader("Replication listener");
-        configureReplicationOrControlPlaneListener(REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName, replicationServiceAccountPrincipals(reconciliation.namespace(), clusterName));
+        configureReplicationOrControlPlaneListener(REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName, deployedComponents);
     }
 
     /**
@@ -426,39 +431,35 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Returns the principals of the Service Accounts which are allowed to authenticate on the control plane listener.
-     * Only the Kafka nodes and the Cluster Operator connect to it.
+     * Returns the principals of the Service Accounts of the internal components which connect to the Kafka cluster.
+     * The Kafka nodes and the Cluster Operator are always included. The optional components (Entity Operator, Kafka
+     * Exporter, and Cruise Control) are included only when they are deployed.
      *
-     * @param namespace     Namespace of the Kafka cluster
-     * @param clusterName   Name of the Kafka cluster
+     * @param namespace             Namespace of the Kafka cluster
+     * @param clusterName           Name of the Kafka cluster
+     * @param deployedComponents    Information about which optional components are deployed
      *
      * @return  List with the Service Account principals
      */
-    /* test */ static List<String> controlPlaneServiceAccountPrincipals(String namespace, String clusterName) {
-        return List.of(
-                serviceAccountPrincipal(namespace, KafkaResources.kafkaComponentName(clusterName)),
-                serviceAccountPrincipal(namespace, KafkaResources.clusterOperatorServiceAccount(clusterName))
-        );
-    }
+    /* test */ static List<String> serviceAccountPrincipals(String namespace, String clusterName, KafkaClusterDeployedComponents deployedComponents) {
+        List<String> principals = new ArrayList<>();
+        principals.add(serviceAccountPrincipal(namespace, KafkaResources.kafkaComponentName(clusterName)));
+        principals.add(serviceAccountPrincipal(namespace, KafkaResources.clusterOperatorServiceAccount(clusterName)));
 
-    /**
-     * Returns the principals of the Service Accounts which are allowed to authenticate on the replication listener.
-     * These are all the internal components which connect to the Kafka brokers. The same principals are also
-     * configured as super-users when authorization is enabled.
-     *
-     * @param namespace     Namespace of the Kafka cluster
-     * @param clusterName   Name of the Kafka cluster
-     *
-     * @return  List with the Service Account principals
-     */
-    /* test */ static List<String> replicationServiceAccountPrincipals(String namespace, String clusterName) {
-        return List.of(
-                serviceAccountPrincipal(namespace, KafkaResources.kafkaComponentName(clusterName)),
-                serviceAccountPrincipal(namespace, KafkaResources.entityOperatorDeploymentName(clusterName)),
-                serviceAccountPrincipal(namespace, KafkaExporterResources.serviceAccountName(clusterName)),
-                serviceAccountPrincipal(namespace, CruiseControlResources.serviceAccountName(clusterName)),
-                serviceAccountPrincipal(namespace, KafkaResources.clusterOperatorServiceAccount(clusterName))
-        );
+        if (deployedComponents.entityOperator()) {
+            // The Topic and User Operators share the Entity Operator Service Account
+            principals.add(serviceAccountPrincipal(namespace, KafkaResources.entityOperatorDeploymentName(clusterName)));
+        }
+
+        if (deployedComponents.kafkaExporter()) {
+            principals.add(serviceAccountPrincipal(namespace, KafkaExporterResources.serviceAccountName(clusterName)));
+        }
+
+        if (deployedComponents.cruiseControl()) {
+            principals.add(serviceAccountPrincipal(namespace, CruiseControlResources.serviceAccountName(clusterName)));
+        }
+
+        return principals;
     }
 
     /**
@@ -481,11 +482,11 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param listenerName          Name of the listener
      * @param clusterName           Name of the Kafka cluster
-     * @param allowedPrincipals     Principals of the Service Accounts which are allowed to authenticate on this
+     * @param deployedComponents    Optional components whose Service Accounts are allowed to authenticate on this
      *                              listener when Service Account authentication is used
      */
     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
-    private void configureReplicationOrControlPlaneListener(String listenerName, String clusterName, List<String> allowedPrincipals) {
+    private void configureReplicationOrControlPlaneListener(String listenerName, String clusterName, KafkaClusterDeployedComponents deployedComponents) {
         // Configure encryption
         if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             writer.println("listener.name." + listenerName + ".ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
@@ -508,7 +509,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("listener.name." + listenerName + ".oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
                     "unsecuredLoginStringClaim_sub=\"unused\" " +
                     "oauth.check.access.token.type=\"false\" " +
-                    "oauth.custom.claim.check=\"" + serviceAccountClaimCheck(saConfig.audience(), allowedPrincipals) + "\" " +
+                    "oauth.custom.claim.check=\"" + serviceAccountClaimCheck(saConfig.audience(), serviceAccountPrincipals(reconciliation.namespace(), clusterName, deployedComponents)) + "\" " +
                     "oauth.valid.issuer.uri=\"" + saConfig.issuer() + "\" " +
                     "oauth.jwks.endpoint.uri=\"" + saConfig.jwksUri() + "\" " +
                     "oauth.username.claim=\"sub\" " +
@@ -642,14 +643,26 @@ public class KafkaBrokerConfigurationBuilder {
             if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
                 // Superusers for mTLS authentication => they represent the internal components
                 superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaResources.kafkaComponentName(clusterName)));
-                superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-topic-operator"));
-                superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-user-operator"));
-                superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaExporterResources.componentName(clusterName)));
-                superUsers.add(String.format("User:CN=%s,O=io.strimzi", CruiseControlResources.componentName(clusterName)));
                 superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
+
+                if (deployedComponents.topicOperator()) {
+                    superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-topic-operator"));
+                }
+
+                if (deployedComponents.userOperator()) {
+                    superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-user-operator"));
+                }
+
+                if (deployedComponents.kafkaExporter()) {
+                    superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaExporterResources.componentName(clusterName)));
+                }
+
+                if (deployedComponents.cruiseControl()) {
+                    superUsers.add(String.format("User:CN=%s,O=io.strimzi", CruiseControlResources.componentName(clusterName)));
+                }
             } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration) {
                 // Superusers for SA authentication => they represent the internal components
-                replicationServiceAccountPrincipals(reconciliation.namespace(), clusterName).forEach(principal -> superUsers.add("User:" + principal));
+                serviceAccountPrincipals(reconciliation.namespace(), clusterName, deployedComponents).forEach(principal -> superUsers.add("User:" + principal));
             }
 
             printSectionHeader("Authorization");
