@@ -748,7 +748,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Create test storage instance", expected = "Test storage instance is created"),
             @Step(value = "Create KafkaNodePool resources", expected = "KafkaNodePool resources are created and waited for readiness"),
             @Step(value = "Create Kafka cluster", expected = "Kafka cluster is created and waited for readiness"),
-            @Step(value = "Deploy EchoSink KafkaConnector with autor restart enabled", expected = "KafkaConnector is created with auto-restart enabled"),
+            @Step(value = "Deploy EchoSink KafkaConnector with auto restart enabled", expected = "KafkaConnector is created with auto-restart enabled"),
             @Step(value = "Send first batch of messages", expected = "First batch of messages is sent to the topic"),
             @Step(value = "Ensure connection success for the first batch", expected = "Successfully produce the first batch of messages"),
             @Step(value = "Send second batch of messages", expected = "Second batch of messages is sent to the topic"),

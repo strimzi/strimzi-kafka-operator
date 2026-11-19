@@ -49,7 +49,7 @@
 | 1. | Create test storage instance | Test storage instance is created |
 | 2. | Create KafkaNodePool resources | KafkaNodePool resources are created and waited for readiness |
 | 3. | Create Kafka cluster | Kafka cluster is created and waited for readiness |
-| 4. | Deploy EchoSink KafkaConnector with autor restart enabled | KafkaConnector is created with auto-restart enabled |
+| 4. | Deploy EchoSink KafkaConnector with auto restart enabled | KafkaConnector is created with auto-restart enabled |
 | 5. | Send first batch of messages | First batch of messages is sent to the topic |
 | 6. | Ensure connection success for the first batch | Successfully produce the first batch of messages |
 | 7. | Send second batch of messages | Second batch of messages is sent to the topic |

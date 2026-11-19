@@ -493,12 +493,12 @@ public class ListenersST extends AbstractST {
             @Step(value = "Create a Kafka cluster with custom listener using TLS authentication " +
                 "and both custom CA certs defined via 'ssl.truststore.location'. " +
                 "Kafka also contains simple authorization config with superuser 'pepa'.", expected = "Kafka cluster with custom listener is ready."),
-            @Step(value = "Create a Kafka topic and Kafka TLS users wit respective ACL configuration.", expected = "Kafka topic and users are created."),
-            @Step(value = "Transmit messages over TLS to custom listener with user-1 certs generated during the firs step.", expected = "Messages are transmitted successfully."),
+            @Step(value = "Create a Kafka topic and Kafka TLS users with respective ACL configuration.", expected = "Kafka topic and users are created."),
+            @Step(value = "Transmit messages over TLS to custom listener with user-1 certs generated during the first step.", expected = "Messages are transmitted successfully."),
             @Step(value = "Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser.", expected = "Producer/consumer time-outed due to wrong certificate used."),
-            @Step(value = "Transmit messages over TLS to custom listener with user-2 certs generated during the firs step.", expected = "Messages are transmitted successfully."),
+            @Step(value = "Transmit messages over TLS to custom listener with user-2 certs generated during the first step.", expected = "Messages are transmitted successfully."),
             @Step(value = "Remove 'ssl.principal.mapping.rules' configuration from Kafka's listener.", expected = "Rolling update of Kafka brokers is performed successfully."),
-            @Step(value = "Transmit messages over TLS to custom listener with user-1 certs generated during the firs step.", expected = "Producer/consumer time-outed due to not-authorized error as KafkaUser CN doesn't match."),
+            @Step(value = "Transmit messages over TLS to custom listener with user-1 certs generated during the first step.", expected = "Producer/consumer time-outed due to not-authorized error as KafkaUser CN doesn't match."),
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
