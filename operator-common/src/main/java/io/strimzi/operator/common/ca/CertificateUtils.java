@@ -141,7 +141,7 @@ public class CertificateUtils {
                     try {
                         validateCertPath(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast());
                     } catch (CertPathValidatorException e) {
-                        String errorMessage = buildInvalidCertChainMessage(caRole, entry.getKey(), e);
+                        String errorMessage = "User supplied " + caRole.caName() + " cert chain " + entry.getKey() + " is not valid. " + describeValidationFailure(e);
                         LOGGER.errorCr(reconciliation, errorMessage);
                         throw new RuntimeException(errorMessage);
                     }
@@ -149,27 +149,26 @@ public class CertificateUtils {
     }
 
     /**
-     * Builds an error message describing why the user supplied CA cert chain failed the validation.
+     * Describes why the certificate chain failed the validation.
      *
-     * @param caRole    The role of the CA
-     * @param key       Key of the Secret entry with the certificate chain
-     * @param e         Exception thrown by the certificate chain validation
+     * @param e     Exception thrown by the certificate chain validation
      *
-     * @return  Error message describing why the validation failed
+     * @return  Description of the validation failure
      */
-    private static String buildInvalidCertChainMessage(Ca.CaRole caRole, String key, CertPathValidatorException e) {
-        String message = "User supplied " + caRole.caName() + " cert chain " + key + " is not valid.";
-
+    private static String describeValidationFailure(CertPathValidatorException e) {
         CertPathValidatorException.Reason reason = e.getReason();
+        String reasonDetails = "Reason: " + reason + " (" + e.getMessage() + ")";
 
         if (reason == PKIXReason.NAME_CHAINING || reason == PKIXReason.NO_TRUST_ANCHOR) {
-            message += " Certificates must be provided in the correct order and the chain must be complete.";
-        } else if (e.getCertPath() != null
+            return "Certificates must be provided in the correct order and the chain must be complete. " + reasonDetails;
+        }
+
+        if (e.getCertPath() != null
                 && e.getIndex() >= 0
                 && e.getCertPath().getCertificates().get(e.getIndex()) instanceof X509Certificate failedCert) {
 
             String subject = failedCert.getSubjectX500Principal().getName();
-            String reasonDescription = switch (reason) {
+            String description = switch (reason) {
                 case BasicReason.EXPIRED -> "Certificate " + subject + " expired on " + failedCert.getNotAfter().toInstant() + ".";
                 case BasicReason.NOT_YET_VALID -> "Certificate " + subject + " is not valid before " + failedCert.getNotBefore().toInstant() + ".";
                 case BasicReason.INVALID_SIGNATURE -> "The signature of certificate " + subject + " cannot be verified with the public key of its issuer " + failedCert.getIssuerX500Principal().getName() + ".";
@@ -180,10 +179,10 @@ public class CertificateUtils {
                 default -> "Certificate " + subject + " failed the validation.";
             };
 
-            message += " " + reasonDescription;
+            return description + " " + reasonDetails;
         }
 
-        return message + " Reason: " + reason + " (" + e.getMessage() + ")";
+        return reasonDetails;
     }
 
     /**
