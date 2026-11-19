@@ -115,10 +115,6 @@ public class CommonVersionModificationData {
         return getFilePaths().get("fromKafka");
     }
 
-    public String getToKafkaFilePath() {
-        return getFilePaths().get("toKafka");
-    }
-
     @Override
     public String toString() {
         return "\n" +

@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import io.skodjob.kubetest4j.resources.ResourceItem;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
@@ -30,7 +29,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -77,7 +75,6 @@ import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.DEFAULT_SINK_FILE_PATH;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG;
-import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING_EXAMPLES;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -160,9 +157,9 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         maybeWaitForRollingUpdate(testStorage.getNamespaceName(), upgradeKafkaVersion);
 
         // 7. Log images of Pods and check that all components (excluding Connect because of custom image) have right images
+        //    The Kafka version is pinned in the Kafka CR and not changed by this procedure, so the Pods stay on it
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
-        // checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
+        checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData, upgradeKafkaVersion.getVersion());
 
         verifyPostUpgradeOrDowngradeProcedure(testStorage, upgradeDowngradeData);
     }
@@ -263,7 +260,11 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         this.deployCoWithWaitForReadiness(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeData);
         this.deployKafkaClusterWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData, upgradeKafkaVersion);
-        verifyClusterSecurityStatus(testStorage.getNamespaceName());
+
+        if (!upgradeData.getFromVersion().equals("1.0.0")) {
+            verifyClusterSecurityStatus(testStorage.getNamespaceName());
+        }
+
         this.deployKafkaUserWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData);
         this.deployKafkaTopicWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData);
 
@@ -597,64 +598,49 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         });
     }
 
-    protected void changeKafkaVersion(final String componentsNamespaceName, CommonVersionModificationData versionModificationData) throws IOException {
-        changeKafkaVersion(componentsNamespaceName, versionModificationData, false);
-    }
-
     /**
-     * Method for changing Kafka `version` and `metadataVersion` fields in Kafka CR based on the current scenario
-     * @param versionModificationData data structure holding information about the desired steps/versions that should be applied
-     * @param replaceEvenIfMissing current workaround for the situation when `metadataVersion` is not set in Kafka CR -> that's because previous version of operator
-     *     doesn't contain this kind of field, so even if we set this field in the Kafka CR, it is removed by the operator
-     *     this is needed for correct functionality of the `testUpgradeAcrossVersionsWithUnsupportedKafkaVersion` test
-     * @throws IOException exception during application of YAML files
+     * Sets the Kafka `version` and `metadataVersion` fields in the Kafka CR to the values the scenario upgrades to.
+     * The Kafka version is applied first and the method waits for the brokers and controllers to finish rolling,
+     * because the metadata version can be raised only once all the nodes run the new Kafka version.
+     *
+     * @param componentsNamespaceName   Namespace where the Kafka cluster is deployed
+     * @param versionModificationData   data structure holding information about the desired steps/versions that should be applied
      */
-    @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaVersion(final String componentsNamespaceName, CommonVersionModificationData versionModificationData, boolean replaceEvenIfMissing) throws IOException {
-        // Get Kafka version
-        String kafkaVersionFromCR = CrdClients.kafkaClient().inNamespace(componentsNamespaceName).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion();
-        // Get Kafka metadata version
-        String currentMetadataVersion = CrdClients.kafkaClient().inNamespace(componentsNamespaceName).withName(CLUSTER_NAME).get().getSpec().getKafka().getMetadataVersion();
+    protected void changeKafkaVersion(final String componentsNamespaceName, CommonVersionModificationData versionModificationData) {
+        final UpgradeKafkaVersion procedures = versionModificationData.getProcedures();
 
-        String kafkaVersionFromProcedure = versionModificationData.getProcedures().getVersion();
+        final String version = procedures.getVersion();
+        if (version != null && !version.isEmpty()) {
+            LOGGER.info("Set Kafka version to {}", version);
+            KafkaUtils.replace(componentsNamespaceName, CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setVersion(version));
 
-        // #######################################################################
-        // #################    Update CRs to latest version   ###################
-        // #######################################################################
-        String examplesPath = downloadExamplesAndGetPath(versionModificationData);
-        String kafkaFilePath = examplesPath + versionModificationData.getToKafkaFilePath();
+            waitForKafkaControllersAndBrokersFinishRollingUpdate(componentsNamespaceName);
+        }
 
-        applyCustomResourcesFromPath(componentsNamespaceName, examplesPath, kafkaFilePath, kafkaVersionFromCR, currentMetadataVersion);
-
-        // #######################################################################
-
-        if (versionModificationData.getProcedures() != null && (currentMetadataVersion != null || replaceEvenIfMissing)) {
-
-            if (kafkaVersionFromProcedure != null && !kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure)) {
-                LOGGER.info("Set Kafka version to {}", kafkaVersionFromProcedure);
-                KafkaUtils.replace(componentsNamespaceName, CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setVersion(kafkaVersionFromProcedure));
-
-                waitForKafkaControllersAndBrokersFinishRollingUpdate(componentsNamespaceName);
-            }
-
-            String metadataVersion = versionModificationData.getProcedures().getMetadataVersion();
-
-            if (metadataVersion != null && !metadataVersion.isEmpty()) {
-                LOGGER.info("Set metadata version to {} (current version is {})", metadataVersion, currentMetadataVersion);
-                KafkaUtils.replace(componentsNamespaceName, CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setMetadataVersion(metadataVersion));
-
-                makeComponentsSnapshots(componentsNamespaceName);
-            }
+        final String metadataVersion = procedures.getMetadataVersion();
+        if (metadataVersion != null && !metadataVersion.isEmpty()) {
+            LOGGER.info("Set metadata version to {}", metadataVersion);
+            KafkaUtils.replace(componentsNamespaceName, CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setMetadataVersion(metadataVersion));
         }
     }
 
-    protected void checkAllComponentsImages(String componentsNamespaceName, BundleVersionModificationData versionModificationData) {
+    /**
+     * Checks that all the components run the images expected after the operator upgrade/downgrade.
+     *
+     * @param componentsNamespaceName   Namespace where the Kafka cluster is deployed
+     * @param versionModificationData   data structure holding information about the desired steps/versions that should be applied
+     * @param expectedKafkaVersion      Kafka version the Kafka Pods are expected to run. Scenarios which do not touch
+     *                                  the Kafka version end up on a different version than those which upgrade it.
+     */
+    protected void checkAllComponentsImages(String componentsNamespaceName, BundleVersionModificationData versionModificationData, String expectedKafkaVersion) {
         if (versionModificationData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }
 
-        checkContainerImages(componentsNamespaceName, controllerSelector, versionModificationData.getKafkaImage());
-        checkContainerImages(componentsNamespaceName, brokerSelector, versionModificationData.getKafkaImage());
+        final String kafkaImage = versionModificationData.getKafkaImageForVersion(expectedKafkaVersion);
+
+        checkContainerImages(componentsNamespaceName, controllerSelector, kafkaImage);
+        checkContainerImages(componentsNamespaceName, brokerSelector, kafkaImage);
         checkContainerImages(componentsNamespaceName, eoSelector, versionModificationData.getTopicOperatorImage());
         checkContainerImages(componentsNamespaceName, eoSelector, 1, versionModificationData.getUserOperatorImage());
     }
@@ -708,28 +694,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         LOGGER.info("Waiting for Kafka rolling update to finish");
         controllerPods = RollingUpdateUtils.waitTillComponentHasRolled(componentsNamespaceName, controllerSelector, 3, controllerPods);
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(componentsNamespaceName, brokerSelector, 3, brokerPods);
-    }
-
-    protected void applyKafkaCustomResourceFromPath(String namespaceName, String kafkaFilePath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
-        // Change kafka version of it's empty (null is for remove the version)
-        String metadataVersion = kafkaVersionFromCR == null ? null : kafkaMetadataVersion;
-
-        kafkaYaml = new File(kafkaFilePath);
-        LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, kafkaVersionFromCR, metadataVersion, clusterSecurityAnnotationIfNeeded()));
-    }
-
-    protected void applyCustomResourcesFromPath(String namespaceName, String examplesPath, String kafkaFilePath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
-        applyKafkaCustomResourceFromPath(namespaceName, kafkaFilePath, kafkaVersionFromCR, kafkaMetadataVersion);
-
-        kafkaUserYaml = new File(examplesPath + "/examples/user/kafka-user.yaml");
-        LOGGER.info("Deploying KafkaUser from: {}, in Namespace: {}", kafkaUserYaml.getPath(), namespaceName);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
-
-        kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
-        LOGGER.info("Deploying KafkaTopic from: {}, in Namespace {}", kafkaTopicYaml.getPath(), namespaceName);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml));
-        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> CrdClients.kafkaTopicClient().inNamespace(namespaceName).withName("my-topic").delete()));
     }
 
     private String getKafkaYamlWithName(String name) {
@@ -786,15 +750,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
     protected String getResourceApiVersion(String resourcePlural) {
         return resourcePlural + "." + Constants.V1 + "." + Constants.RESOURCE_GROUP_NAME;
-    }
-
-    protected String downloadExamplesAndGetPath(CommonVersionModificationData versionModificationData) throws IOException {
-        if (versionModificationData.getToUrl().equals("HEAD")) {
-            return PATH_TO_PACKAGING;
-        } else {
-            File dir = FileUtils.downloadAndUnzip(versionModificationData.getToUrl());
-            return dir.getAbsolutePath() + "/" + versionModificationData.getToExamples();
-        }
     }
 
     /**

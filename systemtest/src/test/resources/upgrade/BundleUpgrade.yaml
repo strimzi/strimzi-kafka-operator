@@ -1,21 +1,28 @@
 #  --- Structure ---
+#  upgrades: list of scenarios for the "regular" upgrade tests. These tests upgrade only the Cluster Operator and
+#            never change the Kafka version in the Kafka CR, so the Kafka cluster has to stay healthy across the
+#            whole upgrade.
+#  unsupportedKafkaUpgrade: single scenario for the test covering an upgrade from an old Strimzi running a Kafka
+#            version that the new Strimzi no longer supports. Here the Kafka version in the Kafka CR *is* changed
+#            after the Cluster Operator upgrade, because the cluster cannot become ready before that.
+#
+#  Fields used in both sections:
 #  fromVersion: String - From this version we will upgrade the CO to latest = "HEAD"
 #  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "fromUrl"
 #  deployKafkaVersion: String - version of Kafka, used in initial deployment of Kafka cluster.
-#                               It should be the latest supported version of Kafka in older version of Strimzi (the one we are upgrading from).
-#                               This version specified in `deployKafkaVersion` has to be in a list of supported version of the Strimzi version we are upgrading to.
-#                               That's because we are waiting for successful upgrade of CO with rolling update of all components before we are doing any upgrade of Kafka.
-#                               Having unsupported Kafka version specified would fail the test, as the cluster would be in the `NotReady` state (and there wouldn't be any rolling update).
-#                               In case that you want to use Kafka version unsupported in the new version of Strimzi, you will have to handle it in the test code directly
-#                               (and re-order the steps just for this particular case).
+#                               In the `upgrades` section it has to be supported by both the Strimzi version we are
+#                               upgrading from and the one we are upgrading to - the tests wait for a successful CO
+#                               upgrade with a rolling update of all components and never touch the Kafka version.
+#                               In the `unsupportedKafkaUpgrade` section it is the opposite - it has to be a version
+#                               supported by the old Strimzi but *not* by the new one, otherwise the test would not
+#                               cover the scenario it is named after.
 #  fromUrl: String - url, from which examples are downloaded
 #  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
-#  conversionTool:
-#    toUrlConversionTool:  String - url, from which conversion tool is downloaded
-#    toConversionTool: String - name of folder, which contains conversion tool
 #  additionalTopics: int - number of additional topics, which will be created
 #  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after upgrade
-#    kafka:
+#    kafka: the registry and tag expected after the upgrade. The `-kafka-<version>` suffix is replaced by the test
+#           with the Kafka version the particular scenario is expected to end up on, so that tests which do not
+#           upgrade Kafka and tests which do can share a single entry.
 #    topicOperator:
 #    userOperator:
 #  client:
@@ -28,14 +35,41 @@
 #  fromFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
 #  toFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  filePaths: path to example files for particular resources
-#  fromKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the upgrade
-#  toKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the upgrade
+#    fromKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the upgrade
 #  --- Structure ---
-- fromVersion: 1.3.1
-  fromExamples: strimzi-1.3.1
-  deployKafkaVersion: 4.3.2
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/1.3.1/strimzi-1.3.1.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.3.1/kafka-versions.yaml
+upgrades:
+  - fromVersion: 1.3.1
+    fromExamples: strimzi-1.3.1
+    deployKafkaVersion: 4.3.2
+    fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/1.3.1/strimzi-1.3.1.zip
+    fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.3.1/kafka-versions.yaml
+    additionalTopics: 2
+    imagesAfterOperations:
+      kafka: strimzi/kafka:latest-kafka-4.3.2
+      topicOperator: strimzi/operator:latest
+      userOperator: strimzi/operator:latest
+    client:
+      continuousClientsMessages: 400
+    environmentInfo:
+      maxK8sVersion: latest
+      status: stable
+      flakyEnvVariable: none
+      reason: Test is working on environment, where k8s server version is < 1.22
+    fromFeatureGates: ""
+    toFeatureGates: ""
+    filePaths:
+      fromKafka: "/examples/kafka/kafka-persistent.yaml"
+
+# Strimzi 1.0.0 supports Kafka 4.1.0 - 4.2.0, so 4.1.2 is not supported by the Strimzi version we upgrade to.
+# Once the oldest Kafka version of this Strimzi release becomes supported again (or the release gets too old to be
+# worth testing), bump `fromVersion`/`fromExamples`/`fromUrl`/`fromKafkaVersionsUrl` and pick a `deployKafkaVersion`
+# that is again unsupported by the new Strimzi.
+unsupportedKafkaUpgrade:
+  fromVersion: 1.0.0
+  fromExamples: strimzi-1.0.0
+  deployKafkaVersion: 4.1.2
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/1.0.0/strimzi-1.0.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.0.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     kafka: strimzi/kafka:latest-kafka-4.3.2
@@ -52,4 +86,3 @@
   toFeatureGates: ""
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
-    toKafka: "/examples/kafka/kafka-persistent.yaml"
