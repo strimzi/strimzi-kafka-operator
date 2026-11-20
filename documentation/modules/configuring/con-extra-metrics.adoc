@@ -1,0 +1,44 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-extra-metrics-{context}']
+= Capturing consumer lag metrics with Extra Metrics
+
+[role="_abstract"]
+Capture consumer group lag metrics to monitor whether consumers are keeping up with message production.
+Consumer lag metrics help you detect slow or stalled consumers and diagnose processing issues.
+
+Extra Metrics is a JVM-based consumer lag exporter that replaces the deprecated `kafkaExporter` component.
+It is based on the link:https://github.com/strimzi/sova[Sova^] project.
+It exposes consumer group lag metrics that are not available through broker JMX metrics.
+These metrics are typically scraped by Prometheus and visualized in monitoring dashboards.
+
+Extra Metrics exposes the same metric names as Kafka Exporter, so existing Prometheus rules and Grafana dashboards continue to work without modification after migration.
+
+Extra Metrics collects metrics in the background at a regular interval.
+An unavailable Kafka cluster shows up as stale metrics and failed collection cycles reported by the component's own `sova_*` metrics, not as an unready Extra Metrics pod.
+
+Enable Extra Metrics when you need to do the following:
+
+* Monitor consumer group lag
+* Track consumer progress over time
+* Alert on slow consumers
+
+Enable Extra Metrics by adding an `extraMetrics` section to the `Kafka` custom resource.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  # Extra Metrics (optional)
+  extraMetrics: {} # <1>
+----
+<1> An empty object enables Extra Metrics with default settings (collect all groups and topics).
+
+NOTE: `spec.kafkaExporter` is deprecated.
+Migrate to `spec.extraMetrics` by mapping your existing fields as described in xref:proc-extra-metrics-deploy-{context}[].
+
+For configuration details, metrics, and dashboards, see
+xref:con-metrics-kafka-exporter-lag-{context}[Consumer lag monitoring].
