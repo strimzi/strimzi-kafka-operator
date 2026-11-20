@@ -169,10 +169,6 @@ ENV SOVA_HOME=/opt/sova
 COPY tmp/sova/ $SOVA_HOME/
 COPY ./sova-scripts $SOVA_HOME/bin
 
-# The Kubernetes Configuration Provider for Apache Kafka and its dependencies. Sova uses the provider to load the
-# certificates from Kubernetes Secrets, but it is not part of the Sova distribution.
-COPY tmp/sova-libs/ $SOVA_HOME/libs/
-
 #####
 # Copy Prometheus JMX Exporter from the downloader stage
 #####

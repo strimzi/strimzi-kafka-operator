@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.common.HasLivenessProbe;
 import io.strimzi.api.kafka.model.common.HasReadinessProbe;
 import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
-import io.strimzi.api.kafka.model.kafka.sova.SovaSpec;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsSpec;
 import io.strimzi.crdgenerator.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -39,7 +39,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 @Deprecated
-@DeprecatedType(replacedWithType = SovaSpec.class)
+@DeprecatedType(replacedWithType = ExtraMetricsSpec.class)
 public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
     private String image;
     private String groupRegex = ".*";

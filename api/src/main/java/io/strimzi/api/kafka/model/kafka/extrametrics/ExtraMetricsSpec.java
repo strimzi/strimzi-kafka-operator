@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.kafka.sova;
+package io.strimzi.api.kafka.model.kafka.extrametrics;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of the Sova deployment.
+ * Representation of the Extra Metrics deployment.
  */
 @Buildable(
         editableEnabled = false,
@@ -38,7 +38,7 @@ import java.util.Map;
     "collectionIntervalMs", "config", "logging", "jvmOptions", "resources", "livenessProbe", "readinessProbe", "template"})
 @EqualsAndHashCode
 @ToString
-public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
+public class ExtraMetricsSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
     /**
      * Prefixes of Kafka Admin client options which cannot be set by the user in {@code config}
      */
@@ -60,11 +60,11 @@ public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasRe
     private ResourceRequirements resources;
     private StrimziProbe livenessProbe;
     private StrimziProbe readinessProbe;
-    private SovaTemplate template;
+    private ExtraMetricsTemplate template;
 
     private Map<String, Object> additionalProperties;
 
-    @Description("The container image used for the Sova pods. "
+    @Description("The container image used for the Extra Metrics pods. "
         + "If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. "
         + "If an image name is not defined in the Cluster Operator configuration, a default value is used.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -129,7 +129,7 @@ public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasRe
         this.collectionIntervalMs = collectionIntervalMs;
     }
 
-    @Description("Kafka Admin client configuration used by Sova. "
+    @Description("Kafka Admin client configuration used by Extra Metrics. "
         + "Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + "). ")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
@@ -140,7 +140,7 @@ public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasRe
         this.config = config;
     }
 
-    @Description("Logging configuration (Log4j 2) for Sova.")
+    @Description("Logging configuration (Log4j 2) for Extra Metrics.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     @Override
     public Logging getLogging() {
@@ -153,7 +153,7 @@ public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasRe
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("JVM Options for the Sova container.")
+    @Description("JVM Options for the Extra Metrics container.")
     public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
@@ -195,11 +195,11 @@ public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasRe
 
     @Description("Customization of deployment templates and pods.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public SovaTemplate getTemplate() {
+    public ExtraMetricsTemplate getTemplate() {
         return template;
     }
 
-    public void setTemplate(SovaTemplate template) {
+    public void setTemplate(ExtraMetricsTemplate template) {
         this.template = template;
     }
 

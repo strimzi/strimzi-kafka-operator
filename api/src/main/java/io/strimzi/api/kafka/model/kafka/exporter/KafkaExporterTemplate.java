@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.kafka.sova.SovaTemplate;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsTemplate;
 import io.strimzi.crdgenerator.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -35,7 +35,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 @Deprecated
-@DeprecatedType(replacedWithType = SovaTemplate.class)
+@DeprecatedType(replacedWithType = ExtraMetricsTemplate.class)
 public class KafkaExporterTemplate implements UnknownPropertyPreserving {
     private DeploymentTemplate deployment;
     private PodTemplate pod;

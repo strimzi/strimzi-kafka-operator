@@ -5869,7 +5869,7 @@ spec:
                   properties:
                     image:
                       type: string
-                      description: "The container image used for the Sova pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
+                      description: "The container image used for the Extra Metrics pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
                     groupRegex:
                       type: string
                       description: Regular expression to specify which consumer groups to collect. Default value is `.*`.
@@ -5889,7 +5889,7 @@ spec:
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object
-                      description: "Kafka Admin client configuration used by Sova. Properties with the following prefixes cannot be set: ssl., sasl., security., bootstrap.servers, config.providers (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols). "
+                      description: "Kafka Admin client configuration used by Extra Metrics. Properties with the following prefixes cannot be set: ssl., sasl., security., bootstrap.servers, config.providers (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols). "
                     logging:
                       type: object
                       properties:
@@ -5920,7 +5920,7 @@ spec:
                           description: '`ConfigMap` entry where the logging configuration is stored. '
                       required:
                         - type
-                      description: Logging configuration (Log4j 2) for Sova.
+                      description: Logging configuration (Log4j 2) for Extra Metrics.
                     jvmOptions:
                       type: object
                       properties:
@@ -5952,7 +5952,7 @@ spec:
                                 type: string
                                 description: The system property value.
                           description: A map of additional system properties which will be passed using the `-D` option to the JVM.
-                      description: JVM Options for the Sova container.
+                      description: JVM Options for the Extra Metrics container.
                     resources:
                       type: object
                       properties:
@@ -6056,7 +6056,7 @@ spec:
                                 - RollingUpdate
                                 - Recreate
                               description: Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
-                          description: Template for Sova `Deployment`.
+                          description: Template for Extra Metrics `Deployment`.
                         pod:
                           type: object
                           properties:
@@ -6738,7 +6738,7 @@ spec:
                             hostUsers:
                               type: boolean
                               description: "Use the host user namespace. Optional. Defaults to `true`. When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`.When set to `false`, the pod runs in a new user namespace. Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature."
-                          description: Template for Sova `Pods`.
+                          description: Template for Extra Metrics `Pods`.
                         container:
                           type: object
                           properties:
@@ -6885,7 +6885,7 @@ spec:
                                   subPathExpr:
                                     type: string
                               description: Additional volume mounts which should be applied to the container.
-                          description: Template for the Sova container.
+                          description: Template for the Extra Metrics container.
                         serviceAccount:
                           type: object
                           properties:
@@ -6903,7 +6903,7 @@ spec:
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
-                          description: Template for the Sova service account.
+                          description: Template for the Extra Metrics service account.
                         podDisruptionBudget:
                           type: object
                           properties:
@@ -6925,9 +6925,9 @@ spec:
                               type: integer
                               minimum: 0
                               description: "Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1."
-                          description: Template for the Pod Disruption Budget for Sova pods.
+                          description: Template for the Pod Disruption Budget for Extra Metrics pods.
                       description: Customization of deployment templates and pods.
-                  description: "Configuration of Sova. Sova can provide additional metrics, for example lag of consumer group at topic/partition."
+                  description: "Configuration of the Extra Metrics component. It provides additional metrics, for example lag of consumer group at topic/partition."
                 maintenanceTimeWindows:
                   type: array
                   items:

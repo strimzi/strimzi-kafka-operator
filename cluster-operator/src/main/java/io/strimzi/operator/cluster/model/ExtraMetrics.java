@@ -29,9 +29,9 @@ import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
-import io.strimzi.api.kafka.model.kafka.sova.SovaSpec;
-import io.strimzi.api.kafka.model.kafka.sova.SovaTemplate;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsSpec;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
@@ -60,24 +60,24 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * Sova model
+ * Extra Metrics model
  */
-public class Sova extends AbstractModel implements SupportsLogging {
+public class ExtraMetrics extends AbstractModel implements SupportsLogging {
     /**
      * Type of the component which this model class represents. It is used for labeling and naming purposes.
      */
-    public static final String COMPONENT_TYPE = "sova";
+    public static final String COMPONENT_TYPE = "extra-metrics";
 
     // Ports
     protected static final String MANAGEMENT_PORT_NAME = "management";
     protected static final int MANAGEMENT_PORT = 8080;
 
     // Logging / metrics config volume
-    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "sova-metrics-and-logging";
+    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "extra-metrics-and-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/sova/custom-config/";
 
     // Custom pod labels env var
-    protected static final String CO_ENV_VAR_CUSTOM_SOVA_POD_LABELS = "STRIMZI_CUSTOM_SOVA_LABELS";
+    protected static final String CO_ENV_VAR_CUSTOM_EXTRA_METRICS_POD_LABELS = "STRIMZI_CUSTOM_EXTRA_METRICS_LABELS";
 
     // Health check defaults
     /*test*/ static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -107,7 +107,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
     protected String groupExcludeRegex;
     protected String topicExcludeRegex;
     protected Long collectionIntervalMs;
-    private SovaAdminClientConfiguration adminClientConfiguration;
+    private ExtraMetricsAdminClientConfiguration adminClientConfiguration;
 
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // Initialized in fromCrd
     private KafkaClusterSecurityContext securityContext;
@@ -120,7 +120,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
-        String value = System.getenv(CO_ENV_VAR_CUSTOM_SOVA_POD_LABELS);
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_EXTRA_METRICS_POD_LABELS);
         if (value != null) {
             DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
@@ -133,12 +133,12 @@ public class Sova extends AbstractModel implements SupportsLogging {
      * @param resource                  Kubernetes resource with metadata containing the namespace and cluster name
      * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected Sova(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, SovaResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+    protected ExtraMetrics(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, ExtraMetricsResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**
-     * Builds the Sova model from the Kafka custom resource. If Sova is not enabled, returns null.
+     * Builds the Extra Metrics model from the Kafka custom resource. If Extra Metrics is not enabled, returns null.
      *
      * @param reconciliation            Reconciliation marker for logging
      * @param kafkaAssembly             The Kafka CR
@@ -146,15 +146,15 @@ public class Sova extends AbstractModel implements SupportsLogging {
      * @param sharedEnvironmentProvider Shared environment provider
      * @param securityContext           Kafka cluster security context
      *
-     * @return Sova model object when Sova is enabled, or null if disabled.
+     * @return Extra Metrics model object when Extra Metrics is enabled, or null if disabled.
      */
-    public static Sova fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider, KafkaClusterSecurityContext securityContext) {
-        SovaSpec spec = kafkaAssembly.getSpec().getExtraMetrics();
+    public static ExtraMetrics fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider, KafkaClusterSecurityContext securityContext) {
+        ExtraMetricsSpec spec = kafkaAssembly.getSpec().getExtraMetrics();
 
         if (spec != null) {
             ModelUtils.validateComputeResources(spec.getResources(), "Kafka.spec.extraMetrics.resources");
             validateRegexes(spec);
-            Sova result = new Sova(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
+            ExtraMetrics result = new ExtraMetrics(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             result.securityContext = securityContext;
             result.resources = spec.getResources();
@@ -168,7 +168,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
             result.collectionIntervalMs = spec.getCollectionIntervalMs();
 
             if (spec.getConfig() != null && !spec.getConfig().isEmpty()) {
-                result.adminClientConfiguration = new SovaAdminClientConfiguration(reconciliation, spec.getConfig().entrySet());
+                result.adminClientConfiguration = new ExtraMetricsAdminClientConfiguration(reconciliation, spec.getConfig().entrySet());
             }
 
             result.jvmOptions = spec.getJvmOptions();
@@ -176,14 +176,14 @@ public class Sova extends AbstractModel implements SupportsLogging {
             String image = spec.getImage();
             if (image == null) {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_SOVA_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             result.image = image;
 
             result.logging = new LoggingModel(spec, result.getClass().getSimpleName());
 
             if (spec.getTemplate() != null) {
-                SovaTemplate template = spec.getTemplate();
+                ExtraMetricsTemplate template = spec.getTemplate();
 
                 result.templateDeployment = template.getDeployment();
                 result.templatePod = template.getPod();
@@ -199,15 +199,15 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Validates the regular expressions used to filter topics and consumer groups. Sova compiles them with the same
+     * Validates the regular expressions used to filter topics and consumer groups. Extra Metrics compiles them with the same
      * Java regular expression engine at startup and exits when any of them is invalid, so rejecting them here turns
      * a crash-looping Pod into a clear error in the Kafka custom resource status.
      *
-     * @param spec  The Sova specification
+     * @param spec  The Extra Metrics specification
      *
      * @throws InvalidResourceException if any of the regular expressions is invalid
      */
-    private static void validateRegexes(SovaSpec spec) {
+    private static void validateRegexes(ExtraMetricsSpec spec) {
         List<String> errors = new ArrayList<>();
         validateRegex("Kafka.spec.extraMetrics.groupRegex", spec.getGroupRegex(), errors);
         validateRegex("Kafka.spec.extraMetrics.groupExcludeRegex", spec.getGroupExcludeRegex(), errors);
@@ -215,7 +215,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
         validateRegex("Kafka.spec.extraMetrics.topicExcludeRegex", spec.getTopicExcludeRegex(), errors);
 
         if (!errors.isEmpty()) {
-            throw new InvalidResourceException("Sova configuration is invalid: " + String.join(", ", errors));
+            throw new InvalidResourceException("Extra Metrics configuration is invalid: " + String.join(", ", errors));
         }
     }
 
@@ -236,7 +236,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Generates the Sova Deployment.
+     * Generates the Extra Metrics Deployment.
      *
      * @param podAnnotations    Map with the annotations that will be used for the Pod metadata
      * @param isOpenShift       Flag indicating whether we are on OpenShift or not
@@ -268,8 +268,8 @@ public class Sova extends AbstractModel implements SupportsLogging {
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(),
                         imagePullSecrets,
-                        securityProvider.sovaPodSecurityContext(podSecurityProviderContext),
-                        securityProvider.sovaHostUsers(podSecurityProviderContext))
+                        securityProvider.extraMetricsPodSecurityContext(podSecurityProviderContext),
+                        securityProvider.extraMetricsHostUsers(podSecurityProviderContext))
         );
     }
 
@@ -278,7 +278,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
                 componentName,
                 image,
                 List.of("/opt/sova/bin/sova_run.sh"),
-                securityProvider.sovaContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
+                securityProvider.extraMetricsContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
                 resources,
                 getEnvVars(),
                 getContainerPortList(),
@@ -290,7 +290,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Generates the Kafka Admin client configuration in the Java properties format. It is passed to Sova as is.
+     * Generates the Kafka Admin client configuration in the Java properties format. It is passed to Extra Metrics as is.
      * The certificates are not part of the configuration. They are loaded by the Kubernetes Secret config provider.
      *
      * @return  Kafka Admin client configuration as a multi-line string with key=value pairs
@@ -312,8 +312,8 @@ public class Sova extends AbstractModel implements SupportsLogging {
         if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
             // mTLS can be used only with TLS encryption
             config.append("ssl.keystore.type=PEM\n");
-            config.append("ssl.keystore.certificate.chain=").append(secretPlaceholder(SovaResources.secretName(cluster), "sova.crt")).append("\n");
-            config.append("ssl.keystore.key=").append(secretPlaceholder(SovaResources.secretName(cluster), "sova.key")).append("\n");
+            config.append("ssl.keystore.certificate.chain=").append(secretPlaceholder(ExtraMetricsResources.secretName(cluster), "extra-metrics.crt")).append("\n");
+            config.append("ssl.keystore.key=").append(secretPlaceholder(ExtraMetricsResources.secretName(cluster), "extra-metrics.key")).append("\n");
         } else if (sasl) {
             config.append("sasl.mechanism=OAUTHBEARER\n");
             config.append("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler\n");
@@ -352,7 +352,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
             secrets.add(KafkaResources.trustBundleSecretName(cluster));
 
             if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
-                secrets.add(SovaResources.secretName(cluster));
+                secrets.add(ExtraMetricsResources.secretName(cluster));
             }
         }
 
@@ -360,18 +360,18 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Generates the Role which allows Sova to read the Secrets with the certificates.
+     * Generates the Role which allows Extra Metrics to read the Secrets with the certificates.
      *
-     * @return  The Role, or null when Sova does not need to read any Secrets
+     * @return  The Role, or null when Extra Metrics does not need to read any Secrets
      */
     public Role generateRole() {
         return AuthenticationUtils.generateAuthenticationSecretsRole(componentName, namespace, secretsToAllowAccessTo(), labels, ownerReference);
     }
 
     /**
-     * Generates the RoleBinding which binds the Sova ServiceAccount to the Role.
+     * Generates the RoleBinding which binds the Extra Metrics ServiceAccount to the Role.
      *
-     * @return  The RoleBinding, or null when Sova does not need to read any Secrets
+     * @return  The RoleBinding, or null when Extra Metrics does not need to read any Secrets
      */
     public RoleBinding generateRoleBindingForRole() {
         return AuthenticationUtils.generateAuthenticationSecretsRoleBinding(getRoleBindingName(), componentName, namespace, secretsToAllowAccessTo(), labels, ownerReference);
@@ -383,7 +383,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
      * @return  Name of the RoleBinding
      */
     public String getRoleBindingName() {
-        return SovaResources.roleBindingName(cluster);
+        return ExtraMetricsResources.roleBindingName(cluster);
     }
 
     private String secretPlaceholder(String secretName, String key) {
@@ -437,7 +437,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
         }
 
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME,
-                SovaResources.configMapName(cluster)));
+                ExtraMetricsResources.configMapName(cluster)));
 
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
@@ -465,8 +465,8 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Generates the Secret containing the Sova certificate signed by the cluster CA certificate used for
-     * TLS based internal communication with Kafka. It also contains the related Sova private key.
+     * Generates the Secret containing the Extra Metrics certificate signed by the cluster CA certificate used for
+     * TLS based internal communication with Kafka. It also contains the related Extra Metrics private key.
      *
      * @param clusterCa                             The cluster CA.
      * @param existingSecret                        The existing secret with certificates
@@ -477,11 +477,11 @@ public class Sova extends AbstractModel implements SupportsLogging {
     public CompletionStage<Secret> generateCertificatesSecret(Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, SovaResources.secretName(cluster), componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, labels)
+        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, ExtraMetricsResources.secretName(cluster), componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, labels)
                 .thenApply(updatedCert -> {
                     Map<String, String> secretData = CertSecretUtils.buildSecretData(COMPONENT_TYPE, updatedCert);
                     return ModelUtils.createSecret(
-                            SovaResources.secretName(cluster),
+                            ExtraMetricsResources.secretName(cluster),
                             namespace,
                             labels,
                             ownerReference,
@@ -493,7 +493,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Generates the NetworkPolicy relevant for Sova.
+     * Generates the NetworkPolicy relevant for Extra Metrics.
      *
      * @return The network policy.
      */
@@ -513,7 +513,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Generates the PodDisruptionBudget for Sova.
+     * Generates the PodDisruptionBudget for Extra Metrics.
      *
      * @return The PodDisruptionBudget.
      */
@@ -528,7 +528,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
     }
 
     /**
-     * Generates the ConfigMap for Sova metrics and logging configuration.
+     * Generates the ConfigMap for Extra Metrics metrics and logging configuration.
      *
      * @param metricsAndLogging  The metrics and logging configuration
      *
@@ -536,7 +536,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
      */
     public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         return ConfigMapUtils.createConfigMap(
-                SovaResources.configMapName(cluster),
+                ExtraMetricsResources.configMapName(cluster),
                 namespace,
                 labels,
                 ownerReference,

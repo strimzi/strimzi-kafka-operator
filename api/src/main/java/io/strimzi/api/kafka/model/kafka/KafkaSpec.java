@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.kafka.sova.SovaSpec;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsSpec;
 import io.strimzi.crdgenerator.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -38,7 +38,7 @@ public class KafkaSpec extends Spec {
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
     private KafkaExporterSpec kafkaExporter;
-    private SovaSpec extraMetrics;
+    private ExtraMetricsSpec extraMetrics;
     private CruiseControlSpec cruiseControl;
     private CertificateAuthority clientsCa;
     private List<String> maintenanceTimeWindows;
@@ -101,12 +101,12 @@ public class KafkaSpec extends Spec {
         this.kafkaExporter = kafkaExporter;
     }
 
-    @Description("Configuration of Sova. Sova can provide additional metrics, for example lag of consumer group at topic/partition.")
-    public SovaSpec getExtraMetrics() {
+    @Description("Configuration of the Extra Metrics component. It provides additional metrics, for example lag of consumer group at topic/partition.")
+    public ExtraMetricsSpec getExtraMetrics() {
         return extraMetrics;
     }
 
-    public void setExtraMetrics(SovaSpec extraMetrics) {
+    public void setExtraMetrics(ExtraMetricsSpec extraMetrics) {
         this.extraMetrics = extraMetrics;
     }
 

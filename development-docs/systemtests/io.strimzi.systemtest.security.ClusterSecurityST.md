@@ -17,8 +17,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka with specified encryption and authentication (including Entity Operator, Cruise Control and Sova). | The cluster is ready with the requested security configuration. |
-| 2. | Verify that Sova connects to Kafka using the requested security configuration. | The Sova Deployment is ready, which requires a successful collection from Kafka. |
+| 1. | Deploy Kafka with specified encryption and authentication (including Entity Operator, Cruise Control and Extra Metrics). | The cluster is ready with the requested security configuration. |
+| 2. | Verify that Extra Metrics connects to Kafka using the requested security configuration. | The Extra Metrics Deployment is ready, which requires a successful collection from Kafka. |
 | 3. | Create a TLS user with ACLs and send and consume messages over mTLS. | The messages are authorized, sent, and consumed successfully. |
 | 4. | Change dynamic Kafka configuration. | The configuration is applied without rolling the Kafka pods. |
 | 5. | Change read-only Kafka configuration. | The Kafka controllers and brokers roll and remain functional. |

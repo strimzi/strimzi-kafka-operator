@@ -102,16 +102,6 @@ function sova {
     fi
 }
 
-function sova_libs {
-    # Copy the third-party JARs which Sova needs on its classpath, but which are not part of its distribution
-    echo "Downloading Sova third-party libraries JARs"
-
-    mvn dependency:copy-dependencies ${MVN_ARGS} -f kafka-thirdparty-libs/sova/pom.xml
-    mkdir -p ./binaries/kafka-thirdparty-libs
-    rm -f ./binaries/kafka-thirdparty-libs/sova.zip
-    zip -j ./binaries/kafka-thirdparty-libs/sova.zip kafka-thirdparty-libs/sova/target/dependency/*
-}
-
 function fetch_and_unpack_kafka_binaries {
     # This function comes from the tools/kafka-versions-tools.sh script and provides several associative arrays
     # version_binary_urls, version_checksums and version_libs which map from version string
@@ -229,5 +219,4 @@ dependency_check
 third_party_libs
 cruise_control
 sova
-sova_libs
 fetch_and_unpack_kafka_binaries

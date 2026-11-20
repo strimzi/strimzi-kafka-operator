@@ -40,9 +40,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -79,7 +79,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:NoFullyQualifiedClassNames"}) // Fully qualified class names are used in the expected config strings
-public class SovaTest {
+public class ExtraMetricsTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String NAMESPACE = "my-namespace";
@@ -126,21 +126,21 @@ public class SovaTest {
                     .withExtraMetrics(null)
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        assertThat(sova, is(nullValue()));
+        assertThat(extraMetrics, is(nullValue()));
     }
 
     @Test
     public void testFromCrdWithCustomImage() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        assertThat(sova, is(notNullValue()));
-        assertThat(sova.getImage(), is("my-image:latest"));
+        assertThat(extraMetrics, is(notNullValue()));
+        assertThat(extraMetrics.getImage(), is("my-image:latest"));
     }
 
     @Test
@@ -152,11 +152,11 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        assertThat(sova.getImage(), is(VERSIONS.kafkaImage(null, VERSIONS.defaultVersion().version())));
+        assertThat(extraMetrics.getImage(), is(VERSIONS.kafkaImage(null, VERSIONS.defaultVersion().version())));
     }
 
     @Test
@@ -171,11 +171,11 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        List<EnvVar> envVars = sova.getEnvVars();
+        List<EnvVar> envVars = extraMetrics.getEnvVars();
         assertEnvVar(envVars, "STRIMZI_DYNAMIC_HEAP_PERCENTAGE", "75");
         assertNoEnvVar(envVars, "STRIMZI_DYNAMIC_HEAP_MAX");
         assertEnvVar(envVars, "STRIMZI_JAVA_SYSTEM_PROPERTIES", "-Dmy.prop=value");
@@ -189,50 +189,50 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        List<EnvVar> envVars = sova.getEnvVars();
-        assertEnvVar(envVars, Sova.ENV_VAR_GROUP_REGEX, ".*");
-        assertEnvVar(envVars, Sova.ENV_VAR_TOPIC_REGEX, ".*");
-        assertEnvVar(envVars, Sova.ENV_VAR_METRICS_PORT, "9404");
-        assertEnvVar(envVars, Sova.ENV_VAR_MANAGEMENT_PORT, "8080");
-        assertEnvVar(envVars, Sova.ENV_VAR_KAFKA_ADMIN_CLIENT_CONFIGURATION, sova.kafkaAdminClientConfiguration());
+        List<EnvVar> envVars = extraMetrics.getEnvVars();
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_GROUP_REGEX, ".*");
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_TOPIC_REGEX, ".*");
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_METRICS_PORT, "9404");
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_MANAGEMENT_PORT, "8080");
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_KAFKA_ADMIN_CLIENT_CONFIGURATION, extraMetrics.kafkaAdminClientConfiguration());
         // Exclude regex vars must not be present when not configured
-        assertNoEnvVar(envVars, Sova.ENV_VAR_GROUP_EXCLUDE_REGEX);
-        assertNoEnvVar(envVars, Sova.ENV_VAR_TOPIC_EXCLUDE_REGEX);
+        assertNoEnvVar(envVars, ExtraMetrics.ENV_VAR_GROUP_EXCLUDE_REGEX);
+        assertNoEnvVar(envVars, ExtraMetrics.ENV_VAR_TOPIC_EXCLUDE_REGEX);
     }
 
     @Test
     public void testRegexEnvVars() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        List<EnvVar> envVars = sova.getEnvVars();
-        assertEnvVar(envVars, Sova.ENV_VAR_GROUP_REGEX, "my-group-.*");
-        assertEnvVar(envVars, Sova.ENV_VAR_GROUP_EXCLUDE_REGEX, "my-group-exclude-.*");
-        assertEnvVar(envVars, Sova.ENV_VAR_TOPIC_REGEX, "my-topic-.*");
-        assertEnvVar(envVars, Sova.ENV_VAR_TOPIC_EXCLUDE_REGEX, "my-topic-exclude-.*");
+        List<EnvVar> envVars = extraMetrics.getEnvVars();
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_GROUP_REGEX, "my-group-.*");
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_GROUP_EXCLUDE_REGEX, "my-group-exclude-.*");
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_TOPIC_REGEX, "my-topic-.*");
+        assertEnvVar(envVars, ExtraMetrics.ENV_VAR_TOPIC_EXCLUDE_REGEX, "my-topic-exclude-.*");
     }
 
     @Test
     public void testAdminClientConfigurationWithMtls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        assertThat(sova.kafkaAdminClientConfiguration(), is(String.join("\n",
+        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
                 "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
                 "security.protocol=SSL",
                 "ssl.truststore.type=PEM",
                 "ssl.truststore.certificates=" + placeholder(KafkaResources.trustBundleSecretName(CLUSTER_NAME), "cluster-ca.crt"),
                 "ssl.keystore.type=PEM",
-                "ssl.keystore.certificate.chain=" + placeholder(SovaResources.secretName(CLUSTER_NAME), "sova.crt"),
-                "ssl.keystore.key=" + placeholder(SovaResources.secretName(CLUSTER_NAME), "sova.key"),
+                "ssl.keystore.certificate.chain=" + placeholder(ExtraMetricsResources.secretName(CLUSTER_NAME), "extra-metrics.crt"),
+                "ssl.keystore.key=" + placeholder(ExtraMetricsResources.secretName(CLUSTER_NAME), "extra-metrics.key"),
                 "config.providers=strimzisecrets",
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "")));
@@ -242,11 +242,11 @@ public class SovaTest {
     public void testAdminClientConfigurationWithServiceAccountAuth() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), serviceAccountAuthentication());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        assertThat(sova.kafkaAdminClientConfiguration(), is(String.join("\n",
+        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
                 "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
                 "security.protocol=SASL_SSL",
                 "ssl.truststore.type=PEM",
@@ -263,11 +263,11 @@ public class SovaTest {
     public void testAdminClientConfigurationWithTlsOnlyNoAuth() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        assertThat(sova.kafkaAdminClientConfiguration(), is(String.join("\n",
+        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
                 "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
                 "security.protocol=SSL",
                 "ssl.truststore.type=PEM",
@@ -281,11 +281,11 @@ public class SovaTest {
     public void testAdminClientConfigurationWithNoTls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        assertThat(sova.kafkaAdminClientConfiguration(), is(String.join("\n",
+        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
                 "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
                 "security.protocol=PLAINTEXT",
                 "")));
@@ -293,69 +293,69 @@ public class SovaTest {
 
     @Test
     public void testContainerPorts() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), false, null, null);
         Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(container.getPorts().stream().anyMatch(p -> p.getContainerPort() == MetricsModel.METRICS_PORT), is(true));
-        assertThat(container.getPorts().stream().anyMatch(p -> p.getContainerPort() == Sova.MANAGEMENT_PORT), is(true));
+        assertThat(container.getPorts().stream().anyMatch(p -> p.getContainerPort() == ExtraMetrics.MANAGEMENT_PORT), is(true));
     }
 
     @Test
     public void testProbesUseManagementPort() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), false, null, null);
         Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(container.getLivenessProbe().getHttpGet().getPath(), is("/healthy"));
-        assertThat(container.getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(Sova.MANAGEMENT_PORT_NAME)));
+        assertThat(container.getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(ExtraMetrics.MANAGEMENT_PORT_NAME)));
         assertThat(container.getReadinessProbe().getHttpGet().getPath(), is("/ready"));
-        assertThat(container.getReadinessProbe().getHttpGet().getPort(), is(new IntOrString(Sova.MANAGEMENT_PORT_NAME)));
+        assertThat(container.getReadinessProbe().getHttpGet().getPort(), is(new IntOrString(ExtraMetrics.MANAGEMENT_PORT_NAME)));
     }
 
     @Test
     public void testVolumesWithMtls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), false, null, null);
 
         // Certificates are loaded through the config provider, so only the Service Account token is mounted
         List<String> volumeNames = dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList();
         assertThat(volumeNames, containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
                 VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME,
-                Sova.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
+                ExtraMetrics.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
 
         List<String> mountNames = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts()
                 .stream().map(VolumeMount::getName).toList();
         assertThat(mountNames, containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
                 VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME,
-                Sova.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
+                ExtraMetrics.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
     }
 
     @Test
     public void testVolumesWithServiceAccountAuth() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), serviceAccountAuthentication());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), false, null, null);
 
         List<String> volumeNames = dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList();
         assertThat(volumeNames, containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
                 VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME,
                 VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME,
-                Sova.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
+                ExtraMetrics.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
 
         List<String> mountNames = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts()
                 .stream().map(VolumeMount::getName).toList();
@@ -363,34 +363,34 @@ public class SovaTest {
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
                 VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME,
                 VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME,
-                Sova.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
+                ExtraMetrics.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
     }
 
     @Test
     public void testVolumesWithNoTls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), false, null, null);
 
         List<String> volumeNames = dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList();
         assertThat(volumeNames, containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
-                Sova.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
+                ExtraMetrics.LOG_AND_METRICS_CONFIG_VOLUME_NAME));
     }
 
     @Test
     public void testRoleAndRoleBindingWithMtls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        Role role = sova.generateRole();
-        assertThat(role.getMetadata().getName(), is(SovaResources.componentName(CLUSTER_NAME)));
+        Role role = extraMetrics.generateRole();
+        assertThat(role.getMetadata().getName(), is(ExtraMetricsResources.componentName(CLUSTER_NAME)));
         assertThat(role.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(role.getRules().size(), is(1));
         assertThat(role.getRules().get(0).getApiGroups(), contains(""));
@@ -398,16 +398,16 @@ public class SovaTest {
         assertThat(role.getRules().get(0).getVerbs(), contains("get"));
         assertThat(role.getRules().get(0).getResourceNames(), containsInAnyOrder(
                 KafkaResources.trustBundleSecretName(CLUSTER_NAME),
-                SovaResources.secretName(CLUSTER_NAME)));
+                ExtraMetricsResources.secretName(CLUSTER_NAME)));
 
-        RoleBinding roleBinding = sova.generateRoleBindingForRole();
-        assertThat(roleBinding.getMetadata().getName(), is(SovaResources.roleBindingName(CLUSTER_NAME)));
+        RoleBinding roleBinding = extraMetrics.generateRoleBindingForRole();
+        assertThat(roleBinding.getMetadata().getName(), is(ExtraMetricsResources.roleBindingName(CLUSTER_NAME)));
         assertThat(roleBinding.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(roleBinding.getRoleRef().getKind(), is("Role"));
-        assertThat(roleBinding.getRoleRef().getName(), is(SovaResources.componentName(CLUSTER_NAME)));
+        assertThat(roleBinding.getRoleRef().getName(), is(ExtraMetricsResources.componentName(CLUSTER_NAME)));
         assertThat(roleBinding.getSubjects().size(), is(1));
         assertThat(roleBinding.getSubjects().get(0).getKind(), is("ServiceAccount"));
-        assertThat(roleBinding.getSubjects().get(0).getName(), is(SovaResources.componentName(CLUSTER_NAME)));
+        assertThat(roleBinding.getSubjects().get(0).getName(), is(ExtraMetricsResources.componentName(CLUSTER_NAME)));
         assertThat(roleBinding.getSubjects().get(0).getNamespace(), is(NAMESPACE));
     }
 
@@ -415,11 +415,11 @@ public class SovaTest {
     public void testRoleWithServiceAccountAuthAllowsOnlyTrustBundle() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), serviceAccountAuthentication());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        assertThat(sova.generateRole().getRules().get(0).getResourceNames(),
+        assertThat(extraMetrics.generateRole().getRules().get(0).getResourceNames(),
                 contains(KafkaResources.trustBundleSecretName(CLUSTER_NAME)));
     }
 
@@ -427,46 +427,46 @@ public class SovaTest {
     public void testNoRoleAndRoleBindingWithoutTls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        assertThat(sova.generateRole(), is(nullValue()));
-        assertThat(sova.generateRoleBindingForRole(), is(nullValue()));
+        assertThat(extraMetrics.generateRole(), is(nullValue()));
+        assertThat(extraMetrics.generateRoleBindingForRole(), is(nullValue()));
     }
 
     @Test
     public void testGenerateDeployment() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), false, null, null);
 
         assertThat(dep, is(notNullValue()));
-        assertThat(dep.getMetadata().getName(), is(SovaResources.componentName(CLUSTER_NAME)));
+        assertThat(dep.getMetadata().getName(), is(ExtraMetricsResources.componentName(CLUSTER_NAME)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
     }
 
     @Test
     public void testGenerateDeploymentWithTmpDirSizeLimit() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment dep = sova.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), false, null, null);
 
         assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME).getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
     }
 
     @Test
     public void testImagePullPolicy() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Deployment dep = sova.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = sova.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = extraMetrics.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -486,11 +486,11 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        List<EnvVar> envVars = sova.getEnvVars();
+        List<EnvVar> envVars = extraMetrics.getEnvVars();
         assertThat(envVars.stream().filter(v -> "TEST_ENV_1".equals(v.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("test.env.one"));
         assertThat(envVars.stream().filter(v -> "TEST_ENV_2".equals(v.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("test.env.two"));
     }
@@ -498,7 +498,7 @@ public class SovaTest {
     @Test
     public void testContainerTemplateEnvVarsWithKeyConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVarBuilder().withName("TEST_ENV_1").withValue("test.env.one").build();
-        ContainerEnvVar envVar2 = new ContainerEnvVarBuilder().withName(Sova.ENV_VAR_GROUP_REGEX).withValue("my-special-value").build();
+        ContainerEnvVar envVar2 = new ContainerEnvVarBuilder().withName(ExtraMetrics.ENV_VAR_GROUP_REGEX).withValue("my-special-value").build();
 
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -511,13 +511,13 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        List<EnvVar> envVars = sova.getEnvVars();
+        List<EnvVar> envVars = extraMetrics.getEnvVars();
         assertThat(envVars.stream().filter(v -> "TEST_ENV_1".equals(v.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("test.env.one"));
-        assertThat(envVars.stream().filter(v -> Sova.ENV_VAR_GROUP_REGEX.equals(v.getName())).map(EnvVar::getValue).toList(), contains("my-group-.*"));
+        assertThat(envVars.stream().filter(v -> ExtraMetrics.ENV_VAR_GROUP_REGEX.equals(v.getName())).map(EnvVar::getValue).toList(), contains("my-group-.*"));
     }
 
     @Test
@@ -631,12 +631,12 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         // Check Deployment
-        Deployment dep = sova.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
 
@@ -654,12 +654,12 @@ public class SovaTest {
         assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
 
         // Check Service Account
-        ServiceAccount sa = sova.generateServiceAccount();
+        ServiceAccount sa = extraMetrics.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
 
         // Check Pod Disruption Budget
-        PodDisruptionBudget pdb = sova.generatePodDisruptionBudget();
+        PodDisruptionBudget pdb = extraMetrics.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
@@ -678,23 +678,23 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Deployment dep = sova.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }
 
     @Test
     public void testSecurityProvider() {
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        sova.securityProvider = new TestPodSecurityProvider();
-        sova.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+        extraMetrics.securityProvider = new TestPodSecurityProvider();
+        extraMetrics.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Deployment dep = sova.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = extraMetrics.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
@@ -705,27 +705,27 @@ public class SovaTest {
 
     @Test
     public void testGenerateNetworkPolicy() {
-        // Sova always produces exactly one ingress rule (port 9404).
+        // Extra Metrics always produces exactly one ingress rule (port 9404).
         // Kubelet probes hit port 8080 directly and do not require an ingress rule.
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        NetworkPolicy np = sova.generateNetworkPolicy();
+        NetworkPolicy np = extraMetrics.generateNetworkPolicy();
 
         assertThat(np, is(notNullValue()));
-        assertThat(np.getMetadata().getName(), is(SovaResources.componentName(CLUSTER_NAME)));
+        assertThat(np.getMetadata().getName(), is(ExtraMetricsResources.componentName(CLUSTER_NAME)));
         assertThat(np.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(np.getSpec().getIngress().size(), is(1));
         assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort().getIntVal(), is(MetricsModel.METRICS_PORT));
         // Management port (8080) must not have an ingress rule — kubelet probes bypass NetworkPolicy
         assertThat(np.getSpec().getIngress().stream()
                 .flatMap(r -> r.getPorts().stream())
-                .noneMatch(p -> p.getPort().getIntVal() == Sova.MANAGEMENT_PORT), is(true));
+                .noneMatch(p -> p.getPort().getIntVal() == ExtraMetrics.MANAGEMENT_PORT), is(true));
     }
 
     @Test
     public void testNoTuningSettingsWhenFieldsUnset() {
-        Sova withoutConfig = Sova.fromCrd(
+        ExtraMetrics withoutConfig = ExtraMetrics.fromCrd(
                 new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         Kafka emptyConfig = new KafkaBuilder(KAFKA)
@@ -735,11 +735,11 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova withEmptyConfig = Sova.fromCrd(
+        ExtraMetrics withEmptyConfig = ExtraMetrics.fromCrd(
                 new Reconciliation("test", emptyConfig.getKind(), NAMESPACE, CLUSTER_NAME),
                 emptyConfig, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        assertNoEnvVar(withoutConfig.getEnvVars(), Sova.ENV_VAR_COLLECT_INTERVAL_MS);
+        assertNoEnvVar(withoutConfig.getEnvVars(), ExtraMetrics.ENV_VAR_COLLECT_INTERVAL_MS);
         assertThat(withoutConfig.kafkaAdminClientConfiguration(), not(containsString("default.api.timeout.ms")));
         assertThat(withEmptyConfig.kafkaAdminClientConfiguration(), is(withoutConfig.kafkaAdminClientConfiguration()));
     }
@@ -753,11 +753,11 @@ public class SovaTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        assertEnvVar(sova.getEnvVars(), Sova.ENV_VAR_COLLECT_INTERVAL_MS, "5000");
+        assertEnvVar(extraMetrics.getEnvVars(), ExtraMetrics.ENV_VAR_COLLECT_INTERVAL_MS, "5000");
     }
 
     @Test
@@ -769,9 +769,9 @@ public class SovaTest {
                 new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration()));
 
         for (KafkaClusterSecurityContext securityContext : contexts) {
-            String withoutUserConfig = Sova.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+            String withoutUserConfig = ExtraMetrics.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                     KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
-            String withUserConfig = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+            String withUserConfig = ExtraMetrics.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                     resource, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
 
             assertThat(withUserConfig, startsWith(withoutUserConfig));
@@ -791,9 +791,9 @@ public class SovaTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
 
-        String withoutUserConfig = Sova.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+        String withoutUserConfig = ExtraMetrics.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
                 KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
-        String withUserConfig = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+        String withUserConfig = ExtraMetrics.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
 
         assertThat(withUserConfig, is(withoutUserConfig));
@@ -802,11 +802,11 @@ public class SovaTest {
     @Test
     public void testAllowedSslExceptionPassesThrough() {
         Kafka resource = withAdminConfig(Map.of("ssl.endpoint.identification.algorithm", ""));
-        Sova sova = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, new KafkaClusterSecurityContext(
                         new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration()));
 
-        assertThat(sova.kafkaAdminClientConfiguration().lines().toList(), hasItem("ssl.endpoint.identification.algorithm="));
+        assertThat(extraMetrics.kafkaAdminClientConfiguration().lines().toList(), hasItem("ssl.endpoint.identification.algorithm="));
     }
 
     @Test
@@ -817,18 +817,18 @@ public class SovaTest {
                         .withCollectionIntervalMs(5000L)
                         .editTemplate()
                             .withNewContainer()
-                                .withEnv(new ContainerEnvVarBuilder().withName(Sova.ENV_VAR_COLLECT_INTERVAL_MS).withValue("9999").build())
+                                .withEnv(new ContainerEnvVarBuilder().withName(ExtraMetrics.ENV_VAR_COLLECT_INTERVAL_MS).withValue("9999").build())
                             .endContainer()
                         .endTemplate()
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-        Sova sova = Sova.fromCrd(
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        List<String> values = sova.getEnvVars().stream()
-                .filter(v -> Sova.ENV_VAR_COLLECT_INTERVAL_MS.equals(v.getName()))
+        List<String> values = extraMetrics.getEnvVars().stream()
+                .filter(v -> ExtraMetrics.ENV_VAR_COLLECT_INTERVAL_MS.equals(v.getName()))
                 .map(EnvVar::getValue)
                 .toList();
         assertThat(values, contains("5000"));
@@ -844,7 +844,7 @@ public class SovaTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> Sova.fromCrd(
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT));
         assertThat(e.getMessage(), containsString("Kafka.spec.extraMetrics.groupRegex"));
@@ -861,7 +861,7 @@ public class SovaTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> Sova.fromCrd(
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> ExtraMetrics.fromCrd(
                 new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT));
         assertThat(e.getMessage(), containsString("Kafka.spec.extraMetrics.topicRegex"));
@@ -875,12 +875,12 @@ public class SovaTest {
                 " security.protocol", "PLAINTEXT"));
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
                 new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
-        Sova sova = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
                 resource, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
 
-        // Sova parses the configuration with java.util.Properties, so check what it would actually see
+        // Extra Metrics parses the configuration with java.util.Properties, so check what it would actually see
         Properties parsed = new Properties();
-        parsed.load(new StringReader(sova.kafkaAdminClientConfiguration()));
+        parsed.load(new StringReader(extraMetrics.kafkaAdminClientConfiguration()));
 
         assertThat(parsed.getProperty("bootstrap.servers"), is(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT));
         assertThat(parsed.getProperty("config.providers"), is("strimzisecrets"));

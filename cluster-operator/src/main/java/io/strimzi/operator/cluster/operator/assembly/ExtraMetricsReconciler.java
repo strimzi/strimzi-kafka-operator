@@ -8,12 +8,12 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
+import io.strimzi.operator.cluster.model.ExtraMetrics;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.Sova;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
@@ -37,13 +37,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Class used for reconciliation of Sova. This class contains both the steps of the Sova
+ * Class used for reconciliation of Extra Metrics. This class contains both the steps of the Extra Metrics
  * reconciliation pipeline and is also used to store the state between them.
  */
-public class SovaReconciler {
+public class ExtraMetricsReconciler {
     private final Reconciliation reconciliation;
     private final long operationTimeoutMs;
-    private final Sova sova;
+    private final ExtraMetrics extraMetrics;
     private final Ca clusterCa;
     private final List<String> maintenanceWindows;
     private final boolean isNetworkPolicyGeneration;
@@ -60,7 +60,7 @@ public class SovaReconciler {
     private String certificateHash = "";
 
     /**
-     * Constructs the Sova reconciler.
+     * Constructs the Extra Metrics reconciler.
      *
      * @param reconciliation    Reconciliation marker
      * @param config            Cluster Operator Configuration
@@ -70,7 +70,7 @@ public class SovaReconciler {
      * @param clusterCa         The Cluster CA instance
      * @param securityContext   Kafka cluster security context
      */
-    public SovaReconciler(
+    public ExtraMetricsReconciler(
             Reconciliation reconciliation,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
@@ -80,7 +80,7 @@ public class SovaReconciler {
             KafkaClusterSecurityContext securityContext) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.sova = Sova.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider, securityContext);
+        this.extraMetrics = ExtraMetrics.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider, securityContext);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
@@ -122,8 +122,8 @@ public class SovaReconciler {
         return serviceAccountOperator.reconcile(
                 reconciliation,
                 reconciliation.namespace(),
-                SovaResources.serviceAccountName(reconciliation.name()),
-                sova != null ? sova.generateServiceAccount() : null
+                ExtraMetricsResources.serviceAccountName(reconciliation.name()),
+                extraMetrics != null ? extraMetrics.generateServiceAccount() : null
         ).thenApply(i -> null);
     }
 
@@ -131,8 +131,8 @@ public class SovaReconciler {
         return roleOperator.reconcile(
                 reconciliation,
                 reconciliation.namespace(),
-                SovaResources.componentName(reconciliation.name()),
-                sova != null ? sova.generateRole() : null
+                ExtraMetricsResources.componentName(reconciliation.name()),
+                extraMetrics != null ? extraMetrics.generateRole() : null
         ).thenApply(i -> null);
     }
 
@@ -140,20 +140,20 @@ public class SovaReconciler {
         return roleBindingOperator.reconcile(
                 reconciliation,
                 reconciliation.namespace(),
-                SovaResources.roleBindingName(reconciliation.name()),
-                sova != null ? sova.generateRoleBindingForRole() : null
+                ExtraMetricsResources.roleBindingName(reconciliation.name()),
+                extraMetrics != null ? extraMetrics.generateRoleBindingForRole() : null
         ).thenApply(i -> null);
     }
 
     private CompletionStage<Void> loggingConfigMap() {
-        if (sova != null) {
-            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, sova.logging(), null)
+        if (extraMetrics != null) {
+            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, extraMetrics.logging(), null)
                     .thenCompose(metricsAndLogging -> {
-                        ConfigMap configMap = sova.generateMetricsAndLogConfigMap(metricsAndLogging);
+                        ConfigMap configMap = extraMetrics.generateMetricsAndLogConfigMap(metricsAndLogging);
                         return configMapOperator.reconcile(
                                 reconciliation,
                                 reconciliation.namespace(),
-                                SovaResources.configMapName(reconciliation.name()),
+                                ExtraMetricsResources.configMapName(reconciliation.name()),
                                 configMap
                         ).thenApply(i -> null);
                     });
@@ -161,31 +161,31 @@ public class SovaReconciler {
             return configMapOperator.reconcile(
                     reconciliation,
                     reconciliation.namespace(),
-                    SovaResources.configMapName(reconciliation.name()),
+                    ExtraMetricsResources.configMapName(reconciliation.name()),
                     null
             ).thenApply(i -> null);
         }
     }
 
     private CompletionStage<Void> certificatesSecret(Clock clock) {
-        if (sova != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), SovaResources.secretName(reconciliation.name()))
-                    .thenCompose(oldSecret -> sova.generateCertificatesSecret(clusterCa, oldSecret,
+        if (extraMetrics != null) {
+            return secretOperator.getAsync(reconciliation.namespace(), ExtraMetricsResources.secretName(reconciliation.name()))
+                    .thenCompose(oldSecret -> extraMetrics.generateCertificatesSecret(clusterCa, oldSecret,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                     .thenCompose(newSecret -> secretOperator.reconcile(
                             reconciliation,
                             reconciliation.namespace(),
-                            SovaResources.secretName(reconciliation.name()),
+                            ExtraMetricsResources.secretName(reconciliation.name()),
                             newSecret
                     ).thenApply(result -> {
                         certificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret,
-                                Ca.SecretEntry.CRT.asKey(Sova.COMPONENT_TYPE));
+                                Ca.SecretEntry.CRT.asKey(ExtraMetrics.COMPONENT_TYPE));
                         return null;
                     }));
         } else {
             return CompletableFuture.allOf(
-                    clusterCa.cleanupEndEntityCert(SovaResources.secretName(reconciliation.name())).toCompletableFuture(),
-                    secretOperator.reconcile(reconciliation, reconciliation.namespace(), SovaResources.secretName(reconciliation.name()), null).toCompletableFuture()
+                    clusterCa.cleanupEndEntityCert(ExtraMetricsResources.secretName(reconciliation.name())).toCompletableFuture(),
+                    secretOperator.reconcile(reconciliation, reconciliation.namespace(), ExtraMetricsResources.secretName(reconciliation.name()), null).toCompletableFuture()
             ).thenApply(i -> null);
         }
     }
@@ -195,8 +195,8 @@ public class SovaReconciler {
             return networkPolicyOperator.reconcile(
                     reconciliation,
                     reconciliation.namespace(),
-                    SovaResources.componentName(reconciliation.name()),
-                    sova != null ? sova.generateNetworkPolicy() : null
+                    ExtraMetricsResources.componentName(reconciliation.name()),
+                    extraMetrics != null ? extraMetrics.generateNetworkPolicy() : null
             ).thenApply(i -> null);
         } else {
             return CompletableFuture.completedFuture(null);
@@ -208,8 +208,8 @@ public class SovaReconciler {
             return podDisruptionBudgetOperator.reconcile(
                     reconciliation,
                     reconciliation.namespace(),
-                    SovaResources.componentName(reconciliation.name()),
-                    sova != null ? sova.generatePodDisruptionBudget() : null
+                    ExtraMetricsResources.componentName(reconciliation.name()),
+                    extraMetrics != null ? extraMetrics.generatePodDisruptionBudget() : null
             ).thenApply(i -> null);
         } else {
             return CompletableFuture.completedFuture(null);
@@ -217,33 +217,33 @@ public class SovaReconciler {
     }
 
     private CompletionStage<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        if (sova != null) {
+        if (extraMetrics != null) {
             Map<String, String> podAnnotations = new LinkedHashMap<>();
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
             podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, certificateHash);
 
-            Deployment deployment = sova.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
+            Deployment deployment = extraMetrics.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
             return deploymentOperator.reconcile(
                     reconciliation,
                     reconciliation.namespace(),
-                    SovaResources.componentName(reconciliation.name()),
+                    ExtraMetricsResources.componentName(reconciliation.name()),
                     deployment
             ).thenApply(i -> null);
         } else {
             return deploymentOperator.reconcile(
                     reconciliation,
                     reconciliation.namespace(),
-                    SovaResources.componentName(reconciliation.name()),
+                    ExtraMetricsResources.componentName(reconciliation.name()),
                     null
             ).thenApply(i -> null);
         }
     }
 
     private CompletionStage<Void> waitForDeploymentReadiness() {
-        if (sova != null) {
-            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), SovaResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)
-                    .thenCompose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), SovaResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs));
+        if (extraMetrics != null) {
+            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), ExtraMetricsResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)
+                    .thenCompose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), ExtraMetricsResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs));
         } else {
             return CompletableFuture.completedFuture(null);
         }

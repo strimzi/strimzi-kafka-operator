@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.kafka.sova.SovaSpec;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsSpec;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.util.HashMap;
@@ -13,17 +13,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Class for handling the Sova Kafka Admin client configuration passed by the user
+ * Class for handling the Extra Metrics Kafka Admin client configuration passed by the user
  */
-public class SovaAdminClientConfiguration extends AbstractConfiguration {
+public class ExtraMetricsAdminClientConfiguration extends AbstractConfiguration {
 
     private static final List<String> FORBIDDEN_PREFIXES;
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(SovaSpec.FORBIDDEN_PREFIXES);
-        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(SovaSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(ExtraMetricsSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(ExtraMetricsSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
         DEFAULTS = new HashMap<>(0);
     }
 
@@ -34,7 +34,7 @@ public class SovaAdminClientConfiguration extends AbstractConfiguration {
      * @param reconciliation  The reconciliation
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public SovaAdminClientConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
+    public ExtraMetricsAdminClientConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), DEFAULTS);
     }
 }

@@ -36,7 +36,7 @@ public class TestPodSecurityProvider extends RestrictedPodSecurityProvider {
     }
 
     @Override
-    public Boolean sovaHostUsers(PodSecurityProviderContext context) {
+    public Boolean extraMetricsHostUsers(PodSecurityProviderContext context) {
         return false;
     }
 
