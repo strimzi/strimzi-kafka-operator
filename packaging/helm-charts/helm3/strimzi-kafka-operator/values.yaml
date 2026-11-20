@@ -169,6 +169,12 @@ kafkaExporter:
     repository: ""
     name: kafka
     tagPrefix: ""
+extraMetrics:
+  image:
+    registry: ""
+    repository: ""
+    name: kafka
+    tagPrefix: ""
 kafkaMirrorMaker2:
   image:
     registry: ""

@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
@@ -433,7 +434,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Returns the principals of the Service Accounts of the internal components which connect to the Kafka cluster.
      * The Kafka nodes and the Cluster Operator are always included. The optional components (Entity Operator, Kafka
-     * Exporter, and Cruise Control) are included only when they are deployed.
+     * Exporter, Extra Metrics, and Cruise Control) are included only when they are deployed.
      *
      * @param namespace             Namespace of the Kafka cluster
      * @param clusterName           Name of the Kafka cluster
@@ -453,6 +454,10 @@ public class KafkaBrokerConfigurationBuilder {
 
         if (deployedComponents.kafkaExporter()) {
             principals.add(serviceAccountPrincipal(namespace, KafkaExporterResources.serviceAccountName(clusterName)));
+        }
+
+        if (deployedComponents.extraMetrics()) {
+            principals.add(serviceAccountPrincipal(namespace, ExtraMetricsResources.serviceAccountName(clusterName)));
         }
 
         if (deployedComponents.cruiseControl()) {
@@ -655,6 +660,10 @@ public class KafkaBrokerConfigurationBuilder {
 
                 if (deployedComponents.kafkaExporter()) {
                     superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaExporterResources.componentName(clusterName)));
+                }
+
+                if (deployedComponents.extraMetrics()) {
+                    superUsers.add(String.format("User:CN=%s,O=io.strimzi", ExtraMetricsResources.componentName(clusterName)));
                 }
 
                 if (deployedComponents.cruiseControl()) {

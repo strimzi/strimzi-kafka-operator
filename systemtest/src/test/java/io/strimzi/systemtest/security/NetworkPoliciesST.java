@@ -27,6 +27,7 @@ import io.skodjob.kubetest4j.metrics.Metric;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
@@ -36,6 +37,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
+import io.strimzi.systemtest.metrics.ExtraMetricsMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaExporterMetricsComponent;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
@@ -50,6 +52,7 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -183,6 +186,8 @@ public class NetworkPoliciesST extends AbstractST {
                 .endKafka()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
+                .withNewExtraMetrics()
+                .endExtraMetrics()
             .endSpec()
             .build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
@@ -270,6 +275,34 @@ public class NetworkPoliciesST extends AbstractST {
 
         metricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertThat("KafkaExporter metrics should be non-empty", metricsCollector.getCollectedData().size() > 0);
+
+        LOGGER.info("Check metrics exposed by Extra Metrics");
+        MetricsCollector extraMetricsMetricsCollector = new MetricsCollector.Builder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withScraperPodName(scraperPodName)
+            .withComponent(ExtraMetricsMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .build();
+        // Extra Metrics serves an empty snapshot until its first collection cycle finishes, so wait for the topic metrics
+        TestUtils.waitFor("Extra Metrics to expose metrics for topic " + topicNameAccessedTls, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
+            extraMetricsMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+            return extraMetricsMetricsCollector.getCollectedData().values().stream()
+                .flatMap(List::stream)
+                .anyMatch(metric -> metric.getName().contains("kafka_topic_partitions") && topicNameAccessedTls.equals(metric.getLabels().get("topic")));
+        });
+
+        for (Map.Entry<String, List<Metric>> entry : extraMetricsMetricsCollector.getCollectedData().entrySet()) {
+            assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
+            MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_consumergroup_current_offset");
+
+            List<Metric> topicPartitionsMetrics = entry.getValue().stream().filter(metrics -> metrics.getName().contains("kafka_topic_partitions")).toList();
+
+            Gauge topicAccessedTlsMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> topicNameAccessedTls.equals(metric.getLabels().get("topic"))).findFirst().orElseThrow();
+            Gauge topicAccessedPlainMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> topicNameAccessedPlain.equals(metric.getLabels().get("topic"))).findFirst().orElseThrow();
+
+            assertThat(topicAccessedTlsMetric.getValue(), is(1.0));
+            assertThat(topicAccessedPlainMetric.getValue(), is(1.0));
+        }
+
         for (Map.Entry<String, List<Metric>> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_consumergroup_current_offset");
@@ -466,6 +499,23 @@ public class NetworkPoliciesST extends AbstractST {
         // if KE is enabled
         if (CrdClients.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafkaExporter() != null) {
             assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaExporterResources.componentName(clusterName))).findFirst());
+        }
+
+        // if Extra Metrics is enabled
+        if (CrdClients.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getExtraMetrics() != null) {
+            NetworkPolicy extraMetricsNp = networkPolicyList.stream()
+                .filter(networkPolicy -> networkPolicy.getMetadata().getName().contains(ExtraMetricsResources.componentName(clusterName)))
+                .findFirst()
+                .orElse(null);
+            assertNotNull(extraMetricsNp);
+            // Management port (8080) must not have an ingress rule.
+            // Kubelet liveness/readiness probes originate from the node network, not a Pod, so they bypass
+            // NetworkPolicy enforcement — no ingress rule is needed for probes to succeed on a default-deny cluster.
+            assertThat("Extra Metrics NetworkPolicy must not open management port 8080",
+                extraMetricsNp.getSpec().getIngress().stream()
+                    .flatMap(rule -> rule.getPorts().stream())
+                    .noneMatch(p -> p.getPort() != null && p.getPort().getIntVal() != null && p.getPort().getIntVal() == 8080),
+                is(true));
         }
     }
 

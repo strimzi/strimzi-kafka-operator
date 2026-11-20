@@ -48,6 +48,60 @@ function cruise_control {
     zip -j ./binaries/kafka-thirdparty-libs/cc.zip kafka-thirdparty-libs/cc/target/dependency/*
 }
 
+function sova {
+    # Fetch the Sova dist zip. Where it comes from depends on the version:
+    #   * a released version is a GitHub release asset, downloaded with curl like every other
+    #     third-party binary this script fetches
+    #   * a -SNAPSHOT has no GitHub release to download from, so it is pulled from GHCR, where
+    #     strimzi/sova publishes it as an OCI artifact on every push to main
+    # Either way the file lands as binaries/sova-<version>-dist.zip, which is the name the kafka
+    # image Makefile looks for. For the GHCR path that needs no renaming: the OCI tag and the file
+    # name inside the artifact both carry the version.
+    echo "Fetching Sova dist zip"
+
+    local sova_version=$(cat ../../sova.version)
+    local sova_zip="binaries/sova-${sova_version}-dist.zip"
+
+    if [[ "${sova_version^^}" == *-SNAPSHOT ]]
+    then
+        local sova_artifact="ghcr.io/strimzi/dist-sova:${sova_version}"
+
+        # oras is checked here rather than in dependency_check or tools/prerequisites-check.sh
+        # because this is the only path that uses it. Building a released Sova must not be blocked
+        # on a tool it does not need.
+        if ! command -v oras >/dev/null 2>&1
+        then
+            # Without oras, fall back to a zip placed into binaries/ by hand, but say that it may be stale.
+            if [ -f "${sova_zip}" ]
+            then
+                >&2 echo "oras is not installed, using the existing ${sova_zip}. It may be an outdated snapshot."
+                return
+            fi
+
+            >&2 echo "Pulling the Sova snapshot ${sova_version} from GHCR needs oras, which is not installed."
+            >&2 echo "Install it from https://oras.land/, or place sova-${sova_version}-dist.zip into"
+            >&2 echo "docker-images/artifacts/binaries/ by hand and re-run the build."
+            >&2 echo "Refer to DEV_GUIDE.md for more information"
+            exit 1
+        fi
+
+        # A snapshot tag is overwritten on every push to the Sova main branch, so it is always pulled
+        # again instead of reusing a zip from an earlier build. The package is public, so this needs no
+        # credentials: GHCR hands out anonymous pull tokens for public packages and oras performs that
+        # handshake itself.
+        echo "Pulling Sova from: ${sova_artifact}"
+        oras pull "${sova_artifact}" -o binaries/
+    elif [ -f "${sova_zip}" ]
+    then
+        echo "Sova dist zip ${sova_zip} is already present, skipping download"
+    else
+        local sova_url="https://github.com/strimzi/sova/releases/download/${sova_version}/sova-${sova_version}-dist.zip"
+
+        echo "Downloading Sova from: ${sova_url}"
+        curl -L --fail ${CURL_ARGS} -o "binaries/sova-${sova_version}-dist.zip" "${sova_url}"
+    fi
+}
+
 function fetch_and_unpack_kafka_binaries {
     # This function comes from the tools/kafka-versions-tools.sh script and provides several associative arrays
     # version_binary_urls, version_checksums and version_libs which map from version string
@@ -164,4 +218,5 @@ function download_kafka_binaries_from_cdn {
 dependency_check
 third_party_libs
 cruise_control
+sova
 fetch_and_unpack_kafka_binaries

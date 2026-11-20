@@ -249,6 +249,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileCruiseControl(clock))
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileKafkaExporter(clock))
+                .compose(state -> state.reconcileExtraMetrics(clock))
                 .compose(state -> state.reconcileKafkaAutoRebalancing())
 
                 // Finish the reconciliation
@@ -601,6 +602,36 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileKafkaExporter(Clock clock)    {
             return VertxUtil.toFuture(kafkaExporterReconciler()
+                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock))
+                    .map(this);
+        }
+
+        /**
+         * Provider method for Extra Metrics reconciler. Overriding this method can be used to get mocked reconciler.
+         *
+         * @return  Extra Metrics reconciler
+         */
+        ExtraMetricsReconciler extraMetricsReconciler()   {
+            return new ExtraMetricsReconciler(
+                    reconciliation,
+                    config,
+                    supplier,
+                    kafkaAssembly,
+                    versions,
+                    clusterCa,
+                    securityContext);
+        }
+
+        /**
+         * Run the reconciliation pipeline for Extra Metrics
+         *
+         * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+         *              That time is used for checking maintenance windows
+         *
+         * @return      Future with Reconciliation State
+         */
+        Future<ReconciliationState> reconcileExtraMetrics(Clock clock)    {
+            return VertxUtil.toFuture(extraMetricsReconciler()
                     .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock))
                     .map(this);
         }

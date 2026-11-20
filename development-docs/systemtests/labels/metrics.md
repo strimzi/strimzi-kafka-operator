@@ -10,8 +10,11 @@ Proper verification of metrics is crucial for observability, debugging, and perf
 <!-- generated part -->
 **Tests:**
 - [testClusterOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
+- [testCollectionTuning](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
 - [testCruiseControlMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testDynamicReconfigurationAllowList](../io.strimzi.systemtest.metrics.StrimziMetricsReporterST.md)
+- [testEnableDisable](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
+- [testJvmAndMemoryOptions](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
 - [testKafkaAndKafkaConnectWithJMX](../io.strimzi.systemtest.metrics.JmxST.md)
 - [testKafkaBridgeMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaConnectAndConnectorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
@@ -19,6 +22,8 @@ Proper verification of metrics is crucial for observability, debugging, and perf
 - [testKafkaExporterMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaMetricsSettings](../io.strimzi.systemtest.metrics.MetricsST.md)
+- [testLoggingChange](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
 - [testMirrorMaker2Metrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testMultipleCOsInDifferentNamespaces](../io.strimzi.systemtest.operators.MultipleClusterOperatorsST.md)
+- [testRegexFilters](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
 - [testUserOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)

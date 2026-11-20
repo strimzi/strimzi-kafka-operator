@@ -15,18 +15,19 @@ import io.strimzi.api.kafka.model.kafka.KafkaSpec;
  * @param topicOperator     Indicates whether the Topic Operator is deployed
  * @param userOperator      Indicates whether the User Operator is deployed
  * @param kafkaExporter     Indicates whether the Kafka Exporter is deployed
+ * @param extraMetrics      Indicates whether Extra Metrics is deployed
  * @param cruiseControl     Indicates whether Cruise Control is deployed
  */
-public record KafkaClusterDeployedComponents(boolean topicOperator, boolean userOperator, boolean kafkaExporter, boolean cruiseControl) {
+public record KafkaClusterDeployedComponents(boolean topicOperator, boolean userOperator, boolean kafkaExporter, boolean extraMetrics, boolean cruiseControl) {
     /**
      * Constant with all optional components deployed
      */
-    public static final KafkaClusterDeployedComponents ALL = new KafkaClusterDeployedComponents(true, true, true, true);
+    public static final KafkaClusterDeployedComponents ALL = new KafkaClusterDeployedComponents(true, true, true, true, true);
 
     /**
      * Constant with none of the optional components deployed
      */
-    public static final KafkaClusterDeployedComponents NONE = new KafkaClusterDeployedComponents(false, false, false, false);
+    public static final KafkaClusterDeployedComponents NONE = new KafkaClusterDeployedComponents(false, false, false, false, false);
 
     /**
      * Creates the KafkaClusterDeployedComponents instance from the Kafka custom resource
@@ -35,6 +36,7 @@ public record KafkaClusterDeployedComponents(boolean topicOperator, boolean user
      *
      * @return  KafkaClusterDeployedComponents instance describing which components are deployed
      */
+    @SuppressWarnings("deprecation") // Kafka Exporter is deprecated, but still supported
     public static KafkaClusterDeployedComponents fromCrd(Kafka kafka) {
         KafkaSpec spec = kafka.getSpec();
 
@@ -42,6 +44,7 @@ public record KafkaClusterDeployedComponents(boolean topicOperator, boolean user
                 spec.getEntityOperator() != null && spec.getEntityOperator().getTopicOperator() != null,
                 spec.getEntityOperator() != null && spec.getEntityOperator().getUserOperator() != null,
                 spec.getKafkaExporter() != null,
+                spec.getExtraMetrics() != null,
                 spec.getCruiseControl() != null
         );
     }

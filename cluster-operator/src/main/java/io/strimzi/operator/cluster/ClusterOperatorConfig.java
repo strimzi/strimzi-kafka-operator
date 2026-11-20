@@ -72,6 +72,11 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE = "STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE";
 
     /**
+     * Configures the Extra Metrics container image
+     */
+    public static final String STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE = "STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE";
+
+    /**
      * Configures the Topic Operator container image
      */
     public static final String STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";

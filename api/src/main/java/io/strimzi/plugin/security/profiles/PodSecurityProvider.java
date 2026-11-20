@@ -205,6 +205,44 @@ public interface PodSecurityProvider {
     }
 
     /**
+     * Provides the Pod security context for the Extra Metrics pod. The default implementation just returns the security
+     * context configured by the user in the template section or null (no Pod security context).
+     *
+     * @param context   Provides the context which can be used to generate the Pod security context
+     *
+     * @return  Pod security context which will be set for the Extra Metrics pod
+     */
+    default PodSecurityContext extraMetricsPodSecurityContext(PodSecurityProviderContext context) {
+        return podSecurityContextOrNull(context);
+    }
+
+    /**
+     * Provides the (container) security context for the Extra Metrics container. The default implementation just
+     * returns the security context configured by the user in the template section or null (no security context).
+     *
+     * @param context   Provides the context which can be used to generate the security context
+     *
+     * @return  Security context which will be set for the Extra Metrics container
+     */
+    default SecurityContext extraMetricsContainerSecurityContext(ContainerSecurityProviderContext context) {
+        return securityContextOrNull(context);
+    }
+
+    /**
+     * Configures the hostUsers flag in the Extra Metrics Pod configuration. The hostUsers flag controls whether the
+     * Pod containers run in the host's user namespace (when set to true) or in a new user namespace created for this
+     * Pod (when set to false). The default implementation just returns the flag configured by the user in the Pod
+     * template section or null (leaves the default to Kubernetes).
+     *
+     * @param context   Provides the context which can be used to configure the hostUsers flag
+     *
+     * @return  hostUsers flag, which will be set for the Extra Metrics Pod
+     */
+    default Boolean extraMetricsHostUsers(PodSecurityProviderContext context) {
+        return hostUsersOrNull(context);
+    }
+
+    /**
      * Provides the Pod security context for the Cruise Control pod. The default implementation just returns the security
      * context configured by the user in the template section or null (no Pod security context).
      *

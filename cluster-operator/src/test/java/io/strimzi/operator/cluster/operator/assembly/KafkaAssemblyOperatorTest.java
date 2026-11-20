@@ -44,6 +44,8 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBu
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsSpec;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -519,6 +521,8 @@ public class KafkaAssemblyOperatorTest {
                     }
                 } else if (name.contains("exporter"))   {
                     context.verify(() -> assertThat(metrics, is(true)));
+                } else if (name.equals(ExtraMetricsResources.componentName(CLUSTER_NAME)))   {
+                    context.verify(() -> assertThat(metrics, is(true)));
                 }
             }
             return CompletableFuture.completedFuture(desired != null ? ReconcileResult.created(desired) : ReconcileResult.deleted());
@@ -542,6 +546,7 @@ public class KafkaAssemblyOperatorTest {
 
         if (metrics)    {
             expectedSecrets.add(KafkaExporterResources.secretName(CLUSTER_NAME));
+            expectedSecrets.add(ExtraMetricsResources.secretName(CLUSTER_NAME));
         }
 
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
@@ -676,12 +681,13 @@ public class KafkaAssemblyOperatorTest {
                 }
 
                 // Check PDBs
-                assertThat(pdbCaptor.getAllValues(), hasSize(4));
+                assertThat(pdbCaptor.getAllValues(), hasSize(5));
                 Set<String> expectedPdbNames = new HashSet<>();
                 expectedPdbNames.add(KafkaResources.kafkaComponentName(CLUSTER_NAME));
                 String entityOperatorName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
                 String exporterName = KafkaExporterResources.componentName(CLUSTER_NAME);
                 String cruiseControlName = CruiseControlResources.componentName(CLUSTER_NAME);
+                String extraMetricsName = ExtraMetricsResources.componentName(CLUSTER_NAME);
                 if (kafka.getSpec().getEntityOperator() != null) {
                     expectedPdbNames.add(entityOperatorName);
                 }
@@ -690,6 +696,9 @@ public class KafkaAssemblyOperatorTest {
                 }
                 if (kafka.getSpec().getCruiseControl() != null) {
                     expectedPdbNames.add(cruiseControlName);
+                }
+                if (kafka.getSpec().getExtraMetrics() != null) {
+                    expectedPdbNames.add(extraMetricsName);
                 }
                 assertThat(
                     pdbCaptor.getAllValues().stream()
@@ -743,6 +752,7 @@ public class KafkaAssemblyOperatorTest {
                     .endKafka()
                     .withEntityOperator(eoConfig)
                     .withKafkaExporter(metrics ? new KafkaExporterSpec() : null)
+                    .withExtraMetrics(metrics ? new ExtraMetricsSpec() : null)
                 .endSpec()
                 .build();
 
@@ -1018,6 +1028,7 @@ public class KafkaAssemblyOperatorTest {
                 .addToData("entity-operator.crt", Base64.getEncoder().encodeToString(dummyCert.getBytes()))
                 .build()));
         when(mockSecretOps.getAsync(NAMESPACE, KafkaExporterResources.secretName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(NAMESPACE, ExtraMetricsResources.secretName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(null));
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))).thenReturn(
                 CompletableFuture.completedFuture(new SecretBuilder()
                         .withNewMetadata().withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).endMetadata()
