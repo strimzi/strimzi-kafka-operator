@@ -71,7 +71,7 @@ public class RestrictedPodSecurityProvider extends BaselinePodSecurityProvider {
     }
 
     @Override
-    public SecurityContext sovaContainerSecurityContext(ContainerSecurityProviderContext context) {
+    public SecurityContext extraMetricsContainerSecurityContext(ContainerSecurityProviderContext context) {
         return createRestrictedContainerSecurityContext(context);
     }
 

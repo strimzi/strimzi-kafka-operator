@@ -18,9 +18,9 @@ import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthentic
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.certs.CertAndKey;
@@ -32,13 +32,13 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
+import io.strimzi.operator.cluster.model.ExtraMetrics;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.model.Sova;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
@@ -644,7 +644,7 @@ public class CaReconcilerTest {
                 Arguments.of(KafkaResources.entityTopicOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
                 Arguments.of(KafkaResources.entityUserOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
                 Arguments.of(KafkaExporterResources.secretName(NAME), KafkaExporter.COMPONENT_TYPE),
-                Arguments.of(SovaResources.secretName(NAME), Sova.COMPONENT_TYPE));
+                Arguments.of(ExtraMetricsResources.secretName(NAME), ExtraMetrics.COMPONENT_TYPE));
     }
 
     @ParameterizedTest
@@ -754,7 +754,7 @@ public class CaReconcilerTest {
         deps.put("my-cluster-entity-operator", deploymentWithName("my-cluster-entity-operator"));
         deps.put("my-cluster-cruise-control", deploymentWithName("my-cluster-cruise-control"));
         deps.put("my-cluster-kafka-exporter", deploymentWithName("my-cluster-kafka-exporter"));
-        deps.put("my-cluster-sova", deploymentWithName("my-cluster-sova"));
+        deps.put("my-cluster-extra-metrics", deploymentWithName("my-cluster-extra-metrics"));
         DeploymentOperator depsOperator = supplier.deploymentOperations;
         when(depsOperator.getAsync(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(deps.get(i.getArgument(1, String.class))));
     }

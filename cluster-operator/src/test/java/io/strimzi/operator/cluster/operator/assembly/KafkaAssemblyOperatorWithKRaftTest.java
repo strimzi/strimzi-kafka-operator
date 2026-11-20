@@ -2169,7 +2169,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             }
 
             @Override
-            Future<ReconciliationState> reconcileSova(Clock clock)    {
+            Future<ReconciliationState> reconcileExtraMetrics(Clock clock)    {
                 return Future.succeededFuture(this);
             }
         }

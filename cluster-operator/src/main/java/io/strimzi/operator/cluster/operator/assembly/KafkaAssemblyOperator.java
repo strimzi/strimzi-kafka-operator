@@ -249,7 +249,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileCruiseControl(clock))
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileKafkaExporter(clock))
-                .compose(state -> state.reconcileSova(clock))
+                .compose(state -> state.reconcileExtraMetrics(clock))
                 .compose(state -> state.reconcileKafkaAutoRebalancing())
 
                 // Finish the reconciliation
@@ -607,12 +607,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * Provider method for Sova reconciler. Overriding this method can be used to get mocked reconciler.
+         * Provider method for Extra Metrics reconciler. Overriding this method can be used to get mocked reconciler.
          *
-         * @return  Sova reconciler
+         * @return  Extra Metrics reconciler
          */
-        SovaReconciler sovaReconciler()   {
-            return new SovaReconciler(
+        ExtraMetricsReconciler extraMetricsReconciler()   {
+            return new ExtraMetricsReconciler(
                     reconciliation,
                     config,
                     supplier,
@@ -623,15 +623,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * Run the reconciliation pipeline for Sova
+         * Run the reconciliation pipeline for Extra Metrics
          *
          * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
          *              That time is used for checking maintenance windows
          *
          * @return      Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileSova(Clock clock)    {
-            return VertxUtil.toFuture(sovaReconciler()
+        Future<ReconciliationState> reconcileExtraMetrics(Clock clock)    {
+            return VertxUtil.toFuture(extraMetricsReconciler()
                     .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock))
                     .map(this);
         }

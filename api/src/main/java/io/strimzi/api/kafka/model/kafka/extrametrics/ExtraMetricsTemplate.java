@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.kafka.sova;
+package io.strimzi.api.kafka.model.kafka.extrametrics;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Sova resources.
+ * Representation of a template for Extra Metrics resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -32,7 +32,7 @@ import java.util.Map;
 @JsonPropertyOrder({"deployment", "pod", "container", "serviceAccount", "podDisruptionBudget"})
 @EqualsAndHashCode
 @ToString
-public class SovaTemplate implements UnknownPropertyPreserving {
+public class ExtraMetricsTemplate implements UnknownPropertyPreserving {
     private DeploymentTemplate deployment;
     private PodTemplate pod;
     private ContainerTemplate container;
@@ -40,7 +40,7 @@ public class SovaTemplate implements UnknownPropertyPreserving {
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties;
 
-    @Description("Template for Sova `Deployment`.")
+    @Description("Template for Extra Metrics `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public DeploymentTemplate getDeployment() {
         return deployment;
@@ -50,7 +50,7 @@ public class SovaTemplate implements UnknownPropertyPreserving {
         this.deployment = deployment;
     }
 
-    @Description("Template for Sova `Pods`.")
+    @Description("Template for Extra Metrics `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodTemplate getPod() {
         return pod;
@@ -60,7 +60,7 @@ public class SovaTemplate implements UnknownPropertyPreserving {
         this.pod = pod;
     }
 
-    @Description("Template for the Sova container")
+    @Description("Template for the Extra Metrics container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getContainer() {
         return container;
@@ -70,7 +70,7 @@ public class SovaTemplate implements UnknownPropertyPreserving {
         this.container = container;
     }
 
-    @Description("Template for the Sova service account.")
+    @Description("Template for the Extra Metrics service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;
@@ -80,7 +80,7 @@ public class SovaTemplate implements UnknownPropertyPreserving {
         this.serviceAccount = serviceAccount;
     }
 
-    @Description("Template for the Pod Disruption Budget for Sova pods.")
+    @Description("Template for the Pod Disruption Budget for Extra Metrics pods.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
         return podDisruptionBudget;

@@ -169,7 +169,7 @@ kafkaExporter:
     repository: ""
     name: kafka
     tagPrefix: ""
-sova:
+extraMetrics:
   image:
     registry: ""
     repository: ""

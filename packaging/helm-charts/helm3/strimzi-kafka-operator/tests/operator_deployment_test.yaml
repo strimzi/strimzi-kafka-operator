@@ -164,7 +164,7 @@ tests:
           value: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
       - equal:
           path: spec.template.spec.containers[0].env[4].name
-          value: STRIMZI_DEFAULT_SOVA_IMAGE
+          value: STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE
       - equal:
           path: spec.template.spec.containers[0].env[5].name
           value: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE

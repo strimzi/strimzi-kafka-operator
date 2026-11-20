@@ -27,9 +27,9 @@ import io.skodjob.kubetest4j.metrics.Metric;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -37,8 +37,8 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
+import io.strimzi.systemtest.metrics.ExtraMetricsMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaExporterMetricsComponent;
-import io.strimzi.systemtest.metrics.SovaMetricsComponent;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -276,21 +276,21 @@ public class NetworkPoliciesST extends AbstractST {
         metricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertThat("KafkaExporter metrics should be non-empty", metricsCollector.getCollectedData().size() > 0);
 
-        LOGGER.info("Check metrics exposed by Sova");
-        MetricsCollector sovaMetricsCollector = new MetricsCollector.Builder()
+        LOGGER.info("Check metrics exposed by Extra Metrics");
+        MetricsCollector extraMetricsMetricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(scraperPodName)
-            .withComponent(SovaMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .withComponent(ExtraMetricsMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
             .build();
-        // Sova serves an empty snapshot until its first collection cycle finishes, so wait for the topic metrics
-        TestUtils.waitFor("Sova to expose metrics for topic " + topicNameAccessedTls, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
-            sovaMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-            return sovaMetricsCollector.getCollectedData().values().stream()
+        // Extra Metrics serves an empty snapshot until its first collection cycle finishes, so wait for the topic metrics
+        TestUtils.waitFor("Extra Metrics to expose metrics for topic " + topicNameAccessedTls, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
+            extraMetricsMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+            return extraMetricsMetricsCollector.getCollectedData().values().stream()
                 .flatMap(List::stream)
                 .anyMatch(metric -> metric.getName().contains("kafka_topic_partitions") && topicNameAccessedTls.equals(metric.getLabels().get("topic")));
         });
 
-        for (Map.Entry<String, List<Metric>> entry : sovaMetricsCollector.getCollectedData().entrySet()) {
+        for (Map.Entry<String, List<Metric>> entry : extraMetricsMetricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_consumergroup_current_offset");
 
@@ -501,18 +501,18 @@ public class NetworkPoliciesST extends AbstractST {
             assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaExporterResources.componentName(clusterName))).findFirst());
         }
 
-        // if Sova is enabled
+        // if Extra Metrics is enabled
         if (CrdClients.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getExtraMetrics() != null) {
-            NetworkPolicy sovaNp = networkPolicyList.stream()
-                .filter(networkPolicy -> networkPolicy.getMetadata().getName().contains(SovaResources.componentName(clusterName)))
+            NetworkPolicy extraMetricsNp = networkPolicyList.stream()
+                .filter(networkPolicy -> networkPolicy.getMetadata().getName().contains(ExtraMetricsResources.componentName(clusterName)))
                 .findFirst()
                 .orElse(null);
-            assertNotNull(sovaNp);
+            assertNotNull(extraMetricsNp);
             // Management port (8080) must not have an ingress rule.
             // Kubelet liveness/readiness probes originate from the node network, not a Pod, so they bypass
             // NetworkPolicy enforcement — no ingress rule is needed for probes to succeed on a default-deny cluster.
-            assertThat("Sova NetworkPolicy must not open management port 8080",
-                sovaNp.getSpec().getIngress().stream()
+            assertThat("Extra Metrics NetworkPolicy must not open management port 8080",
+                extraMetricsNp.getSpec().getIngress().stream()
                     .flatMap(rule -> rule.getPorts().stream())
                     .noneMatch(p -> p.getPort() != null && p.getPort().getIntVal() != null && p.getPort().getIntVal() == 8080),
                 is(true));

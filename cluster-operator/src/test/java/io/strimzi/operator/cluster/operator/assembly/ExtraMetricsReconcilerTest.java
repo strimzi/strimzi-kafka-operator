@@ -15,14 +15,14 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
-import io.strimzi.operator.cluster.model.Sova;
+import io.strimzi.operator.cluster.model.ExtraMetrics;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -68,7 +68,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Timeout(value = 30, unit = TimeUnit.SECONDS)
-public class SovaReconcilerTest {
+public class ExtraMetricsReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
 
@@ -107,39 +107,39 @@ public class SovaReconcilerTest {
             .build();
 
     /**
-     * Tests Sova reconciliation when enabled — all resources should be created/updated.
+     * Tests Extra Metrics reconciliation when enabled — all resources should be created/updated.
      */
     @Test
-    public void reconcileWithEnabledSova() {
+    public void reconcileWithEnabledExtraMetrics() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleOperator mockRoleOps = supplier.roleOperations;
-        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
-        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(SovaResources.secretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(NAMESPACE), eq(SovaResources.configMapName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.getAsync(eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
-        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -149,7 +149,7 @@ public class SovaReconcilerTest {
                 .endSpec()
                 .build();
 
-        SovaReconciler reconciler = new SovaReconciler(
+        ExtraMetricsReconciler reconciler = new ExtraMetricsReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
@@ -160,92 +160,92 @@ public class SovaReconcilerTest {
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
 
-        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNotNull());
+        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNotNull());
 
         ArgumentCaptor<Role> roleCaptor = ArgumentCaptor.forClass(Role.class);
-        verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), roleCaptor.capture());
+        verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), roleCaptor.capture());
         assertThat(roleCaptor.getValue(), is(notNullValue()));
         assertThat(roleCaptor.getValue().getRules().get(0).getResourceNames(), containsInAnyOrder(
                 KafkaResources.trustBundleSecretName(NAME),
-                SovaResources.secretName(NAME)));
+                ExtraMetricsResources.secretName(NAME)));
 
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
-        verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), roleBindingCaptor.capture());
+        verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.roleBindingName(NAME)), roleBindingCaptor.capture());
         assertThat(roleBindingCaptor.getValue(), is(notNullValue()));
-        assertThat(roleBindingCaptor.getValue().getSubjects().get(0).getName(), is(SovaResources.componentName(NAME)));
+        assertThat(roleBindingCaptor.getValue().getSubjects().get(0).getName(), is(ExtraMetricsResources.componentName(NAME)));
 
         ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), cmCaptor.capture());
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)), cmCaptor.capture());
         assertThat(cmCaptor.getValue(), is(notNullValue()));
-        assertThat(cmCaptor.getValue().getMetadata().getName(), is(SovaResources.configMapName(NAME)));
+        assertThat(cmCaptor.getValue().getMetadata().getName(), is(ExtraMetricsResources.configMapName(NAME)));
         assertThat(cmCaptor.getValue().getData(), hasKey(LoggingModel.LOG4J2_CONFIG_MAP_KEY));
 
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), secretCaptor.capture());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), secretCaptor.capture());
         Secret certSecret = secretCaptor.getValue();
         assertThat(certSecret, is(notNullValue()));
-        assertThat(certSecret.getData(), hasKey(Ca.SecretEntry.CRT.asKey(Sova.COMPONENT_TYPE)));
-        assertThat(certSecret.getData(), hasKey(Ca.SecretEntry.KEY.asKey(Sova.COMPONENT_TYPE)));
+        assertThat(certSecret.getData(), hasKey(Ca.SecretEntry.CRT.asKey(ExtraMetrics.COMPONENT_TYPE)));
+        assertThat(certSecret.getData(), hasKey(Ca.SecretEntry.KEY.asKey(ExtraMetrics.COMPONENT_TYPE)));
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), netPolicyCaptor.capture());
+        verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), netPolicyCaptor.capture());
         assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
         // metrics port (9404) rule
         assertThat(netPolicyCaptor.getValue().getSpec().getIngress().size(), is(1));
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), depCaptor.capture());
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), depCaptor.capture());
         assertThat(depCaptor.getValue(), is(notNullValue()));
         assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
         assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
         String certHash = depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
         assertThat(certHash, is(not(emptyOrNullString())));
-        assertThat(certHash, is(CertSecretUtils.getCertificateShortThumbprint(certSecret, Ca.SecretEntry.CRT.asKey(Sova.COMPONENT_TYPE))));
-        verify(mockDepOps, times(1)).waitForObserved(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong());
-        verify(mockDepOps, times(1)).readiness(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong());
+        assertThat(certHash, is(CertSecretUtils.getCertificateShortThumbprint(certSecret, Ca.SecretEntry.CRT.asKey(ExtraMetrics.COMPONENT_TYPE))));
+        verify(mockDepOps, times(1)).waitForObserved(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong());
+        verify(mockDepOps, times(1)).readiness(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), pdbCaptor.capture());
+        verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), pdbCaptor.capture());
         assertThat(pdbCaptor.getValue(), is(notNullValue()));
         assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     /**
-     * Tests Sova reconciliation when disabled — all resources should be deleted (reconciled with null).
+     * Tests Extra Metrics reconciliation when disabled — all resources should be deleted (reconciled with null).
      */
     @Test
-    public void reconcileWithDisabledSova() {
+    public void reconcileWithDisabledExtraMetrics() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleOperator mockRoleOps = supplier.roleOperations;
-        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
-        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
-        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // KAFKA has no extraMetrics spec — disabled
         Ca clusterCa = spy(CLUSTER_CA);
-        SovaReconciler reconciler = new SovaReconciler(
+        ExtraMetricsReconciler reconciler = new ExtraMetricsReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
@@ -256,49 +256,49 @@ public class SovaReconcilerTest {
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
 
-        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
-        verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
-        verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), isNull());
-        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), isNull());
-        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), isNull());
-        verify(clusterCa, times(1)).cleanupEndEntityCert(SovaResources.secretName(NAME));
-        verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
-        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
+        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
+        verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
+        verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.roleBindingName(NAME)), isNull());
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)), isNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), isNull());
+        verify(clusterCa, times(1)).cleanupEndEntityCert(ExtraMetricsResources.secretName(NAME));
+        verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
         verify(mockDepOps, never()).readiness(any(), any(), any(), anyLong(), anyLong());
-        verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
+        verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
     }
 
     /**
-     * Tests Sova reconciliation when disabled and network policy and PodDisruptionBudget generation is disabled.
+     * Tests Extra Metrics reconciliation when disabled and network policy and PodDisruptionBudget generation is disabled.
      * The other resources should be deleted, but network policies and PodDisruptionBudgets should not be touched.
      */
     @Test
-    public void reconcileWithDisabledSovaWithoutNetworkPoliciesAndPdbs() {
+    public void reconcileWithDisabledExtraMetricsWithoutNetworkPoliciesAndPdbs() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleOperator mockRoleOps = supplier.roleOperations;
-        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
-        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         Ca clusterCa = spy(CLUSTER_CA);
-        SovaReconciler reconciler = new SovaReconciler(
+        ExtraMetricsReconciler reconciler = new ExtraMetricsReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
                         .with(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), "false")
@@ -312,50 +312,50 @@ public class SovaReconcilerTest {
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
 
-        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
-        verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
-        verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), isNull());
-        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), isNull());
-        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), isNull());
-        verify(clusterCa, times(1)).cleanupEndEntityCert(SovaResources.secretName(NAME));
+        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
+        verify(mockRoleOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
+        verify(mockRoleBindingOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.roleBindingName(NAME)), isNull());
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)), isNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), isNull());
+        verify(clusterCa, times(1)).cleanupEndEntityCert(ExtraMetricsResources.secretName(NAME));
         verify(mockNetPolicyOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
         verify(mockPodDisruptionBudgetOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
-        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNull());
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNull());
     }
 
     /**
      * Tests that when network policy generation is disabled, the network policy is never reconciled.
      */
     @Test
-    public void reconcileWithEnabledSovaWithoutNetworkPolicies() {
+    public void reconcileWithEnabledExtraMetricsWithoutNetworkPolicies() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleOperator mockRoleOps = supplier.roleOperations;
-        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
-        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.roleBindingName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(SovaResources.secretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(NAMESPACE), eq(SovaResources.configMapName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.getAsync(eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
-        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -365,7 +365,7 @@ public class SovaReconcilerTest {
                 .endSpec()
                 .build();
 
-        SovaReconciler reconciler = new SovaReconciler(
+        ExtraMetricsReconciler reconciler = new ExtraMetricsReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
                         .with(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), "false").build(),
@@ -377,10 +377,10 @@ public class SovaReconcilerTest {
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
 
-        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNotNull());
-        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.secretName(NAME)), isNotNull());
+        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNotNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.secretName(NAME)), isNotNull());
         verify(mockNetPolicyOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
-        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNotNull());
-        verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(SovaResources.componentName(NAME)), isNotNull());
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNotNull());
+        verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(ExtraMetricsResources.componentName(NAME)), isNotNull());
     }
 }

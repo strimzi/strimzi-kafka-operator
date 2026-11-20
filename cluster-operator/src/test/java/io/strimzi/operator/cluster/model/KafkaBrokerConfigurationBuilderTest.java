@@ -445,7 +445,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-sova,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-extra-metrics,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
     @Test
@@ -490,7 +490,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-sova,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-extra-metrics,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
     @Test
@@ -1062,7 +1062,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.sasl.enabled.mechanisms=OAUTHBEARER",
                 "listener.name.replication-9091.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.replication-9091.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster'] && @.sub in ['system:serviceaccount:namespace:my-cluster-kafka', 'system:serviceaccount:namespace:my-cluster-cluster-operator', 'system:serviceaccount:namespace:my-cluster-entity-operator', 'system:serviceaccount:namespace:my-cluster-sova', 'system:serviceaccount:namespace:my-cluster-kafka-exporter', 'system:serviceaccount:namespace:my-cluster-cruise-control']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "listener.name.replication-9091.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster'] && @.sub in ['system:serviceaccount:namespace:my-cluster-kafka', 'system:serviceaccount:namespace:my-cluster-cluster-operator', 'system:serviceaccount:namespace:my-cluster-entity-operator', 'system:serviceaccount:namespace:my-cluster-extra-metrics', 'system:serviceaccount:namespace:my-cluster-kafka-exporter', 'system:serviceaccount:namespace:my-cluster-cruise-control']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
                 "listener.name.replication-9091.oauthbearer.sasl.mechanism=OAUTHBEARER",
                 "listener.name.replication-9091.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
                 "listeners=REPLICATION-9091://0.0.0.0:9091",
@@ -1089,7 +1089,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.controlplane-9090.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
                 "listener.name.replication-9091.sasl.enabled.mechanisms=OAUTHBEARER",
                 "listener.name.replication-9091.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.replication-9091.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster'] && @.sub in ['system:serviceaccount:namespace:my-cluster-kafka', 'system:serviceaccount:namespace:my-cluster-cluster-operator', 'system:serviceaccount:namespace:my-cluster-entity-operator', 'system:serviceaccount:namespace:my-cluster-sova', 'system:serviceaccount:namespace:my-cluster-kafka-exporter', 'system:serviceaccount:namespace:my-cluster-cruise-control']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "listener.name.replication-9091.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster'] && @.sub in ['system:serviceaccount:namespace:my-cluster-kafka', 'system:serviceaccount:namespace:my-cluster-cluster-operator', 'system:serviceaccount:namespace:my-cluster-entity-operator', 'system:serviceaccount:namespace:my-cluster-extra-metrics', 'system:serviceaccount:namespace:my-cluster-kafka-exporter', 'system:serviceaccount:namespace:my-cluster-cruise-control']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
                 "listener.name.replication-9091.oauthbearer.sasl.mechanism=OAUTHBEARER",
                 "listener.name.replication-9091.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
                 "listeners=REPLICATION-9091://0.0.0.0:9091",
@@ -2364,7 +2364,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
         assertThat(configuration, isEquivalent("node.id=1",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-sova,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-extra-metrics,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi"));
 
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT, KafkaClusterDeployedComponents.ALL)
                 .withAuthorization("my-cluster", auth)
@@ -2567,7 +2567,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "system:serviceaccount:my-namespace:my-cluster-cluster-operator",
                 "system:serviceaccount:my-namespace:my-cluster-entity-operator",
                 "system:serviceaccount:my-namespace:my-cluster-kafka-exporter",
-                "system:serviceaccount:my-namespace:my-cluster-sova",
+                "system:serviceaccount:my-namespace:my-cluster-extra-metrics",
                 "system:serviceaccount:my-namespace:my-cluster-cruise-control")));
 
         // The User Operator alone uses the Entity Operator Service Account

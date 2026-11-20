@@ -65,12 +65,12 @@ import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
-import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -1755,7 +1755,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         NetworkPolicyPeer kafkaClusterPeer = NetworkPolicyUtils.createPeer(labels.strimziSelectorLabels().toMap());
         NetworkPolicyPeer entityOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster)));
         NetworkPolicyPeer kafkaExporterPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.componentName(cluster)));
-        NetworkPolicyPeer sovaPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, SovaResources.componentName(cluster)));
+        NetworkPolicyPeer extraMetricsPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, ExtraMetricsResources.componentName(cluster)));
         NetworkPolicyPeer cruiseControlPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.componentName(cluster)));
 
         // List of network policy rules for all ports
@@ -1766,8 +1766,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         rules.add(NetworkPolicyUtils.createIngressRule(CONTROLPLANE_PORT, List.of(kafkaClusterPeer, clusterOperatorPeer)));
 
         // Replication rule covers the replication listener.
-        // Replication listener is used by Kafka but also by our own tools => Operators, Cruise Control, Kafka Exporter and Sova
-        rules.add(NetworkPolicyUtils.createIngressRule(REPLICATION_PORT, List.of(clusterOperatorPeer, kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer, sovaPeer, cruiseControlPeer)));
+        // Replication listener is used by Kafka but also by our own tools => Operators, Cruise Control, Kafka Exporter and Extra Metrics
+        rules.add(NetworkPolicyUtils.createIngressRule(REPLICATION_PORT, List.of(clusterOperatorPeer, kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer, extraMetricsPeer, cruiseControlPeer)));
 
         // KafkaAgent rule covers the KafkaAgent listener.
         // KafkaAgent listener is used by our own tool => Operators
