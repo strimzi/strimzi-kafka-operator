@@ -15,11 +15,12 @@ The Cluster Operator, Topic Operator, and User Operator expose the `strimzi_reco
 The metric exists only while a reconciliation is running.
 Its value is the time when the reconciliation started, as a Unix epoch timestamp in seconds.
 The `kind`, `namespace`, and `name` labels identify the resource being reconciled.
+If your Prometheus scrape configuration does not honor the labels of the scraped metrics, Prometheus stores the `namespace` label of the metric as `exported_namespace`.
 When the reconciliation completes, the operator stops exposing the metric for that resource.
 
 To find reconciliations that have been running for too long, compare the metric with the current time:
 
-[source,promql]
+[source]
 ----
 time() - strimzi_reconciliations_in_progress_start_time_seconds > 60 * 60
 ----
