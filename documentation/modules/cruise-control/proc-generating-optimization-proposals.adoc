@@ -73,7 +73,7 @@ spec:
 If you want to rebalance a Kafka cluster after scaling up, specify the `add-brokers` mode.
 
 In this mode, existing replicas are moved to the newly added brokers.
-You need to specify the brokers as a list.
+You need to specify the target brokers using the `nodes` property.
 
 .Example configuration specifying `add-brokers` mode
 [source,yaml,subs="attributes+"]
@@ -86,7 +86,9 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   mode: add-brokers
-  brokers: [3, 4] <1>
+  nodes: <1>
+    - brokerId: 3
+    - brokerId: 4
 ----
 <1> List of newly added brokers added by the scale up operation. This property is mandatory.
 --
@@ -97,7 +99,7 @@ spec:
 If you want to rebalance a Kafka cluster before scaling down, specify the `remove-brokers` mode.
 
 In this mode, replicas are moved off the brokers that are going to be removed.
-You need to specify the brokers that are being removed as a list.
+You need to specify the brokers that are being removed using the `nodes` property.
 
 .Example configuration specifying `remove-brokers` mode
 [source,yaml,subs="attributes+"]
@@ -110,14 +112,16 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   mode: remove-brokers
-  brokers: [3, 4] <1>
+  nodes: <1>
+    - brokerId: 3
+    - brokerId: 4
 ----
 <1> List of brokers to be removed by the scale down operation. This property is mandatory.
 --
 +
 NOTE: The following steps and the steps to approve or stop a rebalance are the same regardless of the rebalance mode you are using.
 
-. To configure proposal-specific optimization goals instead of using the default goals, add the `goals` property and enter one or more goals.
+. To configure proposal-specific optimization goals instead of using the default goals, add the `goals` key to `spec.config` with a comma-separated list of goals.
 +
 In the following example, rack awareness and replica capacity are configured as proposal-specific optimization goals:
 +
@@ -130,12 +134,11 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  goals:
-    - RackAwareGoal
-    - ReplicaCapacityGoal
+  config:
+    goals: "RackAwareGoal,ReplicaCapacityGoal"
 ----
 
-. To ignore the configured hard goals, add the `skipHardGoalCheck: true` property:
+. To ignore the configured hard goals, add the `skip_hard_goal_check` key to `spec.config` with a value of `"true"`:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -146,10 +149,9 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  goals:
-    - RackAwareGoal
-    - ReplicaCapacityGoal
-  skipHardGoalCheck: true
+  config:
+    goals: "RackAwareGoal,ReplicaCapacityGoal"
+    skip_hard_goal_check: "true"
 ----
 
 . (Optional) To approve the optimization proposal automatically, set the `strimzi.io/rebalance-auto-approval` annotation to `true`:
@@ -165,10 +167,9 @@ metadata:
   annotations:
     strimzi.io/rebalance-auto-approval: "true"
 spec:
-  goals:
-    - RackAwareGoal
-    - ReplicaCapacityGoal
-  skipHardGoalCheck: true
+  config:
+    goals: "RackAwareGoal,ReplicaCapacityGoal"
+    skip_hard_goal_check: "true"
 ----
 
 . Create or update the resource:

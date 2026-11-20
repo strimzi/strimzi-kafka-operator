@@ -49,7 +49,7 @@ Configure optimization goals in the `Kafka` and `KafkaRebalance` custom resource
 ** Hard goals: `Kafka.spec.cruiseControl.config.hard.goals`
 ** Default goals: `Kafka.spec.cruiseControl.config.default.goals`
 * `KafkaRebalance` resource for proposal-specific goals.
-** Proposal-specific goals: `KafkaRebalance.spec.goals`
+** Proposal-specific goals: `KafkaRebalance.spec.config` with key `goals`
 
 === Supported goals
 
@@ -101,7 +101,7 @@ You can adjust the priority order in the default goals configuration.
 Proposal-specific optimization goals support the creation of optimization proposals based on a specific list of goals.
 If proposal-specific goals are not set in the `KafkaRebalance` resource, then default goals are used
 
-Configure proposal-specific goals in `KafkaRebalance.spec.goals`, specifying a subset of supported optimization goals for customization.
+Configure proposal-specific goals in `KafkaRebalance.spec.config` using the `goals` key, specifying a comma-separated list of supported optimization goals for customization.
 
 For example, you can optimize topic leader replica distribution across the Kafka cluster without considering disk capacity or utilization by defining a single proposal-specific goal.
 
@@ -167,7 +167,7 @@ spec:
       # ...
 ----
 
-IMPORTANT: Ensure that the supported `goals`, `default.goals`, and (unless `skipHardGoalCheck` is set to `true`) proposal-specific `spec.goals` include all hard goals specified in `hard.goals` to avoid errors when generating optimization proposals. 
+IMPORTANT: Ensure that the supported `goals`, `default.goals`, and (unless `skip_hard_goal_check` is set to `true` in `spec.config`) proposal-specific goals include all hard goals specified in `hard.goals` to avoid errors when generating optimization proposals.
 Hard goals must be included as a subset in the supported, default, and proposal-specific goals.
 
 .Example `KafkaRebalance` configuration for proposal-specific goals
@@ -180,18 +180,112 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  goals:
-    - RackAwareGoal
-    - TopicReplicaDistributionGoal
-  skipHardGoalCheck: true
+  config:
+    goals: "RackAwareGoal,TopicReplicaDistributionGoal"
+    skip_hard_goal_check: "true"
 ----
 
 === Skipping hard goal checks
 
-If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does not verify that the proposal-specific goals include all the configured hard goals. 
+If `skip_hard_goal_check` is set to `"true"` in `spec.config` of the `KafkaRebalance` custom resource, Cruise Control does not verify that the proposal-specific goals include all the configured hard goals.
 This allows for more flexibility in generating optimization proposals, but may lead to proposals that do not satisfy all hard goals.
 
-However, any hard goals included in the proposal-specific goals will still be treated as hard goals by Cruise Control, even with `skipHardGoalCheck: true`.
+However, any hard goals included in the proposal-specific goals will still be treated as hard goals by Cruise Control, even with `skip_hard_goal_check` set to `"true"`.
+
+=== Migrating from deprecated fields to spec.config
+
+Several properties previously defined as individual fields in `KafkaRebalanceSpec` are now deprecated in API version `v1` and will be removed in API version `v2`.
+These fields are replaced by the `spec.config` map, which uses link:https://github.com/linkedin/cruise-control/wiki/REST-APIs[Cruise Control REST API parameter names^] as keys.
+
+If both a deprecated field and its corresponding `spec.config` key are set, the `spec.config` value takes priority.
+
+.Deprecated fields and their replacements
+[cols="2m,2m",options="header"]
+|===
+| Deprecated field
+| Replacement
+
+| spec.goals
+| spec.config key `goals` (comma-separated list)
+
+| spec.skipHardGoalCheck
+| spec.config key `skip_hard_goal_check`
+
+| spec.excludedTopics
+| spec.config key `excluded_topics`
+
+| spec.concurrentPartitionMovementsPerBroker
+| spec.config key `concurrent_partition_movements_per_broker`
+
+| spec.concurrentIntraBrokerPartitionMovements
+| spec.config key `concurrent_intra_broker_partition_movements`
+
+| spec.concurrentLeaderMovements
+| spec.config key `concurrent_leader_movements`
+
+| spec.replicationThrottle
+| spec.config key `replication_throttle`
+
+| spec.replicaMovementStrategies
+| spec.config key `replica_movement_strategies`
+
+| spec.rebalanceDisk
+| spec.config key `rebalance_disk`
+
+| spec.brokers
+| spec.nodes (list of `brokerId` objects)
+
+| spec.moveReplicasOffVolumes
+| spec.nodes (list of `brokerId` and `volumeIds` objects)
+
+|===
+
+The following keys are managed by the operator and must not be set in `spec.config`.
+If specified, they are ignored and a warning is logged: `dryrun`, `json`, `verbose`, `super_verbose`, `brokerid`, `brokerid_and_logdirs`.
+
+.Example migration from deprecated fields to spec.config
+[source,yaml,subs="attributes+"]
+----
+# Before (deprecated)
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  mode: add-brokers
+  brokers: [3, 4]
+  goals:
+    - RackAwareGoal
+    - ReplicaCapacityGoal
+  skipHardGoalCheck: true
+  excludedTopics: "my-internal-.*"
+  concurrentPartitionMovementsPerBroker: 10
+  replicationThrottle: 10000000
+----
+
+[source,yaml,subs="attributes+"]
+----
+# After (recommended)
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  mode: add-brokers
+  nodes:
+    - brokerId: 3
+    - brokerId: 4
+  config:
+    goals: "RackAwareGoal,ReplicaCapacityGoal"
+    skip_hard_goal_check: "true"
+    excluded_topics: "my-internal-.*"
+    concurrent_partition_movements_per_broker: "10"
+    replication_throttle: "10000000"
+----
 
 [id='con-optimization-proposals-{context}']
 == Assessing optimization proposals
@@ -251,12 +345,12 @@ This is the default mode if the `spec.mode` property is not defined in the `Kafk
 Normally, after scaling up a Kafka cluster, new brokers are used to host only the partitions of newly created topics.
 If no new topics are created, the newly added brokers are not used and the existing brokers remain under the same load.
 By using the `add-brokers` mode immediately after adding brokers to the cluster, the rebalancing operation moves replicas from existing brokers to the newly added brokers.
-You specify the new brokers as a list using the `spec.brokers` property of the `KafkaRebalance` custom resource.
+You specify the new brokers using the `spec.nodes` property of the `KafkaRebalance` custom resource, providing a list of `brokerId` values.
 
 `remove-brokers` mode:: The `remove-brokers` mode is used before scaling down a Kafka cluster by removing one or more brokers.
 The `remove-brokers` mode moves replicas off the brokers that are going to be removed.
 When these brokers are not hosting replicas anymore, you can safely run the scaling down operation.
-You specify the brokers you're removing as a list in the `spec.brokers` property in the `KafkaRebalance` custom resource.
+You specify the brokers you're removing using the `spec.nodes` property in the `KafkaRebalance` custom resource, providing a list of `brokerId` values.
 
 `remove-disks` mode:: The `remove-disks` mode is used specifically to reassign partitions between JBOD disks used for storage on the same broker.
 You specify a list of broker IDs with corresponding volume IDs for partition reassignment. 
@@ -267,7 +361,7 @@ In general, use the `full` rebalance mode to rebalance a Kafka cluster by spread
 Use the `add-brokers` and `remove-brokers` modes only if you want to scale your cluster up or down and rebalance the replicas accordingly.
 
 The procedure to run a rebalance is actually the same across the three different modes.
-The only difference is with specifying a mode through the `spec.mode` property and, if needed, listing brokers that have been added or will be removed through the `spec.brokers` property.
+The only difference is with specifying a mode through the `spec.mode` property and, if needed, listing brokers that have been added or will be removed through the `spec.nodes` property.
 
 
 [[contents-optimization-proposals]]
@@ -417,7 +511,7 @@ The `After` score is based on the predicted workload model after applying the ge
 | The percentage of partitions in the Kafka cluster covered by the optimization proposal. Affected by the number of `excludedTopics`.
 
 | excludedTopics
-| If you specified a regular expression in the `spec.excludedTopicsRegex` property in the `KafkaRebalance` resource, all topic names matching that expression are listed here.
+| If you specified a regular expression using the `excluded_topics` key in `spec.config` of the `KafkaRebalance` resource, all topic names matching that expression are listed here.
 These topics are excluded from the calculation of partition replica/leader movements in the optimization proposal.
 
 | numLeaderMovements

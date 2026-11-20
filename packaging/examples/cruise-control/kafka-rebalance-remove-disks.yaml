@@ -7,6 +7,6 @@ metadata:
 # no goals specified, using the default goals from the Cruise Control configuration
 spec:
   mode: remove-disks
-  moveReplicasOffVolumes:
+  nodes:
     - brokerId: 0
       volumeIds: [1]
