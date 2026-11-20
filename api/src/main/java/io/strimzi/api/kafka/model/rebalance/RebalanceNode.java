@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Configures the broker and Volume IDs for the remove-disks endpoint for Cruise Control
+ * Identifies a target broker and, optionally, specific volumes on that broker for a rebalance operation.
  */
 @Buildable(
         editableEnabled = false,
@@ -29,13 +29,13 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public class BrokerAndVolumeIds implements UnknownPropertyPreserving {
+public class RebalanceNode implements UnknownPropertyPreserving {
 
     private Integer brokerId;
     private List<Integer> volumeIds;
     private Map<String, Object> additionalProperties;
 
-    @Description("ID of the broker that contains the disk from which you want to move the partition replicas.")
+    @Description("ID of the broker to target for the rebalance operation.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getBrokerId() {
         return brokerId;
@@ -45,7 +45,9 @@ public class BrokerAndVolumeIds implements UnknownPropertyPreserving {
         this.brokerId = brokerId;
     }
 
-    @Description("IDs of the disks from which the partition replicas need to be moved.")
+    @Description("IDs of the volumes on this broker to target for the rebalance operation. " +
+            "Required for volume-targeting modes such as `remove-disks`. " +
+            "Must not be present for broker-targeting modes such as `add-brokers` and `remove-brokers`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @MinimumItems(1)
     public List<Integer> getVolumeIds() {

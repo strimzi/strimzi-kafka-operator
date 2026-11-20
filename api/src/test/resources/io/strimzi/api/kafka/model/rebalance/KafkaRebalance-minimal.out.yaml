@@ -5,4 +5,3 @@ metadata:
   name: "my-rebalance"
 spec:
   mode: "full"
-  skipHardGoalCheck: false

@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -34,6 +35,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube3.MockKube3;
@@ -97,6 +99,7 @@ public class KafkaAutoRebalancingMockTest {
     private StrimziPodSetController podSetController;
     private KafkaAssemblyOperator operator;
     private Admin admin;
+    private List<Integer> nodeIds;
 
     @BeforeAll
     public static void beforeAll() {
@@ -1306,12 +1309,17 @@ public class KafkaAutoRebalancingMockTest {
     private void assertKafkaRebalanceStatus(KafkaRebalance kafkaRebalance, KafkaRebalanceMode mode, List<Integer> brokers, List<String> goals) {
         assertThat(kafkaRebalance, is(notNullValue()));
         assertThat(kafkaRebalance.getSpec().getMode(), is(mode));
-        assertThat(kafkaRebalance.getSpec().getBrokers().size(), is(brokers.size()));
-        assertThat(kafkaRebalance.getSpec().getBrokers().containsAll(brokers), is(true));
+        List<Integer> nodeIds = kafkaRebalance.getSpec().getNodes().stream()
+                .map(RebalanceNode::getBrokerId)
+                .toList();
+        assertThat(nodeIds.size(), is(brokers.size()));
+        assertThat(nodeIds.containsAll(brokers), is(true));
         if (goals != null) {
-            assertThat(kafkaRebalance.getSpec().getGoals().containsAll(goals), is(true));
+            List<String> actualGoals = List.of(kafkaRebalance.getSpec().getConfig().get(CruiseControlParameters.GOALS.toString()).split(","));
+            assertThat(actualGoals.containsAll(goals), is(true));
         } else {
-            assertThat(kafkaRebalance.getSpec().getGoals(), is(nullValue()));
+            assertThat(kafkaRebalance.getSpec().getConfig() == null
+                    || !kafkaRebalance.getSpec().getConfig().containsKey(CruiseControlParameters.GOALS.toString()), is(true));
         }
     }
 
@@ -1326,7 +1334,7 @@ public class KafkaAutoRebalancingMockTest {
                     .withAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE_TEMPLATE, "true"))
                 .endMetadata()
                 .withNewSpec()
-                    .withGoals(goals)
+                    .withConfig(Map.of(CruiseControlParameters.GOALS.toString(), String.join(",", goals)))
                 .endSpec()
                 .build();
     }

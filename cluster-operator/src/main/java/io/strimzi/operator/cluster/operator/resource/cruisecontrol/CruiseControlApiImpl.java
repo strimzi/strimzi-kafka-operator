@@ -376,53 +376,52 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         }
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
-                .withParameter(CruiseControlParameters.JSON, "true")
-                .withRebalanceParameters(options)
+                .withParameters(options)
                 .build();
 
         return internalRebalance(reconciliation, host, port, path, userTaskId);
     }
 
     @Override
-    public CompletionStage<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, AddBrokerOptions options, String userTaskId) {
+    public CompletionStage<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either add broker options or user task ID should be supplied, both were null"));
         }
 
         String path = new PathBuilder(CruiseControlEndpoints.ADD_BROKER)
-                .withParameter(CruiseControlParameters.JSON, "true")
-                .withAddBrokerParameters(options)
+                .withBrokerIdParameter(options)
+                .withParameters(options)
                 .build();
 
         return internalRebalance(reconciliation, host, port, path, userTaskId);
     }
 
     @Override
-    public CompletionStage<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RemoveBrokerOptions options, String userTaskId) {
+    public CompletionStage<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either remove broker options or user task ID should be supplied, both were null"));
         }
 
         String path = new PathBuilder(CruiseControlEndpoints.REMOVE_BROKER)
-                .withParameter(CruiseControlParameters.JSON, "true")
-                .withRemoveBrokerParameters(options)
+                .withBrokerIdParameter(options)
+                .withParameters(options)
                 .build();
 
         return internalRebalance(reconciliation, host, port, path, userTaskId);
     }
 
     @Override
-    public CompletionStage<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
+    public CompletionStage<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either remove disks options or user task ID should be supplied, both were null"));
         }
 
         String path = new PathBuilder(CruiseControlEndpoints.REMOVE_DISKS)
-                .withParameter(CruiseControlParameters.JSON, "true")
-                .withRemoveBrokerDisksParameters(options)
+                .withBrokerIdAndLogDirParameter(options)
+                .withParameters(options)
                 .build();
 
         return internalRebalance(reconciliation, host, port, path, userTaskId);
@@ -431,7 +430,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     @Override
     public CompletionStage<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
-                        .withParameter(CruiseControlParameters.JSON, "true")
                         .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
 
         if (userTaskId != null) {
@@ -550,8 +548,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     @Override
     public CompletionStage<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port) {
-        String path = new PathBuilder(CruiseControlEndpoints.STOP)
-                        .withParameter(CruiseControlParameters.JSON, "true").build();
+        String path = new PathBuilder(CruiseControlEndpoints.STOP).build();
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))

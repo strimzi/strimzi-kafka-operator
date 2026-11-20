@@ -7,7 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -512,21 +512,21 @@ public class KafkaTopicUtils {
     /**
      * Retrieves partition directories for specified brokers and volumes.
      *
-     * @param testStorage           contains cluster and topic information.
-     * @param brokerAndVolumeIdsList list of brokers and their volumes to query.
+     * @param testStorage   contains cluster and topic information.
+     * @param nodes         list of target nodes to query.
      * @return a map of broker pod and volume paths to sets of partition IDs.
      * @throws RuntimeException if the command to list directories fails.
      */
     public static Map<String, Set<Integer>> getPartitionDirectories(final TestStorage testStorage,
-                                                                    final List<BrokerAndVolumeIds> brokerAndVolumeIdsList) {
+                                                                    final List<RebalanceNode> nodes) {
         final Map<String, Set<Integer>> partitionDirs = new HashMap<>();
-        for (final BrokerAndVolumeIds brokerAndVolumeIds : brokerAndVolumeIdsList) {
+        for (final RebalanceNode node : nodes) {
             final String brokerPodName = KafkaComponents.getBrokerPodSetName(testStorage.getClusterName())
-                + "-" + brokerAndVolumeIds.getBrokerId();
-            for (final int volumeId : brokerAndVolumeIds.getVolumeIds()) {
-                final String dataDirPath = KafkaUtils.getDataDirectoryPath(volumeId, brokerAndVolumeIds.getBrokerId());
+                + "-" + node.getBrokerId();
+            for (final int volumeId : node.getVolumeIds()) {
+                final String dataDirPath = KafkaUtils.getDataDirectoryPath(volumeId, node.getBrokerId());
                 final String command = "ls " + dataDirPath;
-                final ExecResult execResult = KafkaUtils.executeInBrokerPod(testStorage.getNamespaceName(), brokerPodName, volumeId, brokerAndVolumeIds.getBrokerId(), command);
+                final ExecResult execResult = KafkaUtils.executeInBrokerPod(testStorage.getNamespaceName(), brokerPodName, volumeId, node.getBrokerId(), command);
 
                 final String[] dirs = execResult.out().trim().split("\\s+");
                 final Set<Integer> partitions = Arrays.stream(dirs)
@@ -577,21 +577,21 @@ public class KafkaTopicUtils {
     /**
      * Gets the sizes of Kafka data directories for specified brokers and volumes.
      *
-     * @param testStorage           cluster and namespace information.
-     * @param brokerAndVolumeIdsList list of brokers and their volumes to query.
+     * @param testStorage   cluster and namespace information.
+     * @param nodes         list of target nodes to query.
      * @return a map of broker pod and volume paths to directory sizes in bytes.
      * @throws RuntimeException if directory size retrieval fails.
      */
     public static Map<String, Long> getDataDirectorySizes(final TestStorage testStorage,
-                                                          final List<BrokerAndVolumeIds> brokerAndVolumeIdsList) {
+                                                          final List<RebalanceNode> nodes) {
         final Map<String, Long> dataDirSizes = new HashMap<>();
-        for (final BrokerAndVolumeIds brokerAndVolumeIds : brokerAndVolumeIdsList) {
+        for (final RebalanceNode node : nodes) {
             final String brokerPodName = KafkaComponents.getBrokerPodSetName(testStorage.getClusterName())
-                + "-" + brokerAndVolumeIds.getBrokerId();
-            for (final int volumeId : brokerAndVolumeIds.getVolumeIds()) {
-                final String dataDirPath = KafkaUtils.getDataDirectoryPath(volumeId, brokerAndVolumeIds.getBrokerId());
+                + "-" + node.getBrokerId();
+            for (final int volumeId : node.getVolumeIds()) {
+                final String dataDirPath = KafkaUtils.getDataDirectoryPath(volumeId, node.getBrokerId());
                 final String command = "du -sb " + dataDirPath + " | cut -f1";
-                final ExecResult execResult = KafkaUtils.executeInBrokerPod(testStorage.getNamespaceName(), brokerPodName, volumeId, brokerAndVolumeIds.getBrokerId(), command);
+                final ExecResult execResult = KafkaUtils.executeInBrokerPod(testStorage.getNamespaceName(), brokerPodName, volumeId, node.getBrokerId(), command);
 
                 final long sizeInBytes = Long.parseLong(execResult.out().trim());
                 final String key = brokerPodName + ":" + dataDirPath;
@@ -609,7 +609,7 @@ public class KafkaTopicUtils {
      * @param initialDataDirSizes       a map of initial data directory paths to their sizes in bytes.
      */
     public static void waitUntilDataMovedOffSpecifiedDisks(final TestStorage testStorage,
-                                                           final List<BrokerAndVolumeIds> brokersWithRemovedVolumes,
+                                                           final List<RebalanceNode> brokersWithRemovedVolumes,
                                                            final Map<String, Long> initialDataDirSizes) {
         LOGGER.info("Waiting until data has been moved off the specified disks...");
 
