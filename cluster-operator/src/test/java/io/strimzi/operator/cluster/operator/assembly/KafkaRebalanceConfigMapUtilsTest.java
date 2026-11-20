@@ -7,8 +7,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
-import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlExecutorState;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus;
+import io.strimzi.operator.common.cruisecontrol.CruiseControlExecutorState;
+import io.strimzi.operator.common.cruisecontrol.ExecutorStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -23,7 +23,7 @@ import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfig
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.TIME_COMPLETED;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.updateRebalanceConfigMapWithProgressFields;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceStatusTest.buildOptimizationProposal;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatusTest.createExecutorStatusJson;
+import static io.strimzi.operator.common.cruisecontrol.ExecutorStatusTest.createExecutorStatusJson;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

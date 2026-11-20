@@ -2,17 +2,16 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
+package io.strimzi.operator.common.cruisecontrol;
 
-import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlExecutorState;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus.FINISHED_DATA_MOVEMENT_KEY;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus.STATE_KEY;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus.TOTAL_DATA_TO_MOVE_KEY;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus.TRIGGERED_TASK_REASON_KEY;
+import static io.strimzi.operator.common.cruisecontrol.ExecutorStatus.FINISHED_DATA_MOVEMENT_KEY;
+import static io.strimzi.operator.common.cruisecontrol.ExecutorStatus.STATE_KEY;
+import static io.strimzi.operator.common.cruisecontrol.ExecutorStatus.TOTAL_DATA_TO_MOVE_KEY;
+import static io.strimzi.operator.common.cruisecontrol.ExecutorStatus.TRIGGERED_TASK_REASON_KEY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
