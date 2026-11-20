@@ -550,7 +550,7 @@ livenessProbe:
 # ...
 ----
 
-For more information about the `livenessProbe` and `readinessProbe` options, see the xref:type-Probe-reference[Probe schema reference].
+For more information about the `livenessProbe` and `readinessProbe` options, see the xref:type-StrimziProbe-reference[StrimziProbe schema reference].
 
 [id='con-common-configuration-prometheus-{context}']
 == `metricsConfig`
