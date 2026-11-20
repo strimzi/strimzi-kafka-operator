@@ -108,7 +108,7 @@ Labels can be applied to the following components:
 * `CRUISE_CONTROL`
 * `KAFKA_BRIDGE`
 * `KAFKA_EXPORTER`
-* `SOVA`
+* `EXTRA_METRICS`
 
 `STRIMZI_CUSTOM_RESOURCE_SELECTOR`:: Optional.
 The label selector to filter the custom resources handled by the Cluster Operator.
@@ -150,9 +150,9 @@ if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` i
 The default is `{DockerKafka}`.
 The image name to use as the default when deploying the Kafka Exporter if no image is specified as the `Kafka.spec.kafkaExporter.image` in the `Kafka` resource.
 
-`STRIMZI_DEFAULT_SOVA_IMAGE`:: Optional.
+`STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE`:: Optional.
 The default is `{DockerKafka}`.
-The image name to use as the default when deploying Sova if no image is specified as the `Kafka.spec.extraMetrics.image` in the `Kafka` resource.
+The image name to use as the default when deploying Extra Metrics if no image is specified as the `Kafka.spec.extraMetrics.image` in the `Kafka` resource.
 
 `STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE`:: Optional.
 The default is `{DockerKafka}`.

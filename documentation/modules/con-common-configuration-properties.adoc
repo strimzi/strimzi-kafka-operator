@@ -491,8 +491,8 @@ For more information on image environment variables, see link:{BookURLDeploying}
 | STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
 | {DockerKafka}
 
-| Sova
-| STRIMZI_DEFAULT_SOVA_IMAGE
+| Extra Metrics
+| STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE
 | {DockerKafka}
 
 | Cruise Control

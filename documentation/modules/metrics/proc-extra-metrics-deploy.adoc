@@ -4,16 +4,16 @@
 //
 // metrics/assembly-metrics.adoc
 
-[id='proc-sova-deploy-{context}']
-= Deploying Sova
+[id='proc-extra-metrics-deploy-{context}']
+= Deploying Extra Metrics
 
 [role="_abstract"]
-To monitor consumer lag in your Kafka cluster, configure Sova in the `Kafka` custom resource.
-Sova exposes lag data as Prometheus metrics, which can be visualized in Grafana.
-A dedicated Grafana dashboard for Sova (`strimzi-sova.json`) is included in the xref:ref-metrics-dashboards-{context}[example Grafana dashboards] provided by Strimzi.
-The Kafka Exporter dashboard (`strimzi-kafka-exporter.json`) also works unchanged because Sova exposes the same metric names.
+To monitor consumer lag in your Kafka cluster, configure Extra Metrics in the `Kafka` custom resource.
+Extra Metrics exposes lag data as Prometheus metrics, which can be visualized in Grafana.
+A dedicated Grafana dashboard for Extra Metrics (`strimzi-sova.json`) is included in the xref:ref-metrics-dashboards-{context}[example Grafana dashboards] provided by Strimzi.
+The Kafka Exporter dashboard (`strimzi-kafka-exporter.json`) also works unchanged because Extra Metrics exposes the same metric names.
 
-IMPORTANT: Sova provides only metrics related to consumer groups and lag.
+IMPORTANT: Extra Metrics provides only metrics related to consumer groups and lag.
 To collect general Kafka metrics, configure metrics on the Kafka brokers.
 For more information, see xref:assembly-metrics-setup-{context}[].
 
@@ -21,14 +21,14 @@ For more information, see xref:assembly-metrics-setup-{context}[].
 
 * Consumer groups must be in use.
 +
-Sova relies on data from the `__consumer_offsets` topic to report consumer lag metrics.
+Extra Metrics relies on data from the `__consumer_offsets` topic to report consumer lag metrics.
 This topic only contains information if consumer groups are actively committing offsets.
 
 .Procedure
 
 . Add `extraMetrics` configuration to the `spec` section of the `Kafka` resource.
 +
-.Example configuration for deploying Sova
+.Example configuration for deploying Extra Metrics
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -76,50 +76,51 @@ spec:
           fsGroup: 0
         terminationGracePeriodSeconds: 120
     # Custom image (optional)
-    image: my-registry.io/my-org/my-sova-cluster:latest # <12>
+    image: my-registry.io/my-org/my-extra-metrics:latest # <12>
 # ...
 ----
-<1> Enables Sova. An empty object (`extraMetrics: {}`) uses default settings.
+<1> Enables Extra Metrics. An empty object (`extraMetrics: {}`) uses default settings.
 <2> Regular expression to specify consumer groups to include in metrics.
 <3> Regular expression to specify topics to include in metrics.
 <4> Regular expression to specify consumer groups to exclude from metrics.
 <5> Regular expression to specify topics to exclude from metrics.
 <6> Interval between metric collection cycles, in milliseconds. Defaults to `30000`.
-<7> Kafka Admin client options used by Sova, for example the timeout for each Admin API call (`default.api.timeout.ms`).
+<7> Kafka Admin client options used by Extra Metrics, for example the timeout for each Admin API call (`default.api.timeout.ms`).
 Properties with the following prefixes cannot be set: `ssl.`, `sasl.`, `security.`, `bootstrap.servers`, and `config.providers`.
 The exceptions are `ssl.endpoint.identification.algorithm`, `ssl.cipher.suites`, `ssl.protocol`, and `ssl.enabled.protocols`.
 Connection and security settings are configured automatically by the Cluster Operator.
-The value of `default.api.timeout.ms` must not be lower than the value of `request.timeout.ms` (`30000` by default), otherwise Sova fails to start.
+The value of `default.api.timeout.ms` must not be lower than the value of `request.timeout.ms` (`30000` by default), otherwise Extra Metrics fails to start.
 <8> CPU and memory resources to reserve.
-<9> Readiness probe to check that the Sova HTTP server is up and serving metrics.
+<9> Readiness probe to check that the Extra Metrics HTTP server is up and serving metrics.
 Readiness does not reflect the availability of the Kafka cluster or the health of metrics collection.
-<10> Liveness probe to detect and restart Sova if its JVM becomes unresponsive.
+<10> Liveness probe to detect and restart Extra Metrics if its JVM becomes unresponsive.
 <11> Template customization. Here a pod is scheduled with additional security attributes.
 <12> **ADVANCED OPTION:** Container image configuration, which is recommended only in special situations.
 
 . Apply the changes to the `Kafka` configuration.
 +
-Resources, including a `Deployment` and `Pods`, are created for Sova.
-The Sova pods expose metrics on the port named `tcp-prometheus`.
+Resources, including a `Deployment` and `Pods`, are created for Extra Metrics.
+The Extra Metrics pods expose metrics on the port named `tcp-prometheus`.
 
-. Configure Prometheus to scrape metrics from the Sova endpoint.
+. Configure Prometheus to scrape metrics from the Extra Metrics endpoint.
 +
-If you are using the example Prometheus deployment, it is already set up to discover and scrape Sova metrics.
-The `PodMonitor` resource named `kafka-resources-metrics` matches pods with the `strimzi.io/kind: Kafka` label, which includes Sova pods.
+If you are using the example Prometheus deployment, it is already set up to discover and scrape these metrics.
+The `PodMonitor` resource named `kafka-resources-metrics` matches pods with the `strimzi.io/kind: Kafka` label, which includes Extra Metrics pods.
 For more information, see xref:proc-metrics-deploying-prometheus-{context}[].
 
-. Import the Sova dashboard into Grafana to visualize consumer lag.
+. Import the Extra Metrics dashboard into Grafana to visualize consumer lag.
 +
 Import `strimzi-sova.json` from the `examples/metrics/grafana-dashboards` directory.
-The `strimzi-kafka-exporter.json` dashboard also works without modification because Sova exposes the same metric names.
+The `strimzi-kafka-exporter.json` dashboard also works without modification because Extra Metrics exposes the same metric names.
 For more information, see xref:proc-metrics-grafana-dashboard-{context}[].
 +
 TIP: Use the _Lag by consumer group_ and _Messages consumed per second_ panels to evaluate lag and the impact of tuning actions.
 
-. (Optional) Monitor the health of Sova itself.
+. (Optional) Monitor the health of Extra Metrics itself.
 +
-If Sova cannot collect metrics, for example because the Kafka cluster is unavailable, it keeps serving the last collected metrics and its pod stays ready.
-Use the following metrics to detect stale or failing collection:
+If Extra Metrics cannot collect metrics, for example because the Kafka cluster is unavailable, it keeps serving the last collected metrics and its pod stays ready.
+Use the following metrics to detect stale or failing collection.
+Extra Metrics is based on the Sova project, so these metrics use the `sova_` prefix.
 +
 * `sova_last_successful_collection_timestamp_seconds`: time of the last successful collection cycle
 * `sova_collection_failures_total`: number of collection cycles that failed
@@ -139,7 +140,7 @@ Migrate by moving the configuration to `spec.extraMetrics` using the field mappi
 
 |`groupRegex`
 |`groupRegex`
-|Regex semantics differ: Sova performs a full match against the entire group name (equivalent to anchoring with `^` and `$`), while the Go-based Kafka Exporter applies an unanchored search. Update patterns that relied on unanchored matching.
+|Regex semantics differ: Extra Metrics performs a full match against the entire group name (equivalent to anchoring with `^` and `$`), while the Go-based Kafka Exporter applies an unanchored search. Update patterns that relied on unanchored matching.
 
 |`groupExcludeRegex`
 |`groupExcludeRegex`
@@ -171,31 +172,31 @@ Migrate by moving the configuration to `spec.extraMetrics` using the field mappi
 
 |`image`
 |`image`
-|No change. The default image is now controlled by the `STRIMZI_DEFAULT_SOVA_IMAGE` environment variable in the Cluster Operator.
+|No change. The default image is now controlled by the `STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE` environment variable in the Cluster Operator.
 
 |`logging`
 |`logging`
-|Sova uses Log4j 2 inline or external logging instead of the Go severity string used by Kafka Exporter.
+|Extra Metrics uses Log4j 2 inline or external logging instead of the Go severity string used by Kafka Exporter.
 
 |`enableSaramaLogging`
 |_(removed)_
-|Sarama is a Go library used only by Kafka Exporter; Sova is JVM-based and does not use Sarama.
+|Sarama is a Go library used only by Kafka Exporter; Extra Metrics is JVM-based and does not use Sarama.
 
 |`showAllOffsets`
 |_(removed)_
-|Sova always reports metrics for active consumer groups. Disconnected consumer group data is not retained.
+|Extra Metrics always reports metrics for active consumer groups. Disconnected consumer group data is not retained.
 
 |_(none)_
 |`collectionIntervalMs`
-|New. Sets how often Sova collects metrics.
+|New. Sets how often Extra Metrics collects metrics.
 
 |_(none)_
 |`config`
-|New. Passes Kafka Admin client options, such as `default.api.timeout.ms`, to Sova.
+|New. Passes Kafka Admin client options, such as `default.api.timeout.ms`, to Extra Metrics.
 
 |===
 
-NOTE: The emitted metric names (`kafka_consumergroup_lag`, `kafka_topic_partition_current_offset`, and related metrics) are identical between Kafka Exporter and Sova.
+NOTE: The emitted metric names (`kafka_consumergroup_lag`, `kafka_topic_partition_current_offset`, and related metrics) are identical between Kafka Exporter and Extra Metrics.
 Existing Prometheus alerting rules and Grafana dashboards work unchanged after migration.
 As with Kafka Exporter, internal topics such as `__consumer_offsets` and `__transaction_state` are included in the metrics.
 To exclude them, set `topicExcludeRegex: "__.*"`.
