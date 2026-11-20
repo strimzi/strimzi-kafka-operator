@@ -14,7 +14,6 @@ import io.skodjob.kubetest4j.wait.WaitException;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.UserAuthType;
@@ -42,10 +41,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestTags.USER_CAPACITY;
@@ -59,8 +56,6 @@ import static io.strimzi.systemtest.TestTags.USER_CAPACITY;
 public class UserOperatorPerformance extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformance.class);
-
-    private static final String REPORT_DIRECTORY = "user-operator";
 
     private TestStorage testStorage;
     private UserOperatorMetricsCollector userOperatorCollector;
@@ -240,22 +235,17 @@ public class UserOperatorPerformance extends AbstractST {
             if (this.userOperatorMetricsGatherer != null) {
                 this.userOperatorMetricsGatherer.stopCollecting();
 
-                final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_OPERATION_TIMEOUT_MS, "300000");
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, workerQueueSize);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_CONTROLLER_THREAD_POOL_SIZE, controllerThreadPoolSize);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_CACHE_REFRESH_INTERVAL_MS, cacheRefreshIntervalMs);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_QUEUE_SIZE, batchQueueSize);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_SIZE, batchMaximumBlockSize);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_TIME_MS, batchMaximumBlockTimeMs);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_USER_OPERATIONS_THREAD_POOL_SIZE, controllerThreadPoolSize);
-
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_OUT_SUCCESSFUL_KAFKA_USERS_CREATED, successfulCreations);
-
-                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
-
-                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
+                this.userOperatorPerformanceReporter.capacity()
+                    .operationTimeoutMs("300000")
+                    .workQueueSize(workerQueueSize)
+                    .controllerThreadPoolSize(controllerThreadPoolSize)
+                    .cacheRefreshIntervalMs(cacheRefreshIntervalMs)
+                    .batchQueueSize(batchQueueSize)
+                    .batchMaximumBlockSize(batchMaximumBlockSize)
+                    .batchMaximumBlockTimeMs(batchMaximumBlockTimeMs)
+                    .successfulCreations(successfulCreations)
+                    .metricsHistory(this.userOperatorMetricsGatherer.getMetricsStore())
+                    .log(this.testStorage);
             }
         }
     }

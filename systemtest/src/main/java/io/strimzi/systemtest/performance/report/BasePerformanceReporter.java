@@ -5,7 +5,9 @@
 package io.strimzi.systemtest.performance.report;
 
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.performance.PerformanceConstants;
+import io.strimzi.systemtest.performance.TimeHolder;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.storage.TestStorage;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +38,14 @@ import java.util.Map;
 public abstract class BasePerformanceReporter {
 
     private static final Logger LOGGER = LogManager.getLogger(BasePerformanceReporter.class);
+
+    TemporalAccessor performanceTimestamp() {
+        return TimeHolder.getActualTime();
+    }
+
+    String performanceBaseDirectory() {
+        return Environment.PERFORMANCE_DIR;
+    }
 
     /**
      * Resolves the directory path for logging use case-specific performance data.
@@ -134,7 +144,7 @@ public abstract class BasePerformanceReporter {
      * @param clusterName       The name of the Kafka cluster.
      * @return                  A string containing the serialized YAML representation of the Kafka configuration, or an error message if the configuration cannot be serialized.
      */
-    private String serializeKafkaConfiguration(String namespace, String clusterName) {
+    String serializeKafkaConfiguration(String namespace, String clusterName) {
         Kafka kafkaResource = CrdClients.kafkaClient().inNamespace(namespace).withName(clusterName).get();
 
         // Check if the Kafka resource has deployed
