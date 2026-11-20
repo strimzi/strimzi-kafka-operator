@@ -26,6 +26,7 @@ metrics
 │   ├── strimzi-kafka.json
 |   ├── strimzi-kraft.json
 │   ├── strimzi-operators.json
+│   ├── strimzi-sova.json
 ├── grafana-install
 │   └── grafana.yaml <2>
 ├── kube-state-metrics <3>
@@ -50,6 +51,7 @@ metrics
 │    │  ├── prometheus-kafka-rules.yaml
 │    │  ├── prometheus-kafka-exporter-topic-rules.yaml
 │    │  ├── prometheus-mirrormaker2-rules.yaml
+│    │  ├── prometheus-sova-rules.yaml
 │    │  ├── prometheus-strimzi-cluster-operator-rules.yaml
 │    │  └── prometheus-strimzi-entity-operator-rules.yaml
 │    └── prometheus.yaml <9>
