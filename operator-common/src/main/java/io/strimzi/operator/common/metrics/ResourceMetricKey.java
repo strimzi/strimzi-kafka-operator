@@ -39,15 +39,13 @@ public class ResourceMetricKey extends MetricKey {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof ResourceMetricKey other) {
-            return getKey().equals(other.getKey());
-        }
-        return false;
+        // The key includes the resource name, so the comparison based on the key from the parent class is sufficient
+        return super.equals(obj);
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return super.hashCode();
     }
 
     @Override
