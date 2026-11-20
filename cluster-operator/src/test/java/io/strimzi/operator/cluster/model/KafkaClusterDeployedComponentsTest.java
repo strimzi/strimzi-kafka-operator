@@ -47,6 +47,8 @@ public class KafkaClusterDeployedComponentsTest {
                     .endEntityOperator()
                     .withNewKafkaExporter()
                     .endKafkaExporter()
+                    .withNewExtraMetrics()
+                    .endExtraMetrics()
                     .withNewCruiseControl()
                     .endCruiseControl()
                 .endSpec()
@@ -58,6 +60,7 @@ public class KafkaClusterDeployedComponentsTest {
         assertThat(components.topicOperator(), is(true));
         assertThat(components.userOperator(), is(true));
         assertThat(components.kafkaExporter(), is(true));
+        assertThat(components.extraMetrics(), is(true));
         assertThat(components.cruiseControl(), is(true));
         assertThat(components.entityOperator(), is(true));
     }
@@ -91,7 +94,7 @@ public class KafkaClusterDeployedComponentsTest {
 
         KafkaClusterDeployedComponents components = KafkaClusterDeployedComponents.fromCrd(kafka);
 
-        assertThat(components, is(new KafkaClusterDeployedComponents(true, false, false, false)));
+        assertThat(components, is(new KafkaClusterDeployedComponents(true, false, false, false, false)));
         assertThat(components.entityOperator(), is(true));
     }
 
@@ -108,7 +111,7 @@ public class KafkaClusterDeployedComponentsTest {
 
         KafkaClusterDeployedComponents components = KafkaClusterDeployedComponents.fromCrd(kafka);
 
-        assertThat(components, is(new KafkaClusterDeployedComponents(false, true, false, false)));
+        assertThat(components, is(new KafkaClusterDeployedComponents(false, true, false, false, false)));
         assertThat(components.entityOperator(), is(true));
     }
 
@@ -123,7 +126,22 @@ public class KafkaClusterDeployedComponentsTest {
 
         KafkaClusterDeployedComponents components = KafkaClusterDeployedComponents.fromCrd(kafka);
 
-        assertThat(components, is(new KafkaClusterDeployedComponents(false, false, true, false)));
+        assertThat(components, is(new KafkaClusterDeployedComponents(false, false, true, false, false)));
+        assertThat(components.entityOperator(), is(false));
+    }
+
+    @Test
+    public void testExtraMetricsOnly() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewExtraMetrics()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+
+        KafkaClusterDeployedComponents components = KafkaClusterDeployedComponents.fromCrd(kafka);
+
+        assertThat(components, is(new KafkaClusterDeployedComponents(false, false, false, true, false)));
         assertThat(components.entityOperator(), is(false));
     }
 
@@ -138,7 +156,7 @@ public class KafkaClusterDeployedComponentsTest {
 
         KafkaClusterDeployedComponents components = KafkaClusterDeployedComponents.fromCrd(kafka);
 
-        assertThat(components, is(new KafkaClusterDeployedComponents(false, false, false, true)));
+        assertThat(components, is(new KafkaClusterDeployedComponents(false, false, false, false, true)));
         assertThat(components.entityOperator(), is(false));
     }
 }
