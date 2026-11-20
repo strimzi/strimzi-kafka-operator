@@ -16,6 +16,7 @@ import io.strimzi.operator.topic.model.TopicEvent;
 import io.strimzi.operator.topic.model.TopicEvent.TopicDelete;
 import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -160,6 +161,25 @@ public class BatchingLoop {
     }
 
     /**
+     * Removes the topic from the {@link #inFlight} set together with the metric tracking the start time of its
+     * in-progress reconciliation.
+     */
+    private void removeFromInFlight(KubeRef ref) {
+        inFlight.remove(ref);
+        metricsHolder.removeReconciliationsInProgressStartTime(ref.namespace(), ref.name());
+    }
+
+    /**
+     * Removes all topics of the batch from the {@link #inFlight} set and resets the batch.
+     * Must be called while holding the lock on this {@link BatchingLoop}.
+     */
+    private void removeBatchFromInFlight(Batch batch) {
+        batch.toUpdate.stream().map(TopicEvent::toRef).forEach(this::removeFromInFlight);
+        batch.toDelete.stream().map(TopicEvent::toRef).forEach(this::removeFromInFlight);
+        batch.clear();
+    }
+
+    /**
      * A thread that services the head of the {@link #queue}.
      */
     class LoopRunnable extends Thread {
@@ -183,9 +203,18 @@ public class BatchingLoop {
             var batch = new Batch(maxBatchSize);
             var batchId = 0;
             lastLoopNs = System.nanoTime();
-            while (!runOnce(batchId, batch)) {
-                batchId++;
-                lastLoopNs = System.nanoTime();
+            try {
+                while (!runOnce(batchId, batch)) {
+                    batchId++;
+                    lastLoopNs = System.nanoTime();
+                }
+            } finally {
+                // The batch is normally removed from the inflight set at the start of the next iteration. When the
+                // loop stops, there is no next iteration, so the last batch has to be removed here.
+                synchronized (BatchingLoop.this) {
+                    LOGGER.traceOp("[Batch #{}] Removing batch from inflight on exit", batchId);
+                    removeBatchFromInFlight(batch);
+                }
             }
             LOGGER.debugOp("Exiting run()");
         }
@@ -205,9 +234,7 @@ public class BatchingLoop {
                 synchronized (BatchingLoop.this) {
                     // remove the old batch from the inflight set and reset the batch
                     LOGGER.traceOp("[Batch #{}] Removing batch from inflight", batchId - 1);
-                    batch.toUpdate.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
-                    batch.toDelete.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
-                    batch.clear();
+                    removeBatchFromInFlight(batch);
                     // fill a new batch
                     fillBatch(batchId, batch);
                 }
@@ -299,6 +326,7 @@ public class BatchingLoop {
             if (inFlight.add(ref)) {
                 // wasn't already inflight
                 LOGGER.debugOp("[Batch #{}] Adding {}", batchId, topicEvent);
+                metricsHolder.reconciliationsInProgressStartTime(ref.namespace(), ref.name()).set(Instant.now().getEpochSecond());
                 if (topicEvent instanceof TopicUpsert) {
                     batch.toUpdate.add((TopicUpsert) topicEvent);
                 } else {

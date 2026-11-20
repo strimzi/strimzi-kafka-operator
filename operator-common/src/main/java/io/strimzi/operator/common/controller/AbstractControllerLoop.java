@@ -9,6 +9,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 
+import java.time.Instant;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -152,6 +153,7 @@ public abstract class AbstractControllerLoop {
                 .scheduleAtFixedRate(() -> LOGGER.infoCr(reconciliation, "Reconciliation is in progress"), PROGRESS_WARNING_MS, PROGRESS_WARNING_MS, TimeUnit.MILLISECONDS);
         metrics().reconciliationsCounter(reconciliation.namespace()).increment(); // Increase the reconciliation counter
         Timer.Sample reconciliationTimerSample = Timer.start(metrics().metricsProvider().meterRegistry()); // Start the reconciliation timer
+        metrics().reconciliationsInProgressStartTime(reconciliation.namespace(), reconciliation.name()).set(Instant.now().getEpochSecond()); // Register the start time of the reconciliation which is in progress
 
         // Reconciliation
         try {
@@ -160,6 +162,7 @@ public abstract class AbstractControllerLoop {
             // Tasks after reconciliation
             reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace())); // Stop the reconciliation timer
             progressWarning.cancel(true); // Stop the progress warning
+            metrics().removeReconciliationsInProgressStartTime(reconciliation.namespace(), reconciliation.name()); // Remove the start time of the reconciliation which is not in progress anymore
         }
     }
 
