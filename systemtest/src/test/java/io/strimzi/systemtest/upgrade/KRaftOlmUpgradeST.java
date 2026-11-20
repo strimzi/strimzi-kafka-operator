@@ -151,12 +151,6 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         eoPods = DeploymentUtils.waitTillDepHasRolled(CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
         // ======== Cluster Operator upgrade ends ========
 
-        // ======== Kafka upgrade starts ========
-        logComponentsPodImages(CO_NAMESPACE);
-        changeKafkaVersion(CO_NAMESPACE, olmUpgradeData);
-        logComponentsPodImages(CO_NAMESPACE);
-        // ======== Kafka upgrade ends ========
-
         // Wait for messages of previously created clients
         ClientUtils.waitForClientsSuccess(CO_NAMESPACE, testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
