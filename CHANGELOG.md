@@ -22,6 +22,8 @@
 * Topic and User Operators now use a separate logger for the Apache Kafka Admin client.
   The default log level is set to INFO.
   To change the log level for the Admin client, you must configure this logger explicitly rather than relying solely on the root logger.
+* The Metrics Reporter's `allowList` configuration is not dynamically updated anymore, because of [issue with obtaining current configuration from Kafka](https://github.com/strimzi/strimzi-kafka-operator/issues/13375).
+  Changing this field will result in rolling update of the cluster.
 
 ## 1.3.0
 
