@@ -63,14 +63,15 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create the CA cert Secret in the test namespace. | Secret is present in the test namespace. |
-| 2. | Deploy Kafka with clusterCa.type=cert-manager and generateCertificateAuthority=false. | Kafka cluster reaches ready state without errors. |
-| 3. | Verify that cluster CA cert Secret has correct annotations. | ca-cert-generation=0, ca-key-generation=0, and cert-hash annotations are set. |
-| 4. | Verify that the cert-manager broker and cluster operator Secrets (-cm suffix) exist and their certificates match the corresponding Strimzi Secrets and are signed by the cert-manager CA. | cert-manager Secrets exist, their certificates match the Strimzi Secrets, and the issuer DNs match the CA subject DN. |
-| 5. | Edit the Kafka CR to change validityDays on clusterCa, causing cert-manager to re-issue broker certificates. | Kafka CR is accepted by the API server. |
-| 6. | Wait for all broker pods to roll and become ready. | All broker pods have a new UID after the rolling update. |
-| 7. | Verify that broker certificate is updated. | Broker certificate does not match the certificate captured before renewal |
-| 8. | Produce and consume messages over TLS using a KafkaUser after renewal. | Messages are successfully produced and consumed. |
+| 1. | Create the CA Secret and ClusterIssuer in the cert-manager namespace. | CA Secret and ClusterIssuer are present in the cert-manager namespace. |
+| 2. | Create the CA cert Secret in the test namespace. | Secret is present in the test namespace. |
+| 3. | Deploy Kafka with clusterCa.type=cert-manager and generateCertificateAuthority=false. | Kafka cluster reaches ready state without errors. |
+| 4. | Verify that cluster CA cert Secret has correct annotations. | ca-cert-generation=0, ca-key-generation=0, and cert-hash annotations are set. |
+| 5. | Verify that the cert-manager broker and cluster operator Secrets (-cm suffix) exist and their certificates match the corresponding Strimzi Secrets and are signed by the cert-manager CA. | cert-manager Secrets exist, their certificates match the Strimzi Secrets, and the issuer DNs match the CA subject DN. |
+| 6. | Edit the Kafka CR to change validityDays on clusterCa, causing cert-manager to re-issue broker certificates. | Kafka CR is accepted by the API server. |
+| 7. | Wait for all broker pods to roll and become ready. | All broker pods have a new UID after the rolling update. |
+| 8. | Verify that broker certificate is updated. | Broker certificate does not match the certificate captured before renewal |
+| 9. | Produce and consume messages over TLS using a KafkaUser after renewal. | Messages are successfully produced and consumed. |
 
 **Labels:**
 
@@ -110,12 +111,13 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Kafka with default Strimzi-managed CA. | Kafka cluster reaches ready state. |
-| 2. | Create the cert-manager CA cert Secret and edit the Kafka CR to switch cluster CA to cert-manager. | Kafka CR is updated. |
-| 3. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
-| 4. | Wait for CO cert to be reissued with the new cert-manager CA. | CO cert secret generation matches cluster CA cert generation. |
-| 5. | Verify broker certificates are signed by the cert-manager CA. | Broker certificate issuer DN matches cert-manager CA subject DN. |
-| 6. | Verify CA key Secret is removed. | CA key Secret is not present. |
-| 7. | Produce and consume messages over TLS after switching to cert-manager. | Messages are successfully produced and consumed. |
+| 2. | Create the CA Secret and ClusterIssuer in the cert-manager namespace. | CA Secret and ClusterIssuer are present in the cert-manager namespace. |
+| 3. | Create the cert-manager CA cert Secret and edit the Kafka CR to switch cluster CA to cert-manager. | Kafka CR is updated. |
+| 4. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
+| 5. | Wait for CO cert to be reissued with the new cert-manager CA. | CO cert secret generation matches cluster CA cert generation. |
+| 6. | Verify broker certificates are signed by the cert-manager CA. | Broker certificate issuer DN matches cert-manager CA subject DN. |
+| 7. | Verify CA key Secret is removed. | CA key Secret is not present. |
+| 8. | Produce and consume messages over TLS after switching to cert-manager. | Messages are successfully produced and consumed. |
 
 **Labels:**
 
