@@ -44,7 +44,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.METRICS;
@@ -53,6 +52,7 @@ import static io.strimzi.systemtest.resources.types.KafkaType.kafkaClient;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNotNull;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.createPatternAndCollect;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.createPatternAndCollectWithoutWait;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.waitForExtraMetricsSuccessfulCollection;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -119,8 +119,8 @@ public class ExtraMetricsST extends AbstractST {
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}", true);
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_PAYMENTS + "\"\\}", false);
 
-        // "extra-metrics" is only a prefix of the topic names, so with a full match nothing should be exposed
-        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setTopicRegex("extra-metrics"));
+        // "sova" is only a prefix of the topic names, so with a full match nothing should be exposed
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setTopicRegex("sova"));
         snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, extraMetricsName, 1, snapshot);
         waitForCollectionAfterRoll();
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}", false);
@@ -296,12 +296,7 @@ public class ExtraMetricsST extends AbstractST {
      * trivially on a freshly rolled Pod without this wait.
      */
     private void waitForCollectionAfterRoll() {
-        TestUtils.waitFor("first Extra Metrics collection cycle", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
-            extraMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-            // Every scraped Pod must have collected, so that a terminating old Pod cannot satisfy the wait
-            final List<Double> timestamps = createPatternAndCollectWithoutWait(extraMetricsCollector, "sova_last_successful_collection_timestamp_seconds");
-            return !timestamps.isEmpty() && timestamps.stream().allMatch(value -> value > 0);
-        });
+        waitForExtraMetricsSuccessfulCollection(extraMetricsCollector);
     }
 
     /**

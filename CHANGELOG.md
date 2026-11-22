@@ -23,8 +23,9 @@
 * Delegation token options (`delegation.token.` prefix) are now forbidden in the Kafka broker configuration, because Strimzi does not support delegation tokens and these options did never work properly.
 * **`spec.kafkaExporter` is deprecated.** Use `spec.extraMetrics` instead.
   Migrate by moving your `kafkaExporter` fields to `extraMetrics` using the field mapping described in the documentation.
-  Note that the Extra Metrics component performs full regex matching (anchored) against group and topic names, while the Go-based Kafka Exporter applied an unanchored search.
-  Update any regex patterns that relied on unanchored matching.
+  Note that the regular expressions for topics and consumer groups now have to match the whole name, not just a part of it.
+  For example, `topicRegex: orders` matched topics `orders` and `orders-eu` in Kafka Exporter, but matches only the topic `orders` in Extra Metrics.
+  To keep matching both topics, use `topicRegex: orders.*`.
 * The Prometheus JMX Exporter configuration from the metrics `ConfigMap` is now parsed as YAML 1.2 (using the Core schema) instead of YAML 1.1.
   Unquoted `yes`, `no`, `on`, and `off` values are not converted to booleans anymore and are passed to the JMX Exporter as strings.
   The JMX Exporter fails to start when these values are used for boolean options such as `lowercaseOutputName`, which prevents the container from starting.

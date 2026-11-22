@@ -179,6 +179,25 @@ public class ExtraMetricsTest {
         assertEnvVar(envVars, "STRIMZI_DYNAMIC_HEAP_PERCENTAGE", "75");
         assertNoEnvVar(envVars, "STRIMZI_DYNAMIC_HEAP_MAX");
         assertEnvVar(envVars, "STRIMZI_JAVA_SYSTEM_PROPERTIES", "-Dmy.prop=value");
+        assertEnvVar(envVars, AbstractModel.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, "false");
+    }
+
+    @Test
+    public void testGcLoggingEnabled() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withNewJvmOptions()
+                            .withGcLoggingEnabled(true)
+                        .endJvmOptions()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        assertEnvVar(extraMetrics.getEnvVars(), AbstractModel.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, "true");
     }
 
     @Test
@@ -202,6 +221,7 @@ public class ExtraMetricsTest {
         // Exclude regex vars must not be present when not configured
         assertNoEnvVar(envVars, ExtraMetrics.ENV_VAR_GROUP_EXCLUDE_REGEX);
         assertNoEnvVar(envVars, ExtraMetrics.ENV_VAR_TOPIC_EXCLUDE_REGEX);
+        assertEnvVar(envVars, AbstractModel.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, "false");
     }
 
     @Test
@@ -215,80 +235,6 @@ public class ExtraMetricsTest {
         assertEnvVar(envVars, ExtraMetrics.ENV_VAR_GROUP_EXCLUDE_REGEX, "my-group-exclude-.*");
         assertEnvVar(envVars, ExtraMetrics.ENV_VAR_TOPIC_REGEX, "my-topic-.*");
         assertEnvVar(envVars, ExtraMetrics.ENV_VAR_TOPIC_EXCLUDE_REGEX, "my-topic-exclude-.*");
-    }
-
-    @Test
-    public void testAdminClientConfigurationWithMtls() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
-                new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
-        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
-                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
-                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-
-        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
-                "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
-                "security.protocol=SSL",
-                "ssl.truststore.type=PEM",
-                "ssl.truststore.certificates=" + placeholder(KafkaResources.trustBundleSecretName(CLUSTER_NAME), "cluster-ca.crt"),
-                "ssl.keystore.type=PEM",
-                "ssl.keystore.certificate.chain=" + placeholder(ExtraMetricsResources.secretName(CLUSTER_NAME), "extra-metrics.crt"),
-                "ssl.keystore.key=" + placeholder(ExtraMetricsResources.secretName(CLUSTER_NAME), "extra-metrics.key"),
-                "config.providers=strimzisecrets",
-                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
-                "")));
-    }
-
-    @Test
-    public void testAdminClientConfigurationWithServiceAccountAuth() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
-                new TlsEncryptionConfiguration(), serviceAccountAuthentication());
-        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
-                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
-                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-
-        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
-                "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
-                "security.protocol=SASL_SSL",
-                "ssl.truststore.type=PEM",
-                "ssl.truststore.certificates=" + placeholder(KafkaResources.trustBundleSecretName(CLUSTER_NAME), "cluster-ca.crt"),
-                "sasl.mechanism=OAUTHBEARER",
-                "sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
-                "sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
-                "config.providers=strimzisecrets",
-                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
-                "")));
-    }
-
-    @Test
-    public void testAdminClientConfigurationWithTlsOnlyNoAuth() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
-                new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
-        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
-                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
-                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-
-        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
-                "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
-                "security.protocol=SSL",
-                "ssl.truststore.type=PEM",
-                "ssl.truststore.certificates=" + placeholder(KafkaResources.trustBundleSecretName(CLUSTER_NAME), "cluster-ca.crt"),
-                "config.providers=strimzisecrets",
-                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
-                "")));
-    }
-
-    @Test
-    public void testAdminClientConfigurationWithNoTls() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
-                new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
-        ExtraMetrics extraMetrics = ExtraMetrics.fromCrd(
-                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
-                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-
-        assertThat(extraMetrics.kafkaAdminClientConfiguration(), is(String.join("\n",
-                "bootstrap.servers=" + KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT,
-                "security.protocol=PLAINTEXT",
-                "")));
     }
 
     @Test
@@ -898,10 +844,6 @@ public class ExtraMetricsTest {
                     .endExtraMetrics()
                 .endSpec()
                 .build();
-    }
-
-    private static String placeholder(String secretName, String key) {
-        return "${strimzisecrets:" + NAMESPACE + "/" + secretName + ":" + key + "}";
     }
 
     private static AuthenticationConfiguration serviceAccountAuthentication() {

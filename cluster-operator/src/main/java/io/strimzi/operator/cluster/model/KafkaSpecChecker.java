@@ -218,7 +218,8 @@ public class KafkaSpecChecker {
 
     /**
      * Checks if both kafkaExporter and extraMetrics are configured in KafkaSpec. When both are configured,
-     * adds a status warning indicating that kafkaExporter is deprecated and extraMetrics should be used instead.
+     * adds a status warning that scraping both at the same time might result in duplicate or conflicting metrics.
+     * The deprecation of kafkaExporter itself is reported automatically through the {@code @DeprecatedProperty} annotation.
      *
      * @param warnings List to add a warning to, if appropriate.
      */
@@ -226,7 +227,7 @@ public class KafkaSpecChecker {
     private void checkKafkaExporterAndExtraMetrics(List<Condition> warnings) {
         if (kafkaSpec.getKafkaExporter() != null && kafkaSpec.getExtraMetrics() != null) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaExporterAndExtraMetrics",
-                    "Both spec.kafkaExporter and spec.extraMetrics are configured. kafkaExporter is deprecated and extraMetrics should be used instead."));
+                    "Both spec.kafkaExporter and spec.extraMetrics are configured. They export metrics with the same names, so scraping both at the same time might result in duplicate or conflicting metrics."));
         }
     }
 }

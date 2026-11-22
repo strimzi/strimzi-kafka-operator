@@ -790,7 +790,7 @@ public class KafkaSpecCheckerTest {
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaExporterAndExtraMetrics"));
         assertThat(warning.getStatus(), is("True"));
-        assertThat(warning.getMessage(), is("Both spec.kafkaExporter and spec.extraMetrics are configured. kafkaExporter is deprecated and extraMetrics should be used instead."));
+        assertThat(warning.getMessage(), is("Both spec.kafkaExporter and spec.extraMetrics are configured. They export metrics with the same names, so scraping both at the same time might result in duplicate or conflicting metrics."));
     }
 
     @Test

@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.StrimziProbeBuilder;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
@@ -98,9 +99,6 @@ public class ExtraMetrics extends AbstractModel implements SupportsLogging {
     protected static final String ENV_VAR_MANAGEMENT_PORT = "STRIMZI_MANAGEMENT_PORT";
     protected static final String ENV_VAR_KAFKA_ADMIN_CLIENT_CONFIGURATION = "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION";
     protected static final String ENV_VAR_COLLECT_INTERVAL_MS = "STRIMZI_COLLECT_INTERVAL_MS";
-
-    // Placeholder used to load the values from Kubernetes Secrets using the Kubernetes Secret config provider
-    private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
 
     protected String groupRegex = ".*";
     protected String topicRegex = ".*";
@@ -291,49 +289,14 @@ public class ExtraMetrics extends AbstractModel implements SupportsLogging {
 
     /**
      * Generates the Kafka Admin client configuration in the Java properties format. It is passed to Extra Metrics as is.
-     * The certificates are not part of the configuration. They are loaded by the Kubernetes Secret config provider.
      *
      * @return  Kafka Admin client configuration as a multi-line string with key=value pairs
      */
-    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class names used in strings
     /* test */ String kafkaAdminClientConfiguration() {
-        boolean tls = isTlsEnabled();
-        boolean sasl = securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration;
-
-        StringBuilder config = new StringBuilder();
-        config.append("bootstrap.servers=").append(KafkaResources.bootstrapServiceName(cluster)).append(":").append(KafkaCluster.REPLICATION_PORT).append("\n");
-        config.append("security.protocol=").append(sasl ? "SASL_" : "").append(tls ? "SSL" : "PLAINTEXT").append("\n");
-
-        if (tls) {
-            config.append("ssl.truststore.type=PEM\n");
-            config.append("ssl.truststore.certificates=").append(secretPlaceholder(KafkaResources.trustBundleSecretName(cluster), "cluster-ca.crt")).append("\n");
-        }
-
-        if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
-            // mTLS can be used only with TLS encryption
-            config.append("ssl.keystore.type=PEM\n");
-            config.append("ssl.keystore.certificate.chain=").append(secretPlaceholder(ExtraMetricsResources.secretName(cluster), "extra-metrics.crt")).append("\n");
-            config.append("ssl.keystore.key=").append(secretPlaceholder(ExtraMetricsResources.secretName(cluster), "extra-metrics.key")).append("\n");
-        } else if (sasl) {
-            config.append("sasl.mechanism=OAUTHBEARER\n");
-            config.append("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler\n");
-            config.append("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";\n");
-        }
-
-        if (tls) {
-            // The config provider is needed only when some values are loaded from Secrets
-            config.append("config.providers=strimzisecrets\n");
-            config.append("config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider\n");
-        }
-
-        // User-provided options go last. Forbidden options (connection, security and config providers) were already
-        // filtered out, and getConfiguration() escapes keys and values in the properties format, so a user value
-        // cannot inject additional lines that would override anything generated above.
-        if (adminClientConfiguration != null) {
-            config.append(adminClientConfiguration.getConfiguration());
-        }
-
-        return config.toString();
+        return new ExtraMetricsConfigurationBuilder(namespace, cluster)
+                .withSecurity(securityContext)
+                .withUserConfiguration(adminClientConfiguration)
+                .build();
     }
 
     private boolean isTlsEnabled() {
@@ -386,10 +349,6 @@ public class ExtraMetrics extends AbstractModel implements SupportsLogging {
         return ExtraMetricsResources.roleBindingName(cluster);
     }
 
-    private String secretPlaceholder(String secretName, String key) {
-        return String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, secretName, key);
-    }
-
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
@@ -412,6 +371,7 @@ public class ExtraMetrics extends AbstractModel implements SupportsLogging {
         JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
         JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
         JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(jvmOptions != null ? jvmOptions.isGcLoggingEnabled() : JvmOptions.DEFAULT_GC_LOGGING_ENABLED)));
 
         // Shared environment variables
         varList.addAll(sharedEnvironmentProvider.variables());

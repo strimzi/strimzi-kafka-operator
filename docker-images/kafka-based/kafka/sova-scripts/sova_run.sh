@@ -21,6 +21,13 @@ if [ -n "$KAFKA_JVM_PERFORMANCE_OPTS" ]; then
     JAVA_OPTS="${JAVA_OPTS} ${KAFKA_JVM_PERFORMANCE_OPTS}"
 fi
 
+# Configure GC logging if enabled (script is shared with the Kafka image and runs from KAFKA_HOME)
+# shellcheck source=../scripts/set_kafka_gc_options.sh
+. ./set_kafka_gc_options.sh
+if [ -n "${KAFKA_GC_LOG_OPTS// /}" ]; then
+    JAVA_OPTS="${JAVA_OPTS} ${KAFKA_GC_LOG_OPTS}"
+fi
+
 JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError"
 
 if [ "$FIPS_MODE" = "disabled" ]; then
