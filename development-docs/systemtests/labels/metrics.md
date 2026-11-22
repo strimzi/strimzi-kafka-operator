@@ -12,7 +12,6 @@ Proper verification of metrics is crucial for observability, debugging, and perf
 - [testClusterOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testCollectionTuning](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
 - [testCruiseControlMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
-- [testDynamicReconfigurationAllowList](../io.strimzi.systemtest.metrics.StrimziMetricsReporterST.md)
 - [testEnableDisable](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
 - [testJvmAndMemoryOptions](../io.strimzi.systemtest.metrics.ExtraMetricsST.md)
 - [testKafkaAndKafkaConnectWithJMX](../io.strimzi.systemtest.metrics.JmxST.md)
