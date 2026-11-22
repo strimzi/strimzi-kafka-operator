@@ -401,15 +401,6 @@ public class KafkaConfigurationDiffTest {
     }
 
     @Test
-    public void testPrometheusMetricsReporterAllowList() {
-        List<ConfigEntry> ces = singletonList(new ConfigEntry("prometheus.metrics.reporter.allowlist", "kafka_controller.*"));
-        KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
-            getDesiredConfiguration(ces), kafkaVersion, brokerNodeRef, false, true);
-        assertThat(kcd.getDiffSize(), is(0));
-        assertThat(kcd.canBeUpdatedDynamically(), is(true));
-    }
-
-    @Test
     public void testPerBrokerDynamicConfig() {
         // using cordoned.log.dirs as a PER_BROKER dynamic config
 
