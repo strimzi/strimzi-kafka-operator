@@ -4,85 +4,107 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
- * Rebalance options for full Kafka cluster rebalance
+ * Holds Cruise Control rebalance request parameters: config entries become query parameters,
+ * and nodes identify the target brokers/disks for the operation.
  */
-public class RebalanceOptions extends AbstractRebalanceOptions {
-    /** Whether to balance load between disks within brokers (requires JBOD Kafka deployment) */
-    private final boolean rebalanceDisk;
-    /** The upper bound of ongoing replica movements between disks within each broker */
-    private final int concurrentIntraBrokerPartitionMovements;
+public class RebalanceOptions {
+    private final List<RebalanceNode> nodes;
+    private final Map<String, String> config;
 
     /**
-     * Checks if intra-broker rebalance is enabled.
+     * Gets the list of target nodes for the rebalance operation.
      *
-     * @return  True if intra-broker rebalance is enabled. False otherwise.
+     * @return  List of target nodes, or null if not set
      */
-    public boolean isRebalanceDisk() {
-        return rebalanceDisk;
+    public List<RebalanceNode> getNodes() {
+        return nodes;
     }
 
     /**
-     * Gets the upper bound of concurrent intra-broker partition movements.
+     * Gets the Cruise Control REST API parameters passed through from {@code spec.config}.
      *
-     * @return  Number of concurrent intra-broker partition movements
+     * @return  Map of config parameters, or null if not set
      */
-    public int getConcurrentIntraBrokerPartitionMovements() {
-        return concurrentIntraBrokerPartitionMovements;
+    public Map<String, String> getConfig() {
+        return config;
     }
 
-    RebalanceOptions(RebalanceOptionsBuilder builder) {
-        super(builder);
-        this.rebalanceDisk = builder.rebalanceDisk;
-        this.concurrentIntraBrokerPartitionMovements = builder.concurrentIntraPartitionMovements;
+    private RebalanceOptions(RebalanceOptionsBuilder builder) {
+        this.config = builder.config;
+        this.nodes = builder.nodes;
     }
 
     /**
-     * Builder for the full rebalance options
+     * Builder for RebalanceOptions
      */
-    public static class RebalanceOptionsBuilder extends AbstractRebalanceOptionsBuilder<RebalanceOptionsBuilder, RebalanceOptions> {
-        private boolean rebalanceDisk;
-        private int concurrentIntraPartitionMovements;
+    public static class RebalanceOptionsBuilder {
+        private List<RebalanceNode> nodes;
+        private Map<String, String> config;
 
         /**
          * Constructor
          */
         public RebalanceOptionsBuilder() {
-            rebalanceDisk = false;
-            concurrentIntraPartitionMovements = 0;
+            nodes = null;
+            config = new LinkedHashMap<>();
+            config.put(CruiseControlParameters.DRY_RUN.toString(), "true");
+            config.put(CruiseControlParameters.VERBOSE.toString(), "false");
+            config.put(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.toString(), "false");
         }
 
-        @Override
-        protected RebalanceOptionsBuilder self() {
+        /**
+         * Sets Cruise Control REST API parameters to be passed through as query parameters
+         *
+         * @param config     Map of config parameters
+         *
+         * @return  Instance of this builder
+         */
+        public RebalanceOptionsBuilder withConfig(Map<String, String> config) {
+            this.config = config != null ? new LinkedHashMap<>(config) : null;
             return this;
         }
 
         /**
-         * Enabled intra-broker rebalancing
+         * Adds a single Cruise Control REST API parameter to the config
+         *
+         * @param key       Parameter key
+         * @param value     Parameter value
          *
          * @return  Instance of this builder
          */
-        public RebalanceOptionsBuilder withRebalanceDisk() {
-            this.rebalanceDisk = true;
-            return self();
+        public RebalanceOptionsBuilder withConfigEntry(String key, String value) {
+            if (this.config == null) {
+                this.config = new LinkedHashMap<>();
+            }
+            this.config.put(key, value);
+            return this;
         }
 
         /**
-         * Number of concurrent intra-broker partition movements
+         * Sets the target nodes for the rebalance operation
          *
-         * @param movements Number of intra-broker partition movements
+         * @param nodes     List of target nodes
          *
          * @return  Instance of this builder
          */
-        public RebalanceOptionsBuilder withConcurrentIntraPartitionMovements(int movements) {
-            if (movements < 0) {
-                throw new IllegalArgumentException("The max number of concurrent intra partition movements should be greater than zero");
-            }
-            this.concurrentIntraPartitionMovements = movements;
-            return self();
+        public RebalanceOptionsBuilder withNodes(List<RebalanceNode> nodes) {
+            this.nodes = nodes;
+            return this;
         }
 
-        @Override
+        /**
+         * Builds and returns the rebalance options.
+         *
+         * @return  The built RebalanceOptions instance
+         */
         public RebalanceOptions build() {
             return new RebalanceOptions(this);
         }

@@ -11,9 +11,14 @@
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
 * Use Java 25 as the runtime for all containers (leaving the language level at Java 21) for supporting Post-Quantum Hybrid Key Exchange
 * Add support for running an automatic rebalancing when a goal violation is detected by Cruise Control
+* Consolidate the `KafkaRebalance` API for extensibility with new `spec.config` and `spec.nodes` fields
 
 ### Major changes, deprecations, and removals
 
+* The `KafkaRebalance` custom resource API has been consolidated for extensibility.
+  The new `spec.config` map replaces individual primitive fields (e.g. `goals`, `skipHardGoalCheck`, `replicationThrottle`) for passing Cruise Control REST API parameters.
+  The new `spec.nodes` field replaces the deprecated `brokers` and `moveReplicasOffVolumes` fields.
+  All deprecated fields continue to work during the transition period and will be removed in API version v2.
 * Delegation token options (`delegation.token.` prefix) are now forbidden in the Kafka broker configuration, because Strimzi does not support delegation tokens and these options did never work properly.
 * The Prometheus JMX Exporter configuration from the metrics `ConfigMap` is now parsed as YAML 1.2 (using the Core schema) instead of YAML 1.1.
   Unquoted `yes`, `no`, `on`, and `off` values are not converted to booleans anymore and are passed to the JMX Exporter as strings.

@@ -176,8 +176,8 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   mode: remove-disks
-  moveReplicasOffVolumes:
-    - brokerId: 0 # <1> 
+  nodes:
+    - brokerId: 0 # <1>
       volumeIds: [1, 2] # <2>
 ----
 <1> The broker from which to reassign partitions.
@@ -199,7 +199,7 @@ metadata:
     strimzi.io/rebalance-auto-approval: "true"  
 spec:
   mode: remove-disks
-  moveReplicasOffVolumes:
+  nodes:
     - brokerId: 0
       volumeIds: [1, 2]
 ----
@@ -226,8 +226,8 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   mode: remove-disks
-  moveReplicasOffVolumes:
-    - brokerId: 0 
+  nodes:
+    - brokerId: 0
       volumeIds: [1, 2]
 status:
   - lastTransitionTime: "2024-11-13T06:55:42.217794891Z"

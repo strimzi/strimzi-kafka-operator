@@ -15,4 +15,3 @@ spec:
   - "MinTopicLeadersPerBrokerGoal"
   - "NetworkOutboundCapacityGoal"
   - "ReplicaCapacityGoal"
-  skipHardGoalCheck: false

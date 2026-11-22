@@ -27,7 +27,6 @@ public class PathBuilderTest {
     private static final List<String> GOALS = Arrays.asList("goal.one", "goal.two", "goal.three", "goal.four", "goal.five");
 
     private String getExpectedRebalanceString() {
-
         StringBuilder expectedQuery = new StringBuilder(
                 CruiseControlEndpoints.REBALANCE + "?" +
                         CruiseControlParameters.JSON + "=true&" +
@@ -45,16 +44,13 @@ public class PathBuilderTest {
             }
         }
 
-        expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8) + "&");
-        expectedQuery.append(CruiseControlParameters.REBALANCE_DISK + "=false");
-
+        expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8));
         return expectedQuery.toString();
     }
     @Test
     public void testQueryStringPair() {
 
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
-                .withParameter(CruiseControlParameters.JSON, "true")
                 .withParameter(CruiseControlParameters.DRY_RUN, "true")
                 .withParameter(CruiseControlParameters.VERBOSE, "false")
                 .withParameter(CruiseControlParameters.REBALANCE_DISK, "false")
@@ -68,13 +64,11 @@ public class PathBuilderTest {
     public void testQueryStringList() {
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
-                .withParameter(CruiseControlParameters.JSON, "true")
                 .withParameter(CruiseControlParameters.DRY_RUN, "false")
                 .withParameter(CruiseControlParameters.VERBOSE, "true")
                 .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
                 .withParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
-                .withParameter(CruiseControlParameters.GOALS, GOALS)
-                .withParameter(CruiseControlParameters.REBALANCE_DISK, "false")
+                .withParameter(CruiseControlParameters.GOALS, String.join(",", GOALS))
                 .build();
 
 
@@ -84,17 +78,16 @@ public class PathBuilderTest {
 
     @Test
     public void testQueryRebalanceOptions() {
-
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
-                .withVerboseResponse()
-                .withFullRun()
-                .withExcludedTopics("test-.*")
-                .withGoals(GOALS)
-                .build();
+            .withConfigEntry(CruiseControlParameters.DRY_RUN.toString(), "false")
+            .withConfigEntry(CruiseControlParameters.VERBOSE.toString(), "true")
+            .withConfigEntry(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.toString(), "false")
+            .withConfigEntry(CruiseControlParameters.EXCLUDED_TOPICS.toString(), "test-.*")
+            .withConfigEntry(CruiseControlParameters.GOALS.toString(), String.join(",", GOALS))
+            .build();
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
-                .withParameter(CruiseControlParameters.JSON, "true")
-                .withRebalanceParameters(options).build();
+                .withParameters(options).build();
 
         assertThat(path, is(getExpectedRebalanceString()));
     }
