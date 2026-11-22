@@ -222,6 +222,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * @param templateName  Name of the KafkaRebalance template to validate
      * @return CompletionStage with the list of missing goals - empty list means validation passed
      */
+    @SuppressWarnings("deprecation")
     public CompletionStage<List<String>> validateTemplateGoals(String templateName) {
         return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), templateName)
                 .thenApply(template -> {

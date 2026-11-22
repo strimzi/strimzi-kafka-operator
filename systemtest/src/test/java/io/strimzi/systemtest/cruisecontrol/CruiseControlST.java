@@ -24,13 +24,14 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfigurationBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNodeBuilder;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -269,7 +270,8 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
 
         // updating the KafkaRebalance resource by configuring replication throttle
-        KafkaRebalanceUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000));
+        KafkaRebalanceUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            kafkaRebalance -> kafkaRebalance.getSpec().getConfig().put(CruiseControlParameters.REPLICATION_THROTTLE.toString(), "100000"));
 
         // the resource moved to `ProposalReady` state
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
@@ -828,9 +830,9 @@ public class CruiseControlST extends AbstractST {
 
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        final List<BrokerAndVolumeIds> brokersWithRemovedVolumes = Arrays.asList(
-            new BrokerAndVolumeIdsBuilder().withBrokerId(0).withVolumeIds(Arrays.asList(1, 2)).build(),
-            new BrokerAndVolumeIdsBuilder().withBrokerId(2).withVolumeIds(Arrays.asList(1)).build()
+        final List<RebalanceNode> brokersWithRemovedVolumes = Arrays.asList(
+            new RebalanceNodeBuilder().withBrokerId(0).withVolumeIds(Arrays.asList(1, 2)).build(),
+            new RebalanceNodeBuilder().withBrokerId(2).withVolumeIds(Arrays.asList(1)).build()
         );
 
         final Map<String, Long> initialDataDirSizes = KafkaTopicUtils.getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
