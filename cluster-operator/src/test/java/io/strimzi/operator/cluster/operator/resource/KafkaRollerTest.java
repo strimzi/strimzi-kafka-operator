@@ -62,6 +62,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
@@ -114,16 +115,18 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollsUnreadyNodesFirst() {
-        Set<NodeRef> nodes = createNodes(broker(0), broker(1), controller(2), controller(3), controller(4));
+        Set<NodeRef> nodes = createNodes(broker(0), broker(1),
+                controller(2), controller(3), controller(4),
+                combined(5), combined(6));
 
         MockPodOperator pods = new MockPodOperator().unready(1, 3);
-        Admin admin = mockAdmin(4, List.of(2, 3, 4));
+        Admin admin = mockAdmin(4, List.of(2, 3, 4, 5, 6));
 
         createRoller(nodes, pods.operator(), admin)
                 .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                 .toCompletableFuture().join();
 
-        assertThat(pods.restarted(), is(List.of(3, 2, 4, 1, 0)));
+        assertThat(pods.restarted(), is(List.of(3, 2, 5, 6, 4, 1, 0)));
     }
 
     @Test
@@ -139,11 +142,19 @@ public class KafkaRollerTest {
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.FatalProblem.class));
-        assertThat(e.getCause().getMessage(), is("Error while waiting for restarted pod c-kafka-1 to become ready"));
+        assertThat(e.getCause().getMessage(), is("Error while waiting for restarted pod c-controllers-1 to become ready"));
         // Controller 0 was restarted and controller 1 failed. Controller 2 and the brokers were never restarted.
         assertThat(pods.restarted(), is(List.of(0, 1)));
         // Only the controller admin client was created, as the brokers were never reached, and it is closed on failure
         verify(admin).close(any(Duration.class));
+    }
+
+    private static Stream<Arguments> adminClientCreationFailures() {
+        return Stream.of(
+                Arguments.of("controller nodes, controller admin client fails", createNodes(controller(0), controller(1), controller(2)), true),
+                Arguments.of("broker nodes, broker admin client fails", createNodes(broker(0), broker(1), broker(2)), false),
+                Arguments.of("combined nodes, controller admin client fails", createNodes(combined(0), combined(1), combined(2)), true),
+                Arguments.of("combined nodes, broker admin client fails", createNodes(combined(0), combined(1), combined(2)), false));
     }
 
     /**
@@ -179,16 +190,8 @@ public class KafkaRollerTest {
 
         // The restart is forced, so the active controller is not deferred and the nodes are rolled in order
         assertThat(pods.restarted(), is(List.of(0, 1, 2)));
-        List.of(0, 1, 2).forEach(nodeId ->
-                assertThat(reasons.get(KafkaResources.kafkaPodName(CLUSTER, nodeId)).getReasons(), is(Set.of(RestartReason.POD_UNRESPONSIVE))));
-    }
-
-    private static Stream<Arguments> adminClientCreationFailures() {
-        return Stream.of(
-                Arguments.of("controller nodes, controller admin client fails", createNodes(controller(0), controller(1), controller(2)), true),
-                Arguments.of("broker nodes, broker admin client fails", createNodes(broker(0), broker(1), broker(2)), false),
-                Arguments.of("combined nodes, controller admin client fails", createNodes(combined(0), combined(1), combined(2)), true),
-                Arguments.of("combined nodes, broker admin client fails", createNodes(combined(0), combined(1), combined(2)), false));
+        nodes.forEach(node ->
+                assertThat(reasons.get(node.podName()).getReasons(), is(Set.of(RestartReason.POD_UNRESPONSIVE))));
     }
 
     @Test
@@ -262,6 +265,21 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testControllersRollableWithMajorityOfQuorum() {
+        MockPodOperator pods = new MockPodOperator();
+        Admin admin =  mockAdmin(2, List.of(0, 1, 2, 3, 4));
+        // Controller 1 is behind the active controller and never catches up
+        mockLaggingController(admin, () -> true, 2, List.of(0, 1, 2, 3, 4), 1);
+
+        createRoller(createNodes(controller(0), controller(1), controller(2), controller(3), controller(4)),
+                pods.operator(), admin)
+                .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
+                .toCompletableFuture().join();
+
+        assertThat(pods.restarted(), is(List.of(0, 1, 3, 4, 2)));
+    }
+
+    @Test
     public void testControllersNeverRollable() {
         MockPodOperator pods = new MockPodOperator();
         Admin admin =  mockAdmin(2, List.of(0, 1, 2));
@@ -274,7 +292,7 @@ public class KafkaRollerTest {
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.UnforceableProblem.class));
-        assertThat(e.getCause().getMessage(), is("Pod c-kafka-0 cannot be updated right now."));
+        assertThat(e.getCause().getMessage(), is("Pod c-controllers-0 cannot be updated right now."));
         // Only 1 (the lagging controller) is restarted.
         assertThat(pods.restarted(), is(List.of(1)));
     }
@@ -291,7 +309,7 @@ public class KafkaRollerTest {
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.UnforceableProblem.class));
-        assertThat(e.getCause().getMessage(), is("Pod c-kafka-0 cannot be updated right now."));
+        assertThat(e.getCause().getMessage(), is("Pod c-combined-0 cannot be updated right now."));
         // Only 1 (the lagging controller) is restarted.
         assertThat(pods.restarted(), is(List.of(1)));
     }
@@ -308,7 +326,8 @@ public class KafkaRollerTest {
                         QuorumInfo.ReplicaState voter = mock(QuorumInfo.ReplicaState.class);
                         when(voter.replicaId()).thenReturn(id);
                         if (id == laggingId && lagging.getAsBoolean()) {
-                            when(voter.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(1000L));
+                            // the given controller is lagging by 3000 (the default timeout is 2000) as long as the given condition holds
+                            when(voter.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(7000L));
                         } else {
                             when(voter.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(10000L));
                         }
@@ -328,35 +347,35 @@ public class KafkaRollerTest {
     @Test
     public void testCombinedNotInitiallyRollableBecauseOfAvailability() {
         MockPodOperator pods = new MockPodOperator();
-        Admin admin = mockAdmin(2, List.of(0, 1, 2));
-        mockUnderReplicatedTopic(admin, () -> pods.restarted().isEmpty(), 0);
+        Admin admin = mockAdmin(1, List.of(0, 1, 2));
+        mockUnderReplicatedTopic(admin, () -> pods.restarted().isEmpty());
 
         createRoller(createNodes(combined(0), combined(1), combined(2)), pods.operator(), admin)
                 .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                 .toCompletableFuture().join();
 
-        assertThat(pods.restarted(), is(List.of(1, 0, 2)));
+        assertThat(pods.restarted(), is(List.of(2, 0, 1)));
     }
 
     @Test
     public void testBrokerNotInitiallyRollable() {
         MockPodOperator pods = new MockPodOperator();
-        Admin admin = mockAdmin(2, List.of());
-        mockUnderReplicatedTopic(admin, () -> pods.restarted().isEmpty(), 0);
+        Admin admin = mockAdmin(3, List.of());
+        mockUnderReplicatedTopic(admin, () -> pods.restarted().isEmpty());
 
         createRoller(createNodes(broker(0), broker(1), broker(2)), pods.operator(), admin)
                 .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                 .toCompletableFuture().join();
 
-        assertThat(pods.restarted(), is(List.of(1, 2, 0)));
+        assertThat(pods.restarted(), is(List.of(2, 0, 1)));
     }
 
     @Test
     public void testBrokerNeverRollable() {
         MockPodOperator pods = new MockPodOperator();
-        Admin admin = mockAdmin(2, List.of());
+        Admin admin = mockAdmin(3, List.of());
         // Broker 0 is in the in-sync replicas of a topic that has no more in-sync
-        mockUnderReplicatedTopic(admin, () -> true, 0);
+        mockUnderReplicatedTopic(admin, () -> true);
 
         CompletionException e = assertThrows(CompletionException.class, () ->
                 createRoller(createNodes(broker(0), broker(1), broker(2)), pods.operator(), admin)
@@ -364,16 +383,16 @@ public class KafkaRollerTest {
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.UnforceableProblem.class));
-        assertThat(e.getCause().getMessage(), is("Pod c-kafka-0 cannot be updated right now."));
+        assertThat(e.getCause().getMessage(), is("Pod c-brokers-0 cannot be updated right now."));
         // The other brokers have no replicas of the topic
-        assertThat(pods.restarted(), is(List.of(1, 2)));
+        assertThat(pods.restarted(), is(List.of(2)));
     }
 
     @Test
     public void testCombinedNeverRollableBecauseOfAvailability() {
         MockPodOperator pods = new MockPodOperator();
-        Admin admin = mockAdmin(2, List.of(0, 1, 2));
-        mockUnderReplicatedTopic(admin, () -> true, 0);
+        Admin admin = mockAdmin(1, List.of(0, 1, 2));
+        mockUnderReplicatedTopic(admin, () -> true);
 
         CompletionException e = assertThrows(CompletionException.class, () ->
                 createRoller(createNodes(combined(0), combined(1), combined(2)), pods.operator(), admin)
@@ -381,23 +400,24 @@ public class KafkaRollerTest {
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.UnforceableProblem.class));
-        assertThat(e.getCause().getMessage(), is("Pod c-kafka-0 cannot be updated right now."));
-        assertThat(pods.restarted(), is(List.of(1, 2)));
+        assertThat(e.getCause().getMessage(), is("Pod c-combined-0 cannot be updated right now."));
+        assertThat(pods.restarted(), is(List.of(2)));
     }
 
 
     /**
-     * Adds a topic that has the given broker in its in-sync replicas, with the minimum in-sync replicas as the
-     * only other member. Restarting the broker would drop the topic below the minimum, so the broker cannot be
-     * rolled for as long as the given condition holds.
+     * Adds a topic that has broker 0, 1 and 2 in its replicas, but 0 and 1 in its in-sync replicas,
+     * which is the minimum number of in-sync replicas.
+     * Restarting the broker 0 or 1 would drop the topic below the minimum, so they cannot be rolled
+     * for as long as the given condition holds. Since 2 is out of sync anyway, it can be rolled.
      */
-    private static void mockUnderReplicatedTopic(Admin admin, BooleanSupplier underReplicated, int blockedId) {
+    private static void mockUnderReplicatedTopic(Admin admin, BooleanSupplier underReplicated) {
         ListTopicsResult listTopicsResult = mock(ListTopicsResult.class);
         when(listTopicsResult.names()).thenReturn(KafkaFuture.completedFuture(Set.of("t")));
         when(admin.listTopics(any(ListTopicsOptions.class))).thenReturn(listTopicsResult);
 
         when(admin.describeTopics(anyCollection())).thenAnswer(invocation -> {
-            List<Node> replicas = List.of(new Node(blockedId, "host", 9092), new Node(100, "host", 9092), new Node(101, "host", 9092));
+            List<Node> replicas = List.of(new Node(0, "host", 9092), new Node(1, "host", 9092), new Node(2, "host", 9092));
             List<Node> isr = underReplicated.getAsBoolean() ? replicas.subList(0, 2) : replicas;
             TopicDescription topic = new TopicDescription("t", false, List.of(new TopicPartitionInfo(0, replicas.getFirst(), replicas, isr)));
             DescribeTopicsResult result = mock(DescribeTopicsResult.class);
@@ -406,18 +426,26 @@ public class KafkaRollerTest {
         });
     }
 
-    @Test
-    public void testNodeInLogRecoveryIsNotRolled() {
+    private static Stream<Arguments> nodesInRecoveryState() {
+        return Stream.of(
+                Arguments.of("broker node is in recovery state", createNodes(broker(0), broker(1), broker(2))),
+                Arguments.of("combined node is in recovery state", createNodes(combined(0), combined(1), combined(2))));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("nodesInRecoveryState")
+    public void testNodeInLogRecoveryIsNotRolled(String description, Set<NodeRef> nodes) {
         MockPodOperator pods = new MockPodOperator().neverReady(0);
         BrokerState recovery = new BrokerState(2, Map.of("remainingLogsToRecover", 10, "remainingSegmentsToRecover", 100));
 
         CompletionException e = assertThrows(CompletionException.class, () ->
-                createRoller(createNodes(broker(0), broker(1), broker(2)), pods.operator(), mockAdmin(2, List.of()), recovery)
+                createRoller(nodes, pods.operator(), mockAdmin(2, List.of(0, 1, 2)), mockKafkaAgent(recovery))
                         .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.UnforceableProblem.class));
-        assertThat(e.getCause().getMessage(), is("Pod c-kafka-0 is not ready because the Kafka node is performing log recovery. There are 10 logs and 100 segments left to recover."));
+        assertThat(e.getCause().getMessage(), is("Pod " + nodes.stream().filter(n -> n.nodeId() == 0).findFirst().orElseThrow().podName()
+                + " is not ready because the Kafka node is performing log recovery. There are 10 logs and 100 segments left to recover."));
         assertThat(pods.restarted(), is(List.of(1, 2)));
     }
 
@@ -427,12 +455,12 @@ public class KafkaRollerTest {
         BrokerState running = new BrokerState(3, null);
 
         CompletionException e = assertThrows(CompletionException.class, () ->
-                createRoller(createNodes(broker(0), broker(1)), pods.operator(), mockAdmin(2, List.of()), running)
+                createRoller(createNodes(broker(0), broker(1)), pods.operator(), mockAdmin(2, List.of()), mockKafkaAgent(running))
                         .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.FatalProblem.class));
-        assertThat(e.getCause().getMessage(), is("Error while waiting for restarted pod c-kafka-0 to become ready"));
+        assertThat(e.getCause().getMessage(), is("Error while waiting for restarted pod c-brokers-0 to become ready"));
         assertThat(pods.restarted(), is(List.of(0)));
     }
 
@@ -442,12 +470,12 @@ public class KafkaRollerTest {
         BrokerState unreadable = new BrokerState(-1, null);
 
         CompletionException e = assertThrows(CompletionException.class, () ->
-                createRoller(createNodes(broker(0), broker(1)), pods.operator(), mockAdmin(2, List.of()), unreadable)
+                createRoller(createNodes(broker(0), broker(1)), pods.operator(), mockAdmin(2, List.of()), mockKafkaAgent(unreadable))
                         .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                         .toCompletableFuture().join());
 
         assertThat(e.getCause(), instanceOf(KafkaRoller.FatalProblem.class));
-        assertThat(e.getCause().getMessage(), is("Error while waiting for restarted pod c-kafka-0 to become ready"));
+        assertThat(e.getCause().getMessage(), is("Error while waiting for restarted pod c-brokers-0 to become ready"));
         assertThat(pods.restarted(), is(List.of(0)));
     }
 
@@ -492,27 +520,6 @@ public class KafkaRollerTest {
         assertThat(pods.restarted(), is(List.of()));
     }
 
-    /**
-     * Tests with different pod stuck statuses
-     *
-     * @param description   Description of the way the pod is stuck, used as the name of the test
-     * @param status        Status of the stuck pod
-     */
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("stuckPodStatuses")
-    public void testStuckPodWithOldRevisionIsRestarted(String description, PodStatus status) {
-        Set<NodeRef> nodes = createNodes(controller(0), broker(1));
-
-        MockPodOperator pods = new MockPodOperator().withStatus(0, status);
-        Admin admin = mockAdmin(0, List.of(0));
-
-        createRoller(nodes, pods.operator(), admin)
-                .rollingRestart(pod -> RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION))
-                .toCompletableFuture().join();
-
-        assertThat(pods.restarted(), is(List.of(0, 1)));
-    }
-
     private static Stream<Arguments> stuckPodStatuses() {
         return Stream.of(
                 waitingContainer("CrashLoopBackOff"),
@@ -540,6 +547,27 @@ public class KafkaRollerTest {
                         .endState()
                         .build())
                 .build());
+    }
+
+    /**
+     * Tests with different pod stuck statuses
+     *
+     * @param description   Description of the way the pod is stuck, used as the name of the test
+     * @param status        Status of the stuck pod
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("stuckPodStatuses")
+    public void testStuckPodWithOldRevisionIsRestarted(String description, PodStatus status) {
+        Set<NodeRef> nodes = createNodes(controller(0), broker(1));
+
+        MockPodOperator pods = new MockPodOperator().withStatus(0, status);
+        Admin admin = mockAdmin(0, List.of(0));
+
+        createRoller(nodes, pods.operator(), admin)
+                .rollingRestart(pod -> RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION))
+                .toCompletableFuture().join();
+
+        assertThat(pods.restarted(), is(List.of(0, 1)));
     }
 
     @Test
@@ -713,7 +741,8 @@ public class KafkaRollerTest {
                 .toCompletableFuture().join();
 
         assertThat(pods.restarted(), is(List.of(failingNodeId)));
-        assertThat(reasons.get(KafkaResources.kafkaPodName(CLUSTER, failingNodeId)).getReasons(), is(Set.of(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART)));
+        assertThat(reasons.get(nodes.stream().filter(n -> n.nodeId() == failingNodeId).findFirst().orElseThrow().podName()).getReasons(),
+                is(Set.of(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART)));
     }
 
     private static Stream<Arguments> clusterNodes() {
@@ -736,11 +765,12 @@ public class KafkaRollerTest {
             return CompletableFuture.completedFuture(null);
         });
 
-        createRoller(createNodes(broker(0)), pods.operator(), admin, eventPublisher)
+        NodeRef node0 = broker(0);
+        createRoller(createNodes(node0), pods.operator(), admin, eventPublisher)
                 .rollingRestart(pod -> pod0Reasons)
                 .toCompletableFuture().join();
 
-        Pod pod0 = new PodBuilder().withNewMetadata().withName(KafkaResources.kafkaPodName(CLUSTER, 0)).withNamespace("ns").endMetadata().build();
+        Pod pod0 = new PodBuilder().withNewMetadata().withName(node0.podName()).withNamespace("ns").endMetadata().build();
 
         // Verify that the event publisher received only the snapshot (MANUAL_ROLLING_UPDATE) and not POD_STUCK
         ArgumentCaptor<RestartReasons> captor = ArgumentCaptor.forClass(RestartReasons.class);
@@ -753,27 +783,24 @@ public class KafkaRollerTest {
         return createRoller(nodes, podOps, ResourceUtils.adminClientProvider(admin), DESIRED_CONFIG);
     }
 
-    private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, Admin admin, BrokerState brokerState) {
-        return createRoller(nodes, podOps, ResourceUtils.adminClientProvider(admin), DESIRED_CONFIG, brokerState);
+    private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, Admin admin, KafkaAgentClient agentClient) {
+        return createRoller(nodes, podOps, ResourceUtils.adminClientProvider(admin), DESIRED_CONFIG, agentClient);
     }
 
     private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, Admin admin, KubernetesRestartEventPublisher eventsPublisher) {
-        return createRoller(nodes, podOps, ResourceUtils.adminClientProvider(admin), DESIRED_CONFIG, new BrokerState(1, null), eventsPublisher);
+        return createRoller(nodes, podOps, ResourceUtils.adminClientProvider(admin), DESIRED_CONFIG, mockKafkaAgent(new BrokerState(1, null)), eventsPublisher);
     }
 
     private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, AdminClientProvider adminClientProvider, String desiredConfig) {
         // By default, the broker is starting, so it is not performing a log recovery
-        return createRoller(nodes, podOps, adminClientProvider, desiredConfig, new BrokerState(1, null));
+        return createRoller(nodes, podOps, adminClientProvider, desiredConfig, mockKafkaAgent(new BrokerState(1, null)));
     }
 
-    private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, AdminClientProvider adminClientProvider, String desiredConfig, BrokerState brokerState) {
-        return createRoller(nodes, podOps, adminClientProvider, desiredConfig, brokerState, mock(KubernetesRestartEventPublisher.class));
+    private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, AdminClientProvider adminClientProvider, String desiredConfig, KafkaAgentClient agentClient) {
+        return createRoller(nodes, podOps, adminClientProvider, desiredConfig, agentClient, mock(KubernetesRestartEventPublisher.class));
     }
 
-    private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, AdminClientProvider adminClientProvider, String desiredConfig, BrokerState brokerState, KubernetesRestartEventPublisher eventsPublisher) {
-        KafkaAgentClient agentClient = mock(KafkaAgentClient.class);
-        when(agentClient.getBrokerState(anyString())).thenReturn(brokerState);
-
+    private static KafkaRoller createRoller(Set<NodeRef> nodes, PodOperator podOps, AdminClientProvider adminClientProvider, String desiredConfig, KafkaAgentClient agentClient, KubernetesRestartEventPublisher eventsPublisher) {
         return new KafkaRoller(
                 new Reconciliation("test", "Kafka", "ns", CLUSTER),
                 podOps,
@@ -791,15 +818,15 @@ public class KafkaRollerTest {
     }
 
     private static NodeRef broker(int nodeId) {
-        return new NodeRef(KafkaResources.kafkaPodName(CLUSTER, nodeId), nodeId, "brokers", false, true);
+        return new NodeRef(KafkaResources.kafkaPodName(CLUSTER, "brokers", nodeId), nodeId, "brokers", false, true);
     }
 
     private static NodeRef controller(int nodeId) {
-        return new NodeRef(KafkaResources.kafkaPodName(CLUSTER, nodeId), nodeId, "controllers", true, false);
+        return new NodeRef(KafkaResources.kafkaPodName(CLUSTER, "controllers", nodeId), nodeId, "controllers", true, false);
     }
 
     private static NodeRef combined(int nodeId) {
-        return new NodeRef(KafkaResources.kafkaPodName(CLUSTER, nodeId), nodeId, "combined", true, true);
+        return new NodeRef(KafkaResources.kafkaPodName(CLUSTER, "combined", nodeId), nodeId, "combined", true, true);
     }
 
     private static Set<NodeRef> createNodes(NodeRef... nodes) {
@@ -811,7 +838,7 @@ public class KafkaRollerTest {
      * The restarted pods are recorded in the order they were restarted.
      */
     private static final class MockPodOperator {
-        private final List<Integer> restarted = new ArrayList<>();
+        private final List<Integer> restarted = new CopyOnWriteArrayList<>();
         private final Set<Integer> unready = new HashSet<>();
         private final Set<Integer> neverReady = new HashSet<>();
         private final Set<Integer> notReadyAfterRestart = new HashSet<>();
@@ -894,8 +921,6 @@ public class KafkaRollerTest {
                 return !unready.contains(nodeId) && !neverReady.contains(nodeId);
             });
 
-            // Used by the KafkaRoller to wait for the pods. It is called on the KafkaRoller thread, which is also the thread
-            // that restarts the pods, so the restarted list is safe to read.
             when(podOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenAnswer(invocation -> {
                 Integer nodeId =  ReconcilerUtils.getPodIndexFromPodName(invocation.getArgument(2));
                 boolean ready = !neverReady.contains(nodeId)
@@ -959,7 +984,7 @@ public class KafkaRollerTest {
                 .map(id -> {
                     QuorumInfo.ReplicaState voter = mock(QuorumInfo.ReplicaState.class);
                     when(voter.replicaId()).thenReturn(id);
-                    when(voter.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(1000L));
+                    when(voter.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(10000L));
                     return voter;
                 })
                 .toList();
@@ -971,5 +996,11 @@ public class KafkaRollerTest {
         when(admin.describeMetadataQuorum()).thenReturn(quorumResult);
 
         return admin;
+    }
+
+    private static KafkaAgentClient mockKafkaAgent(BrokerState brokerState) {
+        KafkaAgentClient agentClient = mock(KafkaAgentClient.class);
+        when(agentClient.getBrokerState(anyString())).thenReturn(brokerState);
+        return agentClient;
     }
 }

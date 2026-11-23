@@ -74,18 +74,6 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster not using {@code KafkaNodePool} resources.
-     *
-     * @param clusterName   The {@code metadata.name} of the {@code Kafka} resource.
-     * @param podNum        The ordinal number of the Kafka pod
-     *
-     * @return The name of the corresponding Kafka {@code Pod}.
-     */
-    public static String kafkaPodName(String clusterName, int podNum) {
-        return kafkaComponentName(clusterName) + "-" + podNum;
-    }
-
-    /**
      * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster using {@code KafkaNodePool} resources.
      *
      * @param clusterName   The {@code metadata.name} of the {@code Kafka} resource
