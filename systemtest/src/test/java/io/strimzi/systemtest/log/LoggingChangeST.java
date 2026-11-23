@@ -209,8 +209,7 @@ class LoggingChangeST extends AbstractST {
             rootLogger.appenderRef.console.ref = STDOUT
             rootLogger.additivity = false
             logger.kafka.name = org.apache.kafka
-            logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}
-            logger.kafka.additivity = false""";
+            logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}""";
 
         final String loggersConfigCC = """
             name=CCConfig
@@ -445,8 +444,7 @@ class LoggingChangeST extends AbstractST {
             "rootLogger.appenderRef.console.ref = STDOUT\n" +
             "rootLogger.additivity = false\n" +
             "logger.kafka.name = org.apache.kafka\n" +
-            "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
-            "logger.kafka.additivity = false";
+            "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}";
 
         String configMapOpName = "json-layout-operators";
         String configMapKafkaName = "json-layout-kafka";
@@ -940,8 +938,7 @@ class LoggingChangeST extends AbstractST {
             "\n" +
             "    # Kafka AdminClient logging is a bit noisy at INFO level\n" +
             "    logger.kafka.name = org.apache.kafka\n" +
-            "    logger.kafka.level = OFF\n" +
-            "    logger.kafka.additivity = false";
+            "    logger.kafka.level = OFF";
 
         ConfigMap coMap = new ConfigMapBuilder()
             .withNewMetadata()
@@ -1109,7 +1106,6 @@ class LoggingChangeST extends AbstractST {
                 
                 logger.reflections.name = org.reflections
                 logger.reflections.level = ERROR
-                logger.reflections.additivity = false
                 """;
 
         final String externalCmName = "external-cm";
@@ -1717,7 +1713,6 @@ class LoggingChangeST extends AbstractST {
                 
                 logger.reflections.name = org.reflections
                 logger.reflections.level = ERROR
-                logger.reflections.additivity = false
                 """;
 
         String externalCmName = "external-cm";
@@ -1812,7 +1807,6 @@ class LoggingChangeST extends AbstractST {
                 
                 logger.reflections.name = org.reflections
                 logger.reflections.level = ERROR
-                logger.reflections.additivity = false
                 
                 logger.jettythread.name = org.eclipse.jetty.util.thread
                 logger.jettythread.level = FATAL
@@ -1881,7 +1875,6 @@ class LoggingChangeST extends AbstractST {
                 
                 logger.reflections.name = org.reflections
                 logger.reflections.level = ERROR
-                logger.reflections.additivity = false
                 
                 logger.jettythread.name = org.eclipse.jetty.util.thread
                 logger.jettythread.level = WARN

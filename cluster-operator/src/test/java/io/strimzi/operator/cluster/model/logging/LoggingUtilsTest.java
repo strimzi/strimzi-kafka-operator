@@ -47,7 +47,6 @@ public class LoggingUtilsTest {
                 rootLogger.additivity=false
                 logger.reflections.name=org.reflections
                 logger.reflections.level=ERROR
-                logger.reflections.additivity=false
                 """));
     }
 
@@ -98,7 +97,6 @@ public class LoggingUtilsTest {
                 rootLogger.additivity=false
                 logger.reflections.name=org.reflections
                 logger.reflections.level=ERROR
-                logger.reflections.additivity=false
                 
                 monitorInterval=30
                 """));
@@ -129,7 +127,6 @@ public class LoggingUtilsTest {
                 rootLogger.additivity=false
                 logger.reflections.name=org.reflections
                 logger.reflections.level=ERROR
-                logger.reflections.additivity=false
                 logger.mypackage.level=WARN
                 logger.mypackage.name=io.mydomain.mypackage
                 
