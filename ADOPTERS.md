@@ -50,6 +50,8 @@ Please let us know by adding your company name and, if you want, a description o
 * [Wordfully](https://wordfully.ai)
 * [Klarrio](https://klarrio.com/)
     * Use Strimzi to deploy Kafka on multi-tenant streaming data platforms.  
+* [Amavie](https://amavie.ai/)
+    * Use Strimzi to run Apache Kafka in KRaft mode on GKE for the domain events, notifications and real-time chat updates of an AI character app.
 
 ### Vendors
 
