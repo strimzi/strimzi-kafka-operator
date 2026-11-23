@@ -33,6 +33,7 @@ if [[ -z "$STRIMZI_OPERATOR_NAME" ]]; then
   export STRIMZI_OPERATOR_NAME
 fi
 
-export JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp/vertx-cache"
+# --enable-native-access=ALL-UNNAMED is needed for Netty to avoid warnings about illegal reflective access when running on Java 25.
+export JAVA_OPTS="${JAVA_OPTS} --enable-native-access=ALL-UNNAMED -Dvertx.cacheDirBase=/tmp/vertx-cache"
 
 exec "${STRIMZI_HOME}/bin/launch_java.sh"
