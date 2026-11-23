@@ -55,6 +55,10 @@ public abstract class MetricsHolder {
      */
     public static final String METRICS_RECONCILIATIONS_LOCKED = METRICS_RECONCILIATIONS + ".locked";
     /**
+     * Metric name for the start time of reconciliations which are currently in progress.
+     */
+    public static final String METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME = METRICS_RECONCILIATIONS + ".in.progress.start.time.seconds";
+    /**
      * Metric name for number of resources managed by the operator.
      */
     public static final String METRICS_RESOURCES = METRICS_PREFIX + "resources";
@@ -75,6 +79,7 @@ public abstract class MetricsHolder {
     private final Map<MetricKey, Counter> successfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<MetricKey, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<MetricKey, Timer> reconciliationsTimerMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, AtomicLong> reconciliationsInProgressStartTimeMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the metrics holder
@@ -214,6 +219,38 @@ public abstract class MetricsHolder {
         return getCounter(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS_LOCKED,
                 "Number of reconciliations skipped because another reconciliation for the same resource was still running",
                 Optional.of(getLabelSelectorValues()), lockedReconciliationsCounterMap);
+    }
+
+    /**
+     * Gauge metric with the Unix epoch timestamp, in seconds, when the currently running reconciliation of the
+     * resource started. The metric exists only while a reconciliation of the resource is running. It should be
+     * removed with {@link #removeReconciliationsInProgressStartTime(String, String)} when the reconciliation
+     * completes.
+     *
+     * @param namespace     Namespace of the resource being reconciled
+     * @param name          Name of the resource being reconciled
+     *
+     * @return  Metrics gauge
+     */
+    public AtomicLong reconciliationsInProgressStartTime(String namespace, String name) {
+        return getGaugeLong(new ResourceMetricKey(kind, namespace, name), METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME,
+                "Start time of the reconciliation which is currently in progress as a Unix epoch timestamp in seconds",
+                Optional.empty(), reconciliationsInProgressStartTimeMap, Tag.of("name", name));
+    }
+
+    /**
+     * Removes the gauge metric with the start time of the currently running reconciliation of the resource. It is
+     * used when the reconciliation completes, so that the metric exists only for resources with a reconciliation
+     * in progress.
+     *
+     * @param namespace     Namespace of the resource which was reconciled
+     * @param name          Name of the resource which was reconciled
+     */
+    public void removeReconciliationsInProgressStartTime(String namespace, String name) {
+        if (reconciliationsInProgressStartTimeMap.remove(new ResourceMetricKey(kind, namespace, name)) != null) {
+            removeMetric(METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME,
+                    MetricsUtils.getAllMetricTags(namespace, kind, Optional.empty(), Tag.of("name", name)));
+        }
     }
 
     /**

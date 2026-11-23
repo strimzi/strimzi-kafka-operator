@@ -11,6 +11,7 @@
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
 * Use Java 25 as the runtime for all containers (leaving the language level at Java 21) for supporting Post-Quantum Hybrid Key Exchange
 * Add support for running an automatic rebalancing when a goal violation is detected by Cruise Control
+* Add new metric `strimzi_reconciliations_in_progress_start_time_seconds` to the Cluster, Topic, and User Operators with the start time of currently running reconciliations to help detect stuck reconciliations
 
 ### Major changes, deprecations, and removals
 

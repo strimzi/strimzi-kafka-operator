@@ -1,0 +1,31 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='con-metrics-stuck-reconciliations-{context}']
+
+= Detecting stuck reconciliations
+
+[role="_abstract"]
+A reconciliation that starts but never completes blocks further changes to the same resource and can delay maintenance tasks such as certificate renewal.
+The Cluster Operator, Topic Operator, and User Operator expose the `strimzi_reconciliations_in_progress_start_time_seconds` metric so that you can detect such reconciliations.
+
+The metric exists only while a reconciliation is running.
+Its value is the time when the reconciliation started, as a Unix epoch timestamp in seconds.
+The `kind`, `namespace`, and `name` labels identify the resource being reconciled.
+If your Prometheus scrape configuration does not honor the labels of the scraped metrics, Prometheus stores the `namespace` label of the metric as `exported_namespace`.
+When the reconciliation completes, the operator stops exposing the metric for that resource.
+
+To find reconciliations that have been running for too long, compare the metric with the current time:
+
+[source]
+----
+time() - strimzi_reconciliations_in_progress_start_time_seconds > 60 * 60
+----
+
+The example Prometheus rules for the Cluster Operator include a `StuckReconciliation` alert that uses this expression.
+The alert applies to reconciliations in all three operators.
+The one-hour threshold is an example.
+Adjust it to the reconciliation times you expect in your deployment.

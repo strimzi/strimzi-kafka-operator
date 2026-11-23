@@ -32,6 +32,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
@@ -377,6 +378,7 @@ public abstract class AbstractOperator<
 
                 Lock lock = res.result();
                 long timerId = vertx.setPeriodic(PROGRESS_WARNING, timer -> LOGGER.infoCr(reconciliation, "Reconciliation is in progress"));
+                metrics().reconciliationsInProgressStartTime(namespace, name).set(Instant.now().getEpochSecond());
 
                 callSafely(reconciliation, callable)
                     .onSuccess(handleSafely(reconciliation, handler::complete))
@@ -441,6 +443,7 @@ public abstract class AbstractOperator<
 
     private Future<Void> releaseLockAndTimer(Reconciliation reconciliation, Lock lock, String lockName, long timerId) {
         vertx.cancelTimer(timerId);
+        metrics().removeReconciliationsInProgressStartTime(reconciliation.namespace(), reconciliation.name());
         lock.release();
         LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
         return Future.succeededFuture();

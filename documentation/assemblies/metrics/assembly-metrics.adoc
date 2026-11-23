@@ -48,3 +48,5 @@ include::../../modules/metrics/con_kafka-exporter-lag.adoc[leveloffset=+1]
 include::../../modules/metrics/proc-kafka-exporter-deploy.adoc[leveloffset=+2]
 //Understanding metrics for Cruise Control
 include::../../modules/metrics/con-metrics-cruise-control.adoc[leveloffset=+1]
+//Detecting stuck reconciliations
+include::../../modules/metrics/con-metrics-stuck-reconciliations.adoc[leveloffset=+1]
