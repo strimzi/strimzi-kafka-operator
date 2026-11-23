@@ -17,6 +17,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
+import io.strimzi.systemtest.utils.specific.CertManagerUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,22 +36,6 @@ public class SetupCertManager {
      */
     public static final String CERT_MANAGER_NAMESPACE = "cert-manager";
 
-    /**
-     * Suffix to use for the name of the Kubernetes {@code Secret} in the cert-manager namespace that holds the
-     * CA certificate and private key, created by cert-manager from the CA Certificate resource.
-     */
-    private static final String CA_SECRET_SUFFIX = "-strimzi-ca-secret";
-
-    /**
-     * Suffix to use for the name of the {@code ClusterIssuer} that issues end-entity certificates using the CA.
-     */
-    private static final String CLUSTER_ISSUER_SUFFIX = "-strimzi-issuer";
-
-    /**
-     * Suffix to use for the name of the cert-manager {@code Certificate} resource that represents the CA.
-     */
-    private static final String CA_CERTIFICATE_SUFFIX = "-strimzi-ca";
-
     private static final String SELF_SIGNED_ISSUER_NAME = "selfsigned-bootstrap-issuer";
 
     private static final String CERT_MANAGER_DEPLOYMENT = "cert-manager";
@@ -61,33 +46,6 @@ public class SetupCertManager {
             TestUtils.USER_PATH + "/../systemtest/src/test/resources/cert-manager/cert-manager.yaml";
 
     private SetupCertManager() { }
-
-    /**
-     * Get CA Secret name for cluster
-     * @param clusterName Cluster name
-     * @return CA Secret name
-     */
-    public static String getCaSecretName(String clusterName) {
-        return clusterName + CA_SECRET_SUFFIX;
-    }
-
-    /**
-     * Get CA ClusterIssuer name for cluster
-     * @param clusterName Cluster name
-     * @return CA ClusterIssuer name
-     */
-    public static String getCaClusterIssuer(String clusterName) {
-        return clusterName + CLUSTER_ISSUER_SUFFIX;
-    }
-
-    /**
-     * Get CA Certificate name for cluster
-     * @param clusterName Cluster name
-     * @return CA Certificate name
-     */
-    public static String getCaCertificate(String clusterName) {
-        return clusterName + CA_CERTIFICATE_SUFFIX;
-    }
 
     /**
      * Deploys Cert Manager and adds it to the stack of resources to be deleted on clean up
@@ -187,19 +145,19 @@ public class SetupCertManager {
     /**
      * Bootstraps a CA issuer chain using cert-manager's own certificate lifecycle:
      * <ol>
-     *   <li>A {@code Certificate} resource ({@code clusterName}{@value CA_CERTIFICATE_SUFFIX}) with {@code isCA=true}
+     *   <li>A {@code Certificate} resource with {@code isCA=true}
      *       is created, referencing the SelfSigned issuer. cert-manager generates the CA
-     *       certificate and private key and stores them in {@value CA_SECRET_SUFFIX}.</li>
-     *   <li>A CA {@code ClusterIssuer} ({@code clusterName}{@value CLUSTER_ISSUER_SUFFIX}) is created, referencing
+     *       certificate and private key and stores them in a Secret.</li>
+     *   <li>A CA {@code ClusterIssuer} is created, referencing
      *       the CA Secret so that cert-manager uses it to sign end-entity certificates.</li>
      * </ol>
      *
      * @param clusterName Cluster name to use as prefix for resources
      */
     public static void createIssuerAndCaSecret(String clusterName) {
-        String caCertificateName = getCaCertificate(clusterName);
-        String caSecretName = getCaSecretName(clusterName);
-        String caClusterIssuerName = getCaClusterIssuer(clusterName);
+        String caCertificateName = CertManagerUtils.getCaCertificate(clusterName);
+        String caSecretName = CertManagerUtils.getCaSecretName(clusterName);
+        String caClusterIssuerName = CertManagerUtils.getCaClusterIssuer(clusterName);
 
         // Certificate resource for CA that will generate the CA cert+key in a Secret
         final Certificate caCertificate = new CertificateBuilder()
@@ -260,25 +218,5 @@ public class SetupCertManager {
                 KubeResourceManager.get().kubeClient().getClient()
                         .resources(ClusterIssuer.class, ClusterIssuerList.class)
                         .withName(caClusterIssuerName).delete()));
-    }
-
-    /**
-     * Returns CA public certificate from the CA Secret for
-     * {@code clusterName} cluster in the cert-manager namespace.
-     *
-     * @param clusterName Cluster name
-     *
-     * @return base64-encoded PEM certificate string (the {@code tls.crt} entry)
-     * @throws IllegalStateException if the Secret or its {@code tls.crt} entry is absent
-     */
-    public static String getCaCertBase64(String clusterName) {
-        final Secret caSecret = KubeResourceManager.get().kubeClient().getClient()
-                .secrets().inNamespace(CERT_MANAGER_NAMESPACE).withName(getCaSecretName(clusterName)).get();
-        if (caSecret == null || caSecret.getData() == null || caSecret.getData().get("tls.crt") == null) {
-            throw new IllegalStateException(
-                    "CA Secret '" + getCaSecretName(clusterName) + "' not found in namespace '" + CERT_MANAGER_NAMESPACE +
-                    "' — was createIssuerAndCaSecret() called first?");
-        }
-        return caSecret.getData().get("tls.crt");
     }
 }
