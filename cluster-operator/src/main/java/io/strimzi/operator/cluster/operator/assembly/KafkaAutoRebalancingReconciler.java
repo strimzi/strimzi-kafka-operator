@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.GoalViolationInfo;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
@@ -61,7 +60,6 @@ public class KafkaAutoRebalancingReconciler {
     private final List<KafkaAutoRebalanceConfiguration> kafkaAutoRebalanceConfigurations;
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final Set<Integer> scalingDownBlockedNodes;
-    private final ConfigMapOperator configMapOperator;
     private final KafkaAutoRebalanceImbalanceDetector imbalanceDetector;
     private final KafkaAssemblyOperatorMetricsHolder metricsHolder;
 
@@ -93,7 +91,6 @@ public class KafkaAutoRebalancingReconciler {
         this.kafkaAutoRebalanceConfigurations = kafkaCr.getSpec().getCruiseControl().getAutoRebalance();
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.scalingDownBlockedNodes = scalingDownBlockedNodes;
-        this.configMapOperator = supplier.configMapOperations;
         this.metricsHolder = metricsHolder;
         this.imbalanceDetector = createImbalanceDetector(supplier);
     }
