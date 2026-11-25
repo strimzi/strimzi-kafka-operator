@@ -889,7 +889,7 @@ public class CertManagerST extends AbstractST {
 
         final String oldCaCertWithOldKey = CertManagerUtils.getCaCertBase64(testStorage.getClusterName());
         Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(namespace, testStorage.getBrokerSelector());
-        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getEoSelector());
+        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(namespace, testStorage.getEoSelector());
 
         // Delete the CA Secret so cert-manager regenerates it with a new key
         KubeResourceManager.get().kubeClient().getClient()
@@ -926,7 +926,7 @@ public class CertManagerST extends AbstractST {
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
         eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
-                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // After 1st roll: only key generation is incremented on pod (trust update patches key gen only),
         // cert generation stays 0 because end-entity certs haven't been updated yet
@@ -949,7 +949,7 @@ public class CertManagerST extends AbstractST {
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
         eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
-                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // After 2nd roll: ca-cert-generation incremented on both pod and broker Secret
         brokerPod = KubeResourceManager.get().kubeClient()
@@ -1037,7 +1037,7 @@ public class CertManagerST extends AbstractST {
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
         eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
-                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         brokerPod = KubeResourceManager.get().kubeClient()
                 .listPods(namespace, testStorage.getBrokerSelector()).getFirst();
@@ -1055,7 +1055,7 @@ public class CertManagerST extends AbstractST {
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
         eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
-                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // After 2nd roll: ca-cert-generation incremented on the pod but not on the cert Secret because end-entity certificates are not re-issued yet
         brokerPod = KubeResourceManager.get().kubeClient()
@@ -1072,7 +1072,7 @@ public class CertManagerST extends AbstractST {
 
         LOGGER.info("Verifying cluster stability after CA key replacement without re-issuing end-entity certificates");
         RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getBrokerSelector(), brokerPodsSnapshot);
-        RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getBrokerSelector(), eoPodSnapshot);
+        RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getEoSelector(), eoPodSnapshot);
 
         LOGGER.info("CA key replaced without re-issuing end-entity certificates, 2 rolls, the generations are correct, cluster is stable");
 
@@ -1224,7 +1224,7 @@ public class CertManagerST extends AbstractST {
 
         final String oldCaCertData = CertManagerUtils.getCaCertBase64(testStorage.getClusterName());
         Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(namespace, testStorage.getBrokerSelector());
-        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getEoSelector());
+        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(namespace, testStorage.getEoSelector());
 
         // Set rotationPolicy to Never so cert-manager reuses the existing key on renewal,
         // and update the DNS names to trigger re-issuing of the certificate.
@@ -1261,7 +1261,7 @@ public class CertManagerST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
-                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // ca-cert-generation incremented but not the ca-key-generation on the pod
         Pod brokerPod = KubeResourceManager.get().kubeClient()
