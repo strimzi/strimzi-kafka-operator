@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
@@ -14,6 +15,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -110,7 +112,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Upgrade Kafka to a supported version - this is what unblocks the reconciliation and rolls the whole cluster
         final String targetKafkaVersion = unsupportedKafkaUpgradeData.getProcedures().getVersion();
         changeKafkaVersion(testStorage.getNamespaceName(), unsupportedKafkaUpgradeData);
-        waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
+
+        // Check the TO and UO also got upgraded
+        eoPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
 
         logComponentsPodImages(testStorage.getNamespaceName());
         checkAllComponentsImages(testStorage.getNamespaceName(), unsupportedKafkaUpgradeData, targetKafkaVersion);
