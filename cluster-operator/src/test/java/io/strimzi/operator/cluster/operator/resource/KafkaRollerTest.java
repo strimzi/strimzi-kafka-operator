@@ -114,19 +114,36 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testRollsWithDisconnectedNodeIds() {
+        Set<NodeRef> nodes = createNodes(
+                broker(10), broker(200),
+                controller(30), controller(400),
+                combined(500));
+
+        MockPodOperator pods = new MockPodOperator();
+        Admin admin = mockAdmin(30, List.of(30, 400, 500));
+
+        createRoller(nodes, pods.operator(), admin)
+                .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
+                .toCompletableFuture().join();
+
+        assertThat(pods.restarted(), is(List.of(400, 500, 30, 10, 200)));
+    }
+
+    @Test
     public void testRollsUnreadyNodesFirst() {
         Set<NodeRef> nodes = createNodes(broker(0), broker(1),
                 controller(2), controller(3), controller(4),
                 combined(5), combined(6));
 
-        MockPodOperator pods = new MockPodOperator().unready(1, 3);
+        MockPodOperator pods = new MockPodOperator().unready(1, 3, 6);
         Admin admin = mockAdmin(4, List.of(2, 3, 4, 5, 6));
 
         createRoller(nodes, pods.operator(), admin)
                 .rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                 .toCompletableFuture().join();
 
-        assertThat(pods.restarted(), is(List.of(3, 2, 5, 6, 4, 1, 0)));
+        assertThat(pods.restarted(), is(List.of(6, 3, 2, 5, 4, 1, 0)));
     }
 
     @Test
