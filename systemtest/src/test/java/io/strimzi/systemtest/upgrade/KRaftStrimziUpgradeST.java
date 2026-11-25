@@ -110,7 +110,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Upgrade Kafka to a supported version - this is what unblocks the reconciliation and rolls the whole cluster
         final String targetKafkaVersion = unsupportedKafkaUpgradeData.getProcedures().getVersion();
         changeKafkaVersion(testStorage.getNamespaceName(), unsupportedKafkaUpgradeData);
-        waitForReadinessOfKafkaCluster(testStorage.getNamespaceName());
+        waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
 
         logComponentsPodImages(testStorage.getNamespaceName());
         checkAllComponentsImages(testStorage.getNamespaceName(), unsupportedKafkaUpgradeData, targetKafkaVersion);
