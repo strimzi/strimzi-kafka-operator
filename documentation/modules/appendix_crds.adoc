@@ -598,10 +598,10 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 |A map of -XX options to the JVM.
 |-Xmx
 |string
-|-Xmx option to to the JVM.
+|Configures the -Xmx JVM option.
 |-Xms
 |string
-|-Xms option to to the JVM.
+|Configures the -Xms JVM option.
 |gcLoggingEnabled
 |boolean
 |Specifies whether the Garbage Collection logging is enabled. The default is false.

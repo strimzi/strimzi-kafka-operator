@@ -278,11 +278,11 @@ spec:
                   "-Xmx":
                     type: string
                     pattern: "^[0-9]+[mMgG]?$"
-                    description: -Xmx option to to the JVM.
+                    description: Configures the -Xmx JVM option.
                   "-Xms":
                     type: string
                     pattern: "^[0-9]+[mMgG]?$"
-                    description: -Xms option to to the JVM.
+                    description: Configures the -Xms JVM option.
                   gcLoggingEnabled:
                     type: boolean
                     description: Specifies whether the Garbage Collection logging is enabled. The default is false.

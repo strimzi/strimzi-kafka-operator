@@ -45,7 +45,7 @@ public class JvmOptions implements UnknownPropertyPreserving {
 
     @JsonProperty("-Xmx")
     @Pattern("^[0-9]+[mMgG]?$")
-    @Description("-Xmx option to to the JVM")
+    @Description("Configures the -Xmx JVM option")
     public String getXmx() {
         return xmx;
     }
@@ -56,7 +56,7 @@ public class JvmOptions implements UnknownPropertyPreserving {
 
     @JsonProperty("-Xms")
     @Pattern("^[0-9]+[mMgG]?$")
-    @Description("-Xms option to to the JVM")
+    @Description("Configures the -Xms JVM option")
     public String getXms() {
         return xms;
     }
