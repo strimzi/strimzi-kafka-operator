@@ -53,7 +53,7 @@ fi
 
 # Disable FIPS if needed
 if [ "$FIPS_MODE" = "disabled" ]; then
-    export KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
+    export KAFKA_OPTS="${KAFKA_OPTS} -Dredhat.crypto-policies=false"
 fi
 
 # Configure heap based on the available resources if needed

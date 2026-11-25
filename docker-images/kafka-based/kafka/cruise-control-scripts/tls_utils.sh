@@ -13,7 +13,7 @@ set -e
 function create_truststore {
     # Disable FIPS if needed
     if [ "$FIPS_MODE" = "disabled" ]; then
-        KEYTOOL_OPTS="${KEYTOOL_OPTS} -J-Dcom.redhat.fips=false"
+        KEYTOOL_OPTS="${KEYTOOL_OPTS} -J-Dredhat.crypto-policies=false"
     else
         KEYTOOL_OPTS=""
     fi

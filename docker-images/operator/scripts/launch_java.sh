@@ -30,7 +30,7 @@ fi
 
 # Disable FIPS if needed
 if [ "$FIPS_MODE" = "disabled" ]; then
-    JAVA_OPTS="${JAVA_OPTS} -Dcom.redhat.fips=false"
+    JAVA_OPTS="${JAVA_OPTS} -Dredhat.crypto-policies=false"
 fi
 
 set -x
