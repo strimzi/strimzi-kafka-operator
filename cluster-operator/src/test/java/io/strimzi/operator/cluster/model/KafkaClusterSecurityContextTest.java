@@ -271,6 +271,7 @@ public class KafkaClusterSecurityContextTest {
     public void testTlsWithoutAuthentication()  {
         KafkaClusterSecurityContext context = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
+        assertThat(context.usesEncryption(), is(true));
         assertThat(context.encryption(), is(instanceOf(TlsEncryptionConfiguration.class)));
         assertThat(context.authentication(), is(instanceOf(NoneAuthenticationConfiguration.class)));
         assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE)));
@@ -280,6 +281,7 @@ public class KafkaClusterSecurityContextTest {
     public void testWithoutEncryptionOrAuthentication()  {
         KafkaClusterSecurityContext context = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
+        assertThat(context.usesEncryption(), is(false));
         assertThat(context.encryption(), is(instanceOf(NoneEncryptionConfiguration.class)));
         assertThat(context.authentication(), is(instanceOf(NoneAuthenticationConfiguration.class)));
         assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)));

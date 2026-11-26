@@ -39,8 +39,6 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.common.Annotations;
@@ -152,7 +150,7 @@ public class ReconcilerUtilsTest {
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(clusterCaSecret));
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
+        when(securityContext.usesEncryption()).thenReturn(true);
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
@@ -166,7 +164,7 @@ public class ReconcilerUtilsTest {
     public void testCoIdentityWithoutTlsOrAuthentication() {
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
+        when(securityContext.usesEncryption()).thenReturn(false);
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
@@ -188,7 +186,7 @@ public class ReconcilerUtilsTest {
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(clusterCaSecret));
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
+        when(securityContext.usesEncryption()).thenReturn(true);
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
@@ -206,7 +204,7 @@ public class ReconcilerUtilsTest {
     public void testCoIdentityWithServiceAccountAuthenticationWithoutTls() {
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
+        when(securityContext.usesEncryption()).thenReturn(false);
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();

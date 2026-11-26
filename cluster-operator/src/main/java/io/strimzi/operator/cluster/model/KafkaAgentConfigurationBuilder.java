@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
@@ -47,7 +46,7 @@ public class KafkaAgentConfigurationBuilder {
     public KafkaAgentConfigurationBuilder withSecurity(KafkaClusterSecurityContext securityContext)   {
         printSectionHeader("Security configuration");
 
-        if (securityContext.encryption() instanceof TlsEncryptionConfiguration)   {
+        if (securityContext.usesEncryption()) {
             writer.println("namespace=" + reconciliation.namespace());
             writer.println("sslKeyStoreSecretName=" + node.podName());
         }

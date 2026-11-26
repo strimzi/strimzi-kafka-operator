@@ -147,7 +147,7 @@ public class KafkaClusterSecurityContext {
      */
     private void validateDesiredSecurityConfiguration() {
         // Check that mTLS is not enabled when TLS is disabled
-        if (authentication instanceof MtlsAuthenticationConfiguration && !(encryption instanceof TlsEncryptionConfiguration)) {
+        if (authentication instanceof MtlsAuthenticationConfiguration && !usesEncryption()) {
             LOGGER.errorOp("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption");
             throw new InvalidResourceException("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption.");
         }
@@ -176,6 +176,15 @@ public class KafkaClusterSecurityContext {
      */
     public EncryptionConfiguration encryption() {
         return encryption;
+    }
+
+    /**
+     * Checks whether TLS encryption is configured.
+     *
+     * @return  True if TLS encryption is configured
+     */
+    public boolean usesEncryption() {
+        return encryption instanceof TlsEncryptionConfiguration;
     }
 
     /**

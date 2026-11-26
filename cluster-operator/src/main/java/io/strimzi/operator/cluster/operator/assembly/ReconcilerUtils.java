@@ -30,7 +30,6 @@ import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Annotations;
@@ -137,7 +136,7 @@ public class ReconcilerUtils {
     @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     public static CompletionStage<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         // Gets the trust based on the security context
-        CompletionStage<TrustSet> trustFuture = securityContext.encryption() instanceof TlsEncryptionConfiguration ?
+        CompletionStage<TrustSet> trustFuture = securityContext.usesEncryption() ?
                 clusterCaPemTrustSet(reconciliation, secretOperator).thenApply(t -> (TrustSet) t) : CompletableFuture.completedFuture(null);
         return trustFuture
                 .thenCompose(trustSet -> {
