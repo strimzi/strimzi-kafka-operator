@@ -232,6 +232,18 @@ class spawns as many threads as we specify in the `JUnit-platform.properties`.
       setting `isParallelTestReleased` flag. This ensures that only one test case will continue execution, and others
       will still wait.
 
+### Writing tests that are safe to run in parallel
+
+`@ParallelTest` and `@ParallelNamespaceTest` isolate only the namespace. Anything outside it is shared with every other test running at the same time.
+
+- Name every resource from `TestStorage` (`getClusterName()`, `getTopicName()`, `getUsername()`, ...), or derive the name from the cluster name. Never use a fixed name or a `static final` name.
+- Resources that are cluster-scoped or live in another namespace (ClusterRole(Binding), ClusterIssuer, cert-manager `Certificate`s, CRDs, resources in the Cluster Operator or `cert-manager` namespace) need a per-test name. Use a shared one only if no test ever changes it.
+- If a test changes something global (Cluster Operator environment or configuration, cluster-wide RBAC, the CRDs, node state), annotate it with `@IsolatedTest`.
+- Create KafkaTopic and KafkaUser resources during setup, not just before producing and consuming.
+- When a change rolls several components, wait for each one (brokers, controllers, Entity Operator, ...) before going on. Don't let a later timeout absorb the roll.
+- Wait for conditions with `TestUtils.waitFor` or the `*Utils.waitFor*` helpers. Never use fixed sleeps.
+- Check that the test passes when run in parallel (`-Djunit.jupiter.execution.parallel.enabled=true -Djunit.jupiter.execution.parallel.config.fixed.parallelism=4`), not only alone.
+
 ## Cluster Operator log check
 
 After each test, there is a check for cluster operator logs, which searches for unexpected errors or exceptions.

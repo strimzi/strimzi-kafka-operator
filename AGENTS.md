@@ -55,6 +55,8 @@ Multi-module Maven project.
   - Run locally: `mvn checkstyle:check@validate`
   - CI will fail if checkstyle errors are found
 
+- **Writing system tests**: system tests run in parallel. Follow [Writing tests that are safe to run in parallel](development-docs/TESTING.md#writing-tests-that-are-safe-to-run-in-parallel): no shared fixed names for cluster-scoped resources, `@IsolatedTest` for global changes, and wait for every rolled component.
+
 - **Opening issues**:
   - You MUST follow the issue template when opening a new issue. Do NOT skip or ignore any template sections.
   - You MUST apply the labels suggested by the issue template. Do NOT open an issue without the appropriate labels.
