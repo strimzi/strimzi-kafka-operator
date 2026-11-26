@@ -3,7 +3,9 @@
 #            never change the Kafka version in the Kafka CR, so the Kafka cluster has to stay healthy across the
 #            whole upgrade.
 #  unsupportedKafkaUpgrade: single scenario for the test covering an upgrade from an old Strimzi running a Kafka
-#            version that the new Strimzi no longer supports. Here the Kafka version in the Kafka CR *is* changed
+#            version that the new Strimzi no longer supports. The old Strimzi version should be
+#            the latest one containing Kafka version that is not supported by the "upgrade-to" Strimzi version.
+#            Here the Kafka version in the Kafka CR *is* changed
 #            after the Cluster Operator upgrade, because the cluster cannot become ready before that.
 #
 #  Fields used in both sections:
@@ -60,16 +62,15 @@ upgrades:
     filePaths:
       fromKafka: "/examples/kafka/kafka-persistent.yaml"
 
-# Strimzi 1.0.0 supports Kafka 4.1.0 - 4.2.0, so 4.1.2 is not supported by the Strimzi version we upgrade to.
-# Once the oldest Kafka version of this Strimzi release becomes supported again (or the release gets too old to be
-# worth testing), bump `fromVersion`/`fromExamples`/`fromUrl`/`fromKafkaVersionsUrl` and pick a `deployKafkaVersion`
-# that is again unsupported by the new Strimzi.
+# Once another Kafka version is removed and unsupported by the upcoming release of Strimzi, update
+# the `fromVersion`/`fromExamples`/`fromUrl`/`fromKafkaVersionsUrl` and pick a `deployKafkaVersion`
+# that is again unsupported by the new (upcoming) Strimzi.
 unsupportedKafkaUpgrade:
-  fromVersion: 1.0.0
-  fromExamples: strimzi-1.0.0
-  deployKafkaVersion: 4.1.2
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/1.0.0/strimzi-1.0.0.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.0.0/kafka-versions.yaml
+  fromVersion: 1.3.1
+  fromExamples: strimzi-1.3.1
+  deployKafkaVersion: 4.2.2
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/1.3.1/strimzi-1.3.1.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.3.1/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     kafka: strimzi/kafka:latest-kafka-4.3.2
