@@ -193,6 +193,11 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
     }
 
     protected void crdCreateCruiseControlSecrets() {
+        crdCreateClusterCaCertSecret();
+        crdCreateCruiseControlApiSecret();
+    }
+
+    protected void crdCreateClusterCaCertSecret() {
         Secret clusterCaCertSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
@@ -201,6 +206,10 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
                 .addToData("ca.crt", MockCertIssuer.clusterCaCert())
                 .build();
 
+        client.secrets().inNamespace(namespace).resource(clusterCaCertSecret).create();
+    }
+
+    protected void crdCreateCruiseControlApiSecret() {
         Secret ccApiSecret = new SecretBuilder(MockCruiseControl.CC_API_SECRET)
                 .editMetadata()
                     .withName(CruiseControlResources.apiSecretName(CLUSTER_NAME))
@@ -208,7 +217,6 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
                 .endMetadata()
                 .build();
 
-        client.secrets().inNamespace(namespace).resource(clusterCaCertSecret).create();
         client.secrets().inNamespace(namespace).resource(ccApiSecret).create();
     }
 

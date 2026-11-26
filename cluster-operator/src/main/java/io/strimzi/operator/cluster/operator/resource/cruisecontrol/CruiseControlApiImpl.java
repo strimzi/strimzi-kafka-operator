@@ -58,14 +58,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private final long idleTimeout;
     private final boolean apiSslEnabled;
     private final HTTPHeader authHttpHeader;
-    private final PemTrustSet pemTrustSet;
     private final HttpClient httpClient;
 
     /**
      * Constructor
      *
      * @param idleTimeout           Idle timeout
-     * @param clusterCaCertSecret   Cluster CA certificate Secret, used to trust the Cruise Control TLS server
+     * @param clusterCaCertSecret   Cluster CA certificate Secret, used to trust the Cruise Control TLS server. Used only
+     *                              when TLS is enabled (can be null otherwise).
      * @param ccApiSecret           Cruise Control API Secret
      * @param apiAuthEnabled        Flag indicating if authentication is enabled
      * @param apiSslEnabled         Flag indicating if TLS is enabled
@@ -74,8 +74,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         this.idleTimeout = idleTimeout;
         this.apiSslEnabled = apiSslEnabled;
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
-        this.pemTrustSet = new PemTrustSet(clusterCaCertSecret);
-        this.httpClient = buildHttpClient();
+        this.httpClient = buildHttpClient(apiSslEnabled, clusterCaCertSecret);
     }
 
     @Override
@@ -251,10 +250,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         }
     }
 
-    private HttpClient buildHttpClient() {
+    private static HttpClient buildHttpClient(boolean apiSslEnabled, Secret clusterCaCertSecret) {
         try {
             HttpClient.Builder builder = HttpClient.newBuilder();
             if (apiSslEnabled) {
+                PemTrustSet pemTrustSet = new PemTrustSet(clusterCaCertSecret);
                 String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
                 TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
                 trustManagerFactory.init(pemTrustSet.trustStore());

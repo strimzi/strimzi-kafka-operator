@@ -4,12 +4,14 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
@@ -25,6 +27,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -45,6 +49,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.not;
@@ -123,6 +129,83 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                         context.failNow(result.cause());
                     }
                 });
+    }
+
+    /**
+     * Tests that the Cluster CA certificate Secret is not required when TLS encryption is not used. The Cluster CA
+     * certificate Secret is not created, but the rebalance should still move to the ProposalReady state.
+     */
+    @Test
+    public void testCruiseControlClientWithoutTlsAndWithoutClusterCaCertSecret(VertxTestContext context) {
+        int httpPort = TestUtils.getFreePort();
+        MockCruiseControl httpCruiseControlServer = new MockCruiseControl(httpPort);
+        httpCruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/internal-cluster-security", "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"none\"}}")
+                .endMetadata()
+                .build();
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka(kafka);
+        // Only the API Secret is created => the Cluster CA certificate Secret should not be needed
+        crdCreateCruiseControlApiSecret();
+
+        AtomicReference<Secret> usedClusterCaCertSecret = new AtomicReference<>();
+        AtomicBoolean usedApiSslEnabled = new AtomicBoolean(true);
+        KafkaRebalanceAssemblyOperator httpKrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig(), httpPort) {
+            @Override
+            public String cruiseControlHost(String clusterName, String clusterNamespace) {
+                return HOST;
+            }
+
+            @Override
+            public CruiseControlApi cruiseControlClientProvider(Secret clusterCaCertSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
+                usedClusterCaCertSecret.set(clusterCaCertSecret);
+                usedApiSslEnabled.set(apiSslEnabled);
+                return new CruiseControlApiImpl(1, clusterCaCertSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+            }
+        };
+
+        Checkpoint checkpoint = context.checkpoint();
+        httpKrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(result -> {
+                    httpCruiseControlServer.stop();
+
+                    if (result.succeeded()) {
+                        context.verify(() -> {
+                            assertThat(usedClusterCaCertSecret.get(), is(nullValue()));
+                            assertThat(usedApiSslEnabled.get(), is(false));
+                        });
+                        assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady);
+                        checkpoint.flag();
+                    } else {
+                        context.failNow(result.cause());
+                    }
+                });
+    }
+
+    /**
+     * Tests that the Cluster CA certificate Secret is required when TLS encryption is used. The Cluster CA certificate
+     * Secret is not created, so the reconciliation should fail.
+     */
+    @Test
+    public void testCruiseControlClientWithTlsAndWithoutClusterCaCertSecret(VertxTestContext context) {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka();
+        // Only the API Secret is created => the missing Cluster CA certificate Secret should cause an error
+        crdCreateCruiseControlApiSecret();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertThat(e.getMessage(), is("Secret " + namespace + "/" + KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME) + " does not exist"));
+                    checkpoint.flag();
+                })));
     }
 
     /**

@@ -34,6 +34,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -43,6 +45,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class KafkaAutoRebalanceImbalanceDetectorTest {
@@ -315,6 +319,102 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         assertThat(result, is(nullValue()));
     }
 
+
+    @Test
+    public void testCheckForGoalViolationsWithTlsUsesCruiseControlSecret() {
+        Kafka kafka = buildKafka(null, null);
+        Secret ccSecret = new SecretBuilder().withNewMetadata().withName("cc-secret").endMetadata().build();
+        Secret ccApiSecret = new SecretBuilder().withNewMetadata().withName("cc-api-secret").endMetadata().build();
+        GoalViolationInfo expectedInfo = new GoalViolationInfo(Instant.now(), GoalViolationInfo.Fixability.FIXABLE, List.of(), List.of());
+        CruiseControlApi mockApi = mock(CruiseControlApi.class);
+
+        when(supplier.secretOperations.getAsync(eq(NAMESPACE), eq(CruiseControlResources.secretName(CLUSTER_NAME))))
+                .thenReturn(CompletableFuture.completedFuture(ccSecret));
+        when(supplier.secretOperations.getAsync(eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(CLUSTER_NAME))))
+                .thenReturn(CompletableFuture.completedFuture(ccApiSecret));
+        when(mockApi.getGoalViolations(any(), any(), anyInt()))
+                .thenReturn(CompletableFuture.completedFuture(expectedInfo));
+
+        AtomicReference<Secret> usedCcSecret = new AtomicReference<>();
+        AtomicBoolean usedApiSslEnabled = new AtomicBoolean(false);
+        GoalViolationInfo result = capturingDetector(kafka, mockApi, usedCcSecret, usedApiSslEnabled)
+                .checkForGoalViolations().toCompletableFuture().join();
+
+        assertThat(result, is(notNullValue()));
+        assertThat(usedCcSecret.get(), is(ccSecret));
+        assertThat(usedApiSslEnabled.get(), is(true));
+    }
+
+    @Test
+    public void testCheckForGoalViolationsWithoutTlsDoesNotNeedCruiseControlSecret() {
+        Kafka kafka = withoutEncryption(buildKafka(null, null));
+        Secret ccApiSecret = new SecretBuilder().withNewMetadata().withName("cc-api-secret").endMetadata().build();
+        GoalViolationInfo expectedInfo = new GoalViolationInfo(Instant.now(), GoalViolationInfo.Fixability.FIXABLE, List.of(), List.of());
+        CruiseControlApi mockApi = mock(CruiseControlApi.class);
+
+        // The Cruise Control Secret does not exist, but it should not be needed without TLS encryption
+        when(supplier.secretOperations.getAsync(eq(NAMESPACE), eq(CruiseControlResources.secretName(CLUSTER_NAME))))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.secretOperations.getAsync(eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(CLUSTER_NAME))))
+                .thenReturn(CompletableFuture.completedFuture(ccApiSecret));
+        when(mockApi.getGoalViolations(any(), any(), anyInt()))
+                .thenReturn(CompletableFuture.completedFuture(expectedInfo));
+
+        AtomicReference<Secret> usedCcSecret = new AtomicReference<>();
+        AtomicBoolean usedApiSslEnabled = new AtomicBoolean(true);
+        GoalViolationInfo result = capturingDetector(kafka, mockApi, usedCcSecret, usedApiSslEnabled)
+                .checkForGoalViolations().toCompletableFuture().join();
+
+        assertThat(result, is(notNullValue()));
+        assertThat(result.fixability(), is(GoalViolationInfo.Fixability.FIXABLE));
+        assertThat(usedCcSecret.get(), is(nullValue()));
+        assertThat(usedApiSslEnabled.get(), is(false));
+        verify(supplier.secretOperations, never()).getAsync(eq(NAMESPACE), eq(CruiseControlResources.secretName(CLUSTER_NAME)));
+    }
+
+    @Test
+    public void testCheckForGoalViolationsWithoutTlsWhenApiSecretNotFound() {
+        Kafka kafka = withoutEncryption(buildKafka(null, null));
+        CruiseControlApi mockApi = mock(CruiseControlApi.class);
+
+        when(supplier.secretOperations.getAsync(eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(CLUSTER_NAME))))
+                .thenReturn(CompletableFuture.completedFuture(null));
+
+        GoalViolationInfo result = detectorWithApi(kafka, mockApi).checkForGoalViolations().toCompletableFuture().join();
+
+        assertThat(result, is(nullValue()));
+        verify(mockApi, never()).getGoalViolations(any(), any(), anyInt());
+    }
+
+    private static Kafka withoutEncryption(Kafka kafka) {
+        return new KafkaBuilder(kafka)
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/internal-cluster-security", "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"none\"}}")
+                .endMetadata()
+                .build();
+    }
+
+    private KafkaAutoRebalanceImbalanceDetector capturingDetector(Kafka kafka, CruiseControlApi api, AtomicReference<Secret> usedCcSecret, AtomicBoolean usedApiSslEnabled) {
+        return new KafkaAutoRebalanceImbalanceDetector(RECONCILIATION, kafka, supplier) {
+            @Override
+            protected CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
+                                                                   boolean apiAuthEnabled, boolean apiSslEnabled) {
+                usedCcSecret.set(ccSecret);
+                usedApiSslEnabled.set(apiSslEnabled);
+                return api;
+            }
+
+            @Override
+            protected String cruiseControlHost(String clusterName, String clusterNamespace) {
+                return "localhost";
+            }
+
+            @Override
+            protected int cruiseControlPort() {
+                return 9090;
+            }
+        };
+    }
 
     private KafkaAutoRebalanceImbalanceDetector detector(Kafka kafka) {
         return new KafkaAutoRebalanceImbalanceDetector(RECONCILIATION, kafka, supplier) {
