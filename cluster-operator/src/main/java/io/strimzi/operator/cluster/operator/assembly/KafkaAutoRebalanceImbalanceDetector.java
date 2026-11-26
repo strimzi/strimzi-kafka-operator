@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
@@ -161,7 +160,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
                             ccConfigMap != null ? ccConfigMap.entrySet() : Map.<String, Object>of().entrySet(),
                             Map.of());
                     boolean apiAuthEnabled = ccConfig.isApiAuthEnabled();
-                    boolean apiSslEnabled = KafkaClusterSecurityContext.fromCrd(kafkaCr, null).encryption() instanceof TlsEncryptionConfiguration;
+                    boolean apiSslEnabled = KafkaClusterSecurityContext.fromCrd(kafkaCr, null).usesEncryption();
 
                     CruiseControlApi ccApi = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 

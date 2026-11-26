@@ -30,7 +30,6 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
@@ -146,10 +145,10 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
 
             // Security protocol
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=" + getSecurityProtocol(securityContext.encryption() instanceof TlsEncryptionConfiguration, securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=" + getSecurityProtocol(securityContext.usesEncryption(), securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
 
             // Encryption
-            if (securityContext.encryption() instanceof TlsEncryptionConfiguration)   {
+            if (securityContext.usesEncryption()) {
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS");
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM");
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
@@ -310,7 +309,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         // Control plane listener is configured for all nodes. Even brokers need to connect and talk to controllers, so
         // they need to know what is the security protocol and security configuration
-        securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":" + getSecurityProtocol(securityContext.encryption() instanceof TlsEncryptionConfiguration, securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
+        securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":" + getSecurityProtocol(securityContext.usesEncryption(), securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
         configureControlPlaneListener(clusterName);
 
         ////////////////////
@@ -333,7 +332,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         if (node.broker()) {
             // Replication Listener to be configured only on brokers
-            securityProtocol.add(REPLICATION_LISTENER_NAME + ":" + getSecurityProtocol(securityContext.encryption() instanceof TlsEncryptionConfiguration, securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
+            securityProtocol.add(REPLICATION_LISTENER_NAME + ":" + getSecurityProtocol(securityContext.usesEncryption(), securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
             listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
             advertisedListeners.add(String.format("%s://%s:9091",
                     REPLICATION_LISTENER_NAME,
@@ -488,7 +487,7 @@ public class KafkaBrokerConfigurationBuilder {
     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void configureReplicationOrControlPlaneListener(String listenerName, String clusterName, KafkaClusterDeployedComponents deployedComponents) {
         // Configure encryption
-        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
+        if (securityContext.usesEncryption()) {
             writer.println("listener.name." + listenerName + ".ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
             writer.println("listener.name." + listenerName + ".ssl.truststore.type=PEM");
 
@@ -958,10 +957,10 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("rlmm.config.remote.log.metadata.common.client.bootstrap.servers=" + clusterName + "-kafka-brokers:9091");
 
         // Security protocol
-        writer.println("rlmm.config.remote.log.metadata.common.client.security.protocol=" + getSecurityProtocol(securityContext.encryption() instanceof TlsEncryptionConfiguration, securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
+        writer.println("rlmm.config.remote.log.metadata.common.client.security.protocol=" + getSecurityProtocol(securityContext.usesEncryption(), securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
 
         // Encryption
-        if (securityContext.encryption() instanceof TlsEncryptionConfiguration)   {
+        if (securityContext.usesEncryption()) {
             writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
             writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PEM");
         }
@@ -1034,10 +1033,10 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("client.quota.callback.static.kafka.admin.bootstrap.servers=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
 
         // Security protocol
-        writer.println("client.quota.callback.static.kafka.admin.security.protocol=" + getSecurityProtocol(securityContext.encryption() instanceof TlsEncryptionConfiguration, securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
+        writer.println("client.quota.callback.static.kafka.admin.security.protocol=" + getSecurityProtocol(securityContext.usesEncryption(), securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration));
 
         // Encryption
-        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
+        if (securityContext.usesEncryption()) {
             writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
             writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.type=PEM");
         }

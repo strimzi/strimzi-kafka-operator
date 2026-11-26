@@ -31,7 +31,6 @@ import io.strimzi.operator.cluster.model.WorkloadUtils;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -565,7 +564,7 @@ public class CaReconciler {
     @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     private Identity createCoIdentity() {
         return new Identity(
-            securityContext.encryption() instanceof TlsEncryptionConfiguration ? new PemTrustSet(clusterCaCertSecret) : null,
+            securityContext.usesEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
             // Creates the identity based on the authentication type
             switch (securityContext.authentication()) {
                 case MtlsAuthenticationConfiguration ignored -> PemAuthIdentity.clusterOperator(coSecret);

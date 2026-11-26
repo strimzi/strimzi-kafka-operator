@@ -34,7 +34,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
-import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
@@ -278,7 +277,7 @@ public class KafkaExporter extends AbstractModel {
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
 
-        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
+        if (securityContext.usesEncryption()) {
             volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster), isOpenShift));
         }
 
@@ -297,7 +296,7 @@ public class KafkaExporter extends AbstractModel {
         List<VolumeMount> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createTempDirVolumeMount());
 
-        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
+        if (securityContext.usesEncryption()) {
             volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         }
 
