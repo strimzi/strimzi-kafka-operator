@@ -16,7 +16,7 @@
 
 ## testAutoRebalanceOnImbalanceCrashRecovery
 
-**Description:** Test crash recovery: when the operator is restarted while auto-rebalance on imbalance is in progress (RebalanceOnImbalance state), the operator recovers and continues the rebalance to completion.
+**Description:** Test crash recovery: when the operator is restarted while a KafkaRebalance resource is in a non-terminal state (e.g., PendingProposal, ProposalReady), the operator resumes monitoring and continues the rebalance to completion.
 
 **Steps:**
 
@@ -26,10 +26,11 @@
 | 2. | Create KafkaRebalance template for imbalance mode. | KafkaRebalance template is created. |
 | 3. | Deploy Kafka cluster with Cruise Control and imbalance auto-rebalance configured. | Kafka cluster is deployed. |
 | 4. | Scale brokers to 5 to create an imbalance — operator transitions to RebalanceOnImbalance. | Auto-rebalance state is RebalanceOnImbalance and imbalance KR is created. |
-| 5. | Simulate operator crash by deleting the operator pod. | Operator pod is deleted and restarted by the Deployment. |
-| 6. | Wait for the operator to restart. | Operator pod is running again. |
-| 7. | Verify operator recovers and auto-rebalance state is still RebalanceOnImbalance. | State remains RebalanceOnImbalance after restart. |
-| 8. | Wait for the rebalance to complete. | Auto-rebalance state returns to Idle. |
+| 5. | Wait for KafkaRebalance to reach non-terminal state (PendingProposal or ProposalReady). | KafkaRebalance is in one of the non-terminal states. |
+| 6. | Simulate operator crash by deleting the operator pod. | Operator pod is deleted and restarted by the Deployment. |
+| 7. | Wait for the operator to restart. | Operator pod is running again. |
+| 8. | Verify operator finds existing KafkaRebalance and resumes monitoring. | Operator resumes from current KafkaRebalance state. |
+| 9. | Wait for the rebalance to complete. | Auto-rebalance state returns to Idle and KafkaRebalance is deleted. |
 
 **Labels:**
 
