@@ -601,7 +601,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileKafkaExporter(Clock clock)    {
             return VertxUtil.toFuture(kafkaExporterReconciler()
-                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock))
+                    .reconcile(imagePullPolicy, imagePullSecrets, clock))
                     .map(this);
         }
 
@@ -635,7 +635,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileCruiseControl(Clock clock)    {
             return VertxUtil.toFuture(cruiseControlReconciler()
-                            .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock))
+                            .reconcile(imagePullPolicy, imagePullSecrets, clock))
                     .map(this);
         }
 
@@ -694,7 +694,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileEntityOperator(Clock clock)    {
             return VertxUtil.toFuture(entityOperatorReconciler()
-                            .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock))
+                            .reconcile(imagePullPolicy, imagePullSecrets, clock))
                     .map(this);
         }
 

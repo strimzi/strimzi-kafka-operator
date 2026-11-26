@@ -90,7 +90,6 @@ public class KafkaExporterReconciler {
      * The main reconciliation method which triggers the whole reconciliation pipeline. This is the method which is
      * expected to be called from the outside to trigger the reconciliation.
      *
-     * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
      * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
@@ -98,12 +97,12 @@ public class KafkaExporterReconciler {
      *
      * @return                  CompletionStage which completes when the reconciliation completes
      */
-    public CompletionStage<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
+    public CompletionStage<Void> reconcile(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return serviceAccount()
                 .thenCompose(i -> certificatesSecret(clock))
                 .thenCompose(i -> networkPolicy())
                 .thenCompose(i -> podDisruptionBudget())
-                .thenCompose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
+                .thenCompose(i -> deployment(imagePullPolicy, imagePullSecrets))
                 .thenCompose(i -> waitForDeploymentReadiness());
     }
 
@@ -193,20 +192,19 @@ public class KafkaExporterReconciler {
     /**
      * Manages the Kafka Exporter deployment.
      *
-     * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
      *
      * @return  CompletionState which completes when the reconciliation is done
      */
-    private CompletionStage<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    private CompletionStage<Void> deployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (kafkaExporter != null) {
             Map<String, String> podAnnotations = new LinkedHashMap<>();
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
             podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, certificateHash);
 
-            Deployment deployment = kafkaExporter.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
+            Deployment deployment = kafkaExporter.generateDeployment(podAnnotations, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), deployment)

@@ -313,7 +313,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift) {
+    protected List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createServiceAccountVolume());
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
@@ -324,7 +324,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                 String secretName = http.getTls().getCertificateAndKey().getSecretName();
                 // skipping if a volume mount with same Secret name was already added
                 if (volumeList.stream().noneMatch(v -> v.getName().equals(secretName))) {
-                    volumeList.add(VolumeUtils.createSecretVolume(secretName, secretName, isOpenShift));
+                    volumeList.add(VolumeUtils.createSecretVolume(secretName, secretName));
                 }
             } else {
                 LOGGER.warnCr(reconciliation, "The spec.http.tls.certificateAndKey property is missing. This is required when TLS is enabled for HTTP Bridge.");
@@ -381,13 +381,12 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * Generates the Bridge Kubernetes Deployment
      *
      * @param annotations       Map with annotations
-     * @param isOpenShift       Flag indicating if we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy configuration
      * @param imagePullSecrets  List of image pull secrets
      *
      * @return  Generated Kubernetes Deployment resource
      */
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
 
         return WorkloadUtils.createDeployment(
@@ -408,7 +407,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         ModelUtils.affinityWithRackLabelSelector(templatePod, rack),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
                         List.of(createContainer(imagePullPolicy)),
-                        getVolumes(isOpenShift),
+                        getVolumes(),
                         imagePullSecrets,
                         securityProvider.bridgePodSecurityContext(podSecurityProviderContext),
                         securityProvider.bridgeHostUsers(podSecurityProviderContext))

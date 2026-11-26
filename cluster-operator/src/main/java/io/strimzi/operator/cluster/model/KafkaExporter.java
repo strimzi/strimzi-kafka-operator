@@ -186,13 +186,12 @@ public class KafkaExporter extends AbstractModel {
      * Generates Kafka Exporter Deployment
      *
      * @param podAnnotations    Map with the annotations that will be used for the Pod metadata
-     * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image Pull Secrets
      *
      * @return  Generated deployment
      */
-    public Deployment generateDeployment(Map<String, String> podAnnotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> podAnnotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
 
         return WorkloadUtils.createDeployment(
@@ -213,7 +212,7 @@ public class KafkaExporter extends AbstractModel {
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         List.of(createContainer(imagePullPolicy)),
-                        getVolumes(isOpenShift),
+                        getVolumes(),
                         imagePullSecrets,
                         securityProvider.kafkaExporterPodSecurityContext(podSecurityProviderContext),
                         securityProvider.kafkaExporterHostUsers(podSecurityProviderContext))
@@ -273,17 +272,17 @@ public class KafkaExporter extends AbstractModel {
         }
     }
 
-    private List<Volume> getVolumes(boolean isOpenShift) {
+    private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>(3);
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
 
         if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
-            volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster), isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster)));
         }
 
         if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration)  {
-            volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster)));
         } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication)   {
             volumeList.add(VolumeUtils.createStrimziAuthenticationTokenProjection(saAuthentication.audience(), saAuthentication.expirationSeconds()));
         }

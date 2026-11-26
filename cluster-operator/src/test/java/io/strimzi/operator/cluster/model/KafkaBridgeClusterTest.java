@@ -225,7 +225,7 @@ public class KafkaBridgeClusterTest {
 
     @Test
     public void testGenerateDeployment()   {
-        Deployment dep = KBC.generateDeployment(new HashMap<>(), true, null, null);
+        Deployment dep = KBC.generateDeployment(new HashMap<>(), null, null);
 
         Set<String> secretsToAccess = KBC.secretsToAllowAccessTo();
         assertThat(secretsToAccess.size(), is(0));
@@ -440,7 +440,7 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("my-secret"));
 
@@ -583,7 +583,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
         // Check Deployment
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
@@ -634,7 +634,7 @@ public class KafkaBridgeClusterTest {
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
     }
 
@@ -643,7 +643,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE).build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
     }
 
@@ -663,7 +663,7 @@ public class KafkaBridgeClusterTest {
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -680,7 +680,7 @@ public class KafkaBridgeClusterTest {
 
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, RESOURCE, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, secrets);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, secrets);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -702,7 +702,7 @@ public class KafkaBridgeClusterTest {
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, singletonList(secret1));
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, singletonList(secret1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -713,7 +713,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE).build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
@@ -730,7 +730,7 @@ public class KafkaBridgeClusterTest {
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
@@ -742,7 +742,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE).build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -752,7 +752,7 @@ public class KafkaBridgeClusterTest {
         kbc.securityProvider = new TestPodSecurityProvider();
         kbc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
@@ -791,10 +791,10 @@ public class KafkaBridgeClusterTest {
     public void testImagePullPolicy() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, RESOURCE, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(Collections.emptyMap(), true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = kbc.generateDeployment(Collections.emptyMap(), ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = kbc.generateDeployment(Collections.emptyMap(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = kbc.generateDeployment(Collections.emptyMap(), ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -815,7 +815,7 @@ public class KafkaBridgeClusterTest {
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
-        Deployment dep = kbc.generateDeployment(Collections.emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(Collections.emptyMap(), null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(cont.getResources().getLimits(), is(limits));
         assertThat(cont.getResources().getRequests(), is(requests));
@@ -930,7 +930,7 @@ public class KafkaBridgeClusterTest {
 
     private static Deployment assertRackAwareDeploymentConfigured(final KafkaBridge resource, final String expectedInitImage) {
         KafkaBridgeCluster bridgeCluster = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment deployment = bridgeCluster.generateDeployment(new HashMap<>(), false, null, null);
+        Deployment deployment = bridgeCluster.generateDeployment(new HashMap<>(), null, null);
 
         assertThat(resource.getSpec().getRack(), is(notNullValue()));
         PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
@@ -981,7 +981,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster bridgeCluster = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
         // Test deployment
-        Deployment deployment = bridgeCluster.generateDeployment(new HashMap<>(), false, null, null);
+        Deployment deployment = bridgeCluster.generateDeployment(new HashMap<>(), null, null);
         PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
         assertThat(podSpec.getContainers(), is(notNullValue()));
         assertThat(podSpec.getContainers(), hasSize(1));
@@ -1098,7 +1098,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
         // Check ports in container
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kb.generateDeployment(emptyMap(), null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaBridgeCluster.REST_API_MANAGEMENT_PORT_NAME)));
@@ -1143,7 +1143,7 @@ public class KafkaBridgeClusterTest {
                 .build();
 
         KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kb.generateDeployment(new HashMap<>(), true, null, null);
+        Deployment dep = kb.generateDeployment(new HashMap<>(), null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(20));

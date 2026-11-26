@@ -162,10 +162,9 @@ public class VolumeUtils {
      *
      * @param name        Name of the Volume
      * @param secretName  Name of the Secret
-     * @param isOpenshift true if underlying cluster OpenShift
      * @return The Volume created
      */
-    public static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+    public static Volume createSecretVolume(String name, String secretName) {
         String validName = getValidVolumeName(name);
 
         int mode = 0444;

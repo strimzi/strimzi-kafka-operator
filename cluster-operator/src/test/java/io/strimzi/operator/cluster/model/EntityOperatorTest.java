@@ -139,7 +139,7 @@ public class EntityOperatorTest {
         }
 
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", "Kafka", NAMESPACE, CLUSTER_NAME), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = eo.generateDeployment(Map.of(), null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -167,7 +167,7 @@ public class EntityOperatorTest {
     public void testPodVolumesWithServiceAccountAuthentication() {
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(),
                 new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null)));
-        Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = eo.generateDeployment(Map.of(), null, null);
 
         Volume tokenVolume = dep.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(volume -> VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME.equals(volume.getName()))
@@ -181,7 +181,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testPodVolumesWithoutServiceAccountAuthentication() {
-        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(),
                 not(hasItem(VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME)));
@@ -244,8 +244,8 @@ public class EntityOperatorTest {
     @Test
     public void withAffinityAndTolerations() throws IOException {
         ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, (kAssembly, versions) -> EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT), this.getClass().getSimpleName() + ".withAffinityAndTolerations");
-        helper.assertDesiredModel("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(Map.of(), true, null, null).getSpec().getTemplate().getSpec().getAffinity());
-        helper.assertDesiredModel("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(Map.of(), true, null, null).getSpec().getTemplate().getSpec().getTolerations());
+        helper.assertDesiredModel("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(Map.of(), null, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredModel("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(Map.of(), null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
@@ -359,7 +359,7 @@ public class EntityOperatorTest {
         EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         // Check Deployment
-        Deployment dep = entityOperator.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = entityOperator.generateDeployment(Map.of(), null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnnotations.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
@@ -409,13 +409,13 @@ public class EntityOperatorTest {
 
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = eo.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
     }
 
     @Test
     public void testDefaultGracePeriod() {
-        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
     }
 
@@ -438,7 +438,7 @@ public class EntityOperatorTest {
 
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = eo.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -453,7 +453,7 @@ public class EntityOperatorTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, null, secrets);
+        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), null, secrets);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -478,7 +478,7 @@ public class EntityOperatorTest {
 
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Deployment dep = eo.generateDeployment(Map.of(), true, null, singletonList(secret1));
+        Deployment dep = eo.generateDeployment(Map.of(), null, singletonList(secret1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -486,7 +486,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultImagePullSecrets() {
-        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
@@ -506,7 +506,7 @@ public class EntityOperatorTest {
 
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = eo.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
@@ -515,17 +515,17 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultSecurityContext() {
-        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
     @Test
     public void testImagePullPolicy() {
-        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = ENTITY_OPERATOR.generateDeployment(Map.of(), ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
@@ -730,7 +730,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment deployment = eo.generateDeployment(Map.of(), false, null, null);
+        Deployment deployment = eo.generateDeployment(Map.of(), null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
@@ -764,7 +764,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment deployment = eo.generateDeployment(Map.of(), false, null, null);
+        Deployment deployment = eo.generateDeployment(Map.of(), null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
@@ -956,7 +956,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, config, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        Deployment dep = eo.generateDeployment(Map.of(), false, null, null);
+        Deployment dep = eo.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("-UseBackgroundPodDeletion"));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("-UseBackgroundPodDeletion"));
@@ -968,7 +968,7 @@ public class EntityOperatorTest {
         eo.securityProvider = new TestPodSecurityProvider();
         eo.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Deployment dep = eo.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = eo.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
     }

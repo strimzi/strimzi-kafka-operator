@@ -336,7 +336,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift) {
+    protected List<Volume> getVolumes() {
         List<Volume> volumes = new ArrayList<>();
         volumes.add(VolumeUtils.createTempDirVolume(templatePod));
 
@@ -344,15 +344,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             // The CA certificate is used for encryption of Kafka client.
             // The CC certificate is needed for encryption of the HTTP server.
             // So we need both volumes regardless whether mTLS is enabled or not.
-            volumes.add(VolumeUtils.createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
-            volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, KafkaResources.clusterCaCertificateSecretName(cluster), isOpenShift));
+            volumes.add(VolumeUtils.createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster)));
+            volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, KafkaResources.clusterCaCertificateSecretName(cluster)));
         }
 
         if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication)   {
             volumes.add(VolumeUtils.createStrimziAuthenticationTokenProjection(saAuthentication.audience(), saAuthentication.expirationSeconds()));
         }
 
-        volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
+        volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster)));
         volumes.add(VolumeUtils.createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
 
         TemplateUtils.addAdditionalVolumes(templatePod, volumes);
@@ -388,13 +388,12 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * Generates Kubernetes Deployment for Cruise Control
      *
      * @param annotations       Map with annotations
-     * @param isOpenShift       Flag indicating if we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      *
      * @return  Cruise Control Kubernetes Deployment
      */
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
 
         return WorkloadUtils.createDeployment(
@@ -415,7 +414,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         List.of(createContainer(imagePullPolicy)),
-                        getVolumes(isOpenShift),
+                        getVolumes(),
                         imagePullSecrets,
                         securityProvider.cruiseControlPodSecurityContext(podSecurityProviderContext),
                         securityProvider.cruiseControlHostUsers(podSecurityProviderContext))

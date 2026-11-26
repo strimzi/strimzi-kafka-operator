@@ -194,13 +194,12 @@ public class EntityOperator extends AbstractModel {
      * Generates the Entity Operator deployment
      *
      * @param podAnnotations    Map with the annotations that will be used for the Pod metadata
-     * @param isOpenShift       Flag which identifies if we are running on OpenShift
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      *
      * @return  Kubernetes Deployment with the Entity Operator
      */
-    public Deployment generateDeployment(Map<String, String> podAnnotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> podAnnotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
 
         return WorkloadUtils.createDeployment(
@@ -221,7 +220,7 @@ public class EntityOperator extends AbstractModel {
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         createContainers(imagePullPolicy),
-                        getVolumes(isOpenShift),
+                        getVolumes(),
                         imagePullSecrets,
                         securityProvider.entityOperatorPodSecurityContext(podSecurityProviderContext),
                         securityProvider.entityOperatorHostUsers(podSecurityProviderContext))
@@ -241,7 +240,7 @@ public class EntityOperator extends AbstractModel {
         return containers;
     }
 
-    private List<Volume> getVolumes(boolean isOpenShift) {
+    private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.add(VolumeUtils.createServiceAccountVolume());
@@ -251,7 +250,7 @@ public class EntityOperator extends AbstractModel {
         }
 
         if (topicOperator != null) {
-            volumeList.addAll(topicOperator.getVolumes(templatePod, isOpenShift));
+            volumeList.addAll(topicOperator.getVolumes(templatePod));
         }
 
         if (userOperator != null) {
