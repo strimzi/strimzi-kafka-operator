@@ -25,8 +25,8 @@
   To change the log level for the Admin client, you must configure this logger explicitly rather than relying solely on the root logger.
 * The Metrics Reporter's `allowList` configuration is not dynamically updated anymore, because of [issue with obtaining current configuration from Kafka](https://github.com/strimzi/strimzi-kafka-operator/issues/13375).
   Changing this field will result in rolling update of the cluster.
-* From the 1.6.0 release, a dedicated `Tls13EnforcerGatekeeperPlugin` will enforce TLS 1.3 by default across Kafka and its clients, rejecting TLS 1.2-only external clients. You will be able to
-  opt out by removing the plugin from `STRIMZI_GATEKEEPER_DEFAULT_PLUGINS` or by explicitly configuring `ssl.enabled.protocols` yourself. The plugin ships as opt-in in 1.5.0.
+* Starting with the 1.6.0 release, Strimzi will allow only TLS 1.3 connections between Apache Kafka and its clients by default. 
+  If needed, support for older TLS versions can be enabled manually.
 
 ## 1.3.0
 
