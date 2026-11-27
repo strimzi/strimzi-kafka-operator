@@ -498,7 +498,42 @@ public class KafkaAutoRebalancingReconciler {
             kafkaAutoRebalanceStatus.getModes().stream().filter(m -> m.getMode().equals(KafkaAutoRebalanceMode.ADD_BROKERS)).findFirst()
                     .ifPresent(m -> scalingUpAddedNodes.addAll(m.getBrokers()));
         }
-        return new ScalingNodes(scalingDownBlockedNodes, scalingUpAddedNodes);
+        return ignoreScalingForUnconfiguredModes(new ScalingNodes(scalingDownBlockedNodes, scalingUpAddedNodes));
+    }
+
+    /**
+     * Ignores the scaling nodes for an auto-rebalancing mode (remove-brokers or add-brokers) which is not configured
+     * in the Kafka custom resource, so that no auto-rebalancing is started for it.
+     * An auto-rebalancing already running for that mode is not affected (i.e. the mode was removed from the
+     * configuration while it was running).
+     *
+     * @param scalingNodes  blocked nodes on scaling down and added nodes on scaling up
+     * @return  scaling nodes without the ones related to not configured auto-rebalancing modes
+     */
+    private ScalingNodes ignoreScalingForUnconfiguredModes(ScalingNodes scalingNodes) {
+        Set<Integer> blocked = scalingNodes.blocked();
+        if (!blocked.isEmpty()
+                && kafkaAutoRebalanceStatus.getState() != KafkaAutoRebalanceState.RebalanceOnScaleDown
+                && !isModeConfigured(KafkaAutoRebalanceMode.REMOVE_BROKERS)) {
+            LOGGER.infoCr(reconciliation, "Ignoring scale down of nodes {} because the auto-rebalancing mode {} is not configured",
+                    blocked, KafkaAutoRebalanceMode.REMOVE_BROKERS.toValue());
+            blocked = Set.of();
+        }
+
+        Set<Integer> added = scalingNodes.added();
+        if (!added.isEmpty()
+                && kafkaAutoRebalanceStatus.getState() != KafkaAutoRebalanceState.RebalanceOnScaleUp
+                && !isModeConfigured(KafkaAutoRebalanceMode.ADD_BROKERS)) {
+            LOGGER.infoCr(reconciliation, "Ignoring scale up of nodes {} because the auto-rebalancing mode {} is not configured",
+                    added, KafkaAutoRebalanceMode.ADD_BROKERS.toValue());
+            added = Set.of();
+        }
+
+        return new ScalingNodes(blocked, added);
+    }
+
+    private boolean isModeConfigured(KafkaAutoRebalanceMode kafkaAutoRebalanceMode) {
+        return kafkaAutoRebalanceConfigurations.stream().anyMatch(c -> c.getMode().equals(kafkaAutoRebalanceMode));
     }
 
     private CompletionStage<KafkaRebalance> getKafkaRebalance(String namespace, String cluster, KafkaAutoRebalanceMode kafkaAutoRebalanceMode) {

@@ -42,6 +42,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -55,6 +57,8 @@ public class KafkaAutoRebalancingReconcilerTest {
     private static final Reconciliation RECONCILIATION = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
     private static final Instant DETECTION_TIME = Instant.now();
     private static final String IMBALANCE_KR_NAME = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE);
+    private static final String ADD_BROKERS_KR_NAME = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.ADD_BROKERS);
+    private static final String REMOVE_BROKERS_KR_NAME = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.REMOVE_BROKERS);
     private static final GoalViolationInfo FIXABLE_VIOLATION = new GoalViolationInfo(
             DETECTION_TIME, GoalViolationInfo.Fixability.FIXABLE, List.of("DiskUsageDistributionGoal"), List.of());
 
@@ -454,6 +458,222 @@ public class KafkaAutoRebalancingReconcilerTest {
         verify(rebalanceOperator, never()).createOrUpdate(any(), any());
     }
 
+    /**
+     * When only the remove-brokers mode is configured, a scale up is ignored: no KafkaRebalance is created and the
+     * auto-rebalance state stays Idle.
+     */
+    @Test
+    public void testScaleUpIgnoredWhenAddBrokersModeNotConfigured() {
+        KafkaStatus kafkaStatus = kafkaStatusWithAddedBrokers(3);
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.REMOVE_BROKERS);
+        buildReconciler(kafka, mockImbalanceDetector(null), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+        verify(rebalanceOperator, never()).deleteAsync(any(), any(), any(), anyBoolean());
+    }
+
+    /**
+     * When only the remove-brokers mode is configured and the cluster is scaled up while a rebalance on scale down
+     * completes, the completed KafkaRebalance is deleted, the scale up is ignored and the state goes to Idle.
+     */
+    @Test
+    public void testScaleUpIgnoredAfterScaleDownCompletedWhenAddBrokersModeNotConfigured() {
+        KafkaRebalance kr = buildKafkaRebalance(REMOVE_BROKERS_KR_NAME, KafkaRebalanceMode.REMOVE_BROKERS, KafkaRebalanceState.Ready, 4, 5, 6);
+        mockGetPatchAndDelete(kr);
+
+        KafkaStatus kafkaStatus = kafkaStatusWithAddedBrokers(7);
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.REMOVE_BROKERS);
+        buildReconciler(kafka, mockImbalanceDetector(null), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
+        verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(REMOVE_BROKERS_KR_NAME), eq(true));
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+    }
+
+    /**
+     * When only the add-brokers mode is configured, a scale down is ignored: no KafkaRebalance is created and the
+     * auto-rebalance state stays Idle.
+     */
+    @Test
+    public void testScaleDownIgnoredWhenRemoveBrokersModeNotConfigured() {
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.ADD_BROKERS);
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of(3)));
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+        verify(rebalanceOperator, never()).deleteAsync(any(), any(), any(), anyBoolean());
+    }
+
+    /**
+     * When only the add-brokers mode is configured and the cluster is scaled down while a rebalance on scale up
+     * completes, the completed KafkaRebalance is deleted, the scale down is ignored and the state goes to Idle.
+     */
+    @Test
+    public void testScaleDownIgnoredAfterScaleUpCompletedWhenRemoveBrokersModeNotConfigured() {
+        KafkaRebalance kr = buildKafkaRebalance(ADD_BROKERS_KR_NAME, KafkaRebalanceMode.ADD_BROKERS, KafkaRebalanceState.Ready, 3);
+        mockGetPatchAndDelete(kr);
+
+        KafkaStatus kafkaStatus = kafkaStatusWithAddedBrokers(3);
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaAutoRebalanceMode.ADD_BROKERS);
+        buildReconciler(kafka, mockImbalanceDetector(null), Set.of(1)).reconcile(kafkaStatus).toCompletableFuture().join();
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
+        verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(ADD_BROKERS_KR_NAME), eq(true));
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+    }
+
+    /**
+     * When only the add-brokers mode is configured, a scale up still triggers the rebalance on scale up.
+     */
+    @Test
+    public void testScaleUpTriggersRebalanceWhenOnlyAddBrokersModeConfigured() {
+        when(rebalanceOperator.createOrUpdate(any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(buildKafkaRebalance(ADD_BROKERS_KR_NAME, KafkaRebalanceMode.ADD_BROKERS, KafkaRebalanceState.New, 3))));
+
+        KafkaStatus kafkaStatus = kafkaStatusWithAddedBrokers(3);
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.ADD_BROKERS);
+        buildReconciler(kafka, mockImbalanceDetector(null), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
+
+        verify(rebalanceOperator).createOrUpdate(any(), any());
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleUp));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers(), is(List.of(3)));
+    }
+
+    /**
+     * When only the remove-brokers mode is configured, a scale down still triggers the rebalance on scale down.
+     */
+    @Test
+    public void testScaleDownTriggersRebalanceWhenOnlyRemoveBrokersModeConfigured() {
+        when(rebalanceOperator.createOrUpdate(any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(buildKafkaRebalance(REMOVE_BROKERS_KR_NAME, KafkaRebalanceMode.REMOVE_BROKERS, KafkaRebalanceState.New, 3))));
+
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.REMOVE_BROKERS);
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of(3)));
+
+        verify(rebalanceOperator).createOrUpdate(any(), any());
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleDown));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.REMOVE_BROKERS));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers(), is(List.of(3)));
+    }
+
+    /**
+     * When the add-brokers mode is removed from the configuration while a rebalance on scale up is running, the
+     * running rebalance is not affected: once it completes, its KafkaRebalance is deleted and the state goes to Idle.
+     */
+    @Test
+    public void testRunningScaleUpRebalanceCompletesWhenAddBrokersModeRemoved() {
+        KafkaRebalance kr = buildKafkaRebalance(ADD_BROKERS_KR_NAME, KafkaRebalanceMode.ADD_BROKERS, KafkaRebalanceState.Ready, 3);
+        mockGetPatchAndDelete(kr);
+
+        KafkaStatus kafkaStatus = kafkaStatusWithAddedBrokers(3);
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaAutoRebalanceMode.REMOVE_BROKERS);
+        buildReconciler(kafka, mockImbalanceDetector(null), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
+        verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(ADD_BROKERS_KR_NAME), eq(true));
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+    }
+
+    /**
+     * When the remove-brokers mode is removed from the configuration while a rebalance on scale down is running, the
+     * running rebalance is not affected: once it completes, its KafkaRebalance is deleted and the state goes to Idle.
+     */
+    @Test
+    public void testRunningScaleDownRebalanceCompletesWhenRemoveBrokersModeRemoved() {
+        KafkaRebalance kr = buildKafkaRebalance(REMOVE_BROKERS_KR_NAME, KafkaRebalanceMode.REMOVE_BROKERS, KafkaRebalanceState.Ready, 3);
+        mockGetPatchAndDelete(kr);
+
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.ADD_BROKERS);
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of(3)));
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
+        verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(REMOVE_BROKERS_KR_NAME), eq(true));
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+    }
+
+    /**
+     * When the remove-brokers mode is removed from the configuration while a rebalance on scale down is running and
+     * the nodes blocked for scaling down change, the running rebalance still takes them into account: its
+     * KafkaRebalance is refreshed with the new nodes and the state stays RebalanceOnScaleDown.
+     */
+    @Test
+    public void testRunningScaleDownRebalanceRefreshedWhenBlockedNodesChangeAndRemoveBrokersModeRemoved() {
+        KafkaRebalance kr = buildKafkaRebalance(REMOVE_BROKERS_KR_NAME, KafkaRebalanceMode.REMOVE_BROKERS, KafkaRebalanceState.Rebalancing, 3);
+        mockGetPatchAndDelete(kr);
+
+        Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.ADD_BROKERS);
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of(3, 4)));
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleDown));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
+        assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.REMOVE_BROKERS));
+        assertThat(Set.copyOf(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers()), is(Set.of(3, 4)));
+        verify(rebalanceOperator).patchAsync(any(), argThat(patched -> Set.copyOf(patched.getSpec().getBrokers()).equals(Set.of(3, 4))));
+        verify(rebalanceOperator, never()).deleteAsync(any(), any(), any(), anyBoolean());
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+    }
+
+    /**
+     * When only the imbalance mode is configured, a scale up and a scale down happening while a rebalance on imbalance
+     * is running are both ignored: the running rebalance is not stopped, no KafkaRebalance is created or deleted and
+     * the state stays RebalanceOnImbalance.
+     */
+    @Test
+    public void testScaleUpAndScaleDownIgnoredDuringImbalanceRebalanceWhenModesNotConfigured() {
+        KafkaRebalance kr = buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Rebalancing);
+        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(IMBALANCE_KR_NAME)))
+                .thenReturn(CompletableFuture.completedFuture(kr));
+
+        Kafka kafka = new KafkaBuilder(buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE))
+                .editStatus()
+                    .editAutoRebalance()
+                        .withModes(new KafkaAutoRebalanceStatusBrokersBuilder().withMode(KafkaAutoRebalanceMode.IMBALANCE).build())
+                    .endAutoRebalance()
+                .endStatus()
+                .build();
+        KafkaStatus kafkaStatus = kafkaStatusWithAddedBrokers(5, 6);
+        buildReconciler(kafka, mockImbalanceDetector(null), Set.of(3)).reconcile(kafkaStatus).toCompletableFuture().join();
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.IMBALANCE));
+        verify(rebalanceOperator, never()).patchAsync(any(), any());
+        verify(rebalanceOperator, never()).deleteAsync(any(), any(), any(), anyBoolean());
+        verify(rebalanceOperator, never()).createOrUpdate(any(), any());
+    }
+
+    private void mockGetPatchAndDelete(KafkaRebalance kr) {
+        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
+                .thenReturn(CompletableFuture.completedFuture(kr));
+        when(rebalanceOperator.patchAsync(any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(kr));
+        when(rebalanceOperator.deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true)))
+                .thenReturn(CompletableFuture.completedFuture(null));
+    }
+
+    private KafkaStatus kafkaStatusWithAddedBrokers(Integer... brokers) {
+        // simulates the KafkaReconciler storing the brokers added by a scale up
+        KafkaStatus kafkaStatus = new KafkaStatus();
+        kafkaStatus.setAutoRebalance(new KafkaAutoRebalanceStatusBuilder()
+                .withModes(new KafkaAutoRebalanceStatusBrokersBuilder()
+                        .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
+                        .withBrokers(brokers)
+                        .build())
+                .build());
+        return kafkaStatus;
+    }
+
     private KafkaStatus reconcile(KafkaAutoRebalancingReconciler reconciler) {
         KafkaStatus kafkaStatus = new KafkaStatus();
         reconciler.reconcile(kafkaStatus).toCompletableFuture().join();
@@ -512,6 +732,14 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .withNewStatus()
                     .withConditions(new ConditionBuilder().withType(state.name()).withStatus("True").build())
                 .endStatus()
+                .build();
+    }
+
+    private KafkaRebalance buildKafkaRebalance(String name, KafkaRebalanceMode mode, KafkaRebalanceState state, Integer... brokers) {
+        return new KafkaRebalanceBuilder(buildKafkaRebalance(name, mode, state))
+                .editSpec()
+                    .withBrokers(brokers)
+                .endSpec()
                 .build();
     }
 }
