@@ -8,6 +8,9 @@ DOCKER_TAG ?= latest
 clean:
 	./build.sh clean
 
+clean_third_party_conflicts:
+	./build.sh clean
+
 docker_build:
 	./build.sh docker_build
 

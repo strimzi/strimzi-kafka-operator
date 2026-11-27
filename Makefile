@@ -21,6 +21,7 @@ JAVA_TARGETS=java_build java_install java_clean
 
 all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) crd_install dashboard_install helm_install shellcheck docu_versions docu_check
 clean: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) docu_clean
+clean_third_party_conflicts: prerequisites_check docker-images/artifacts docker-images/kafka-based
 $(DOCKER_TARGETS): prerequisites_check $(DOCKERDIRS)
 $(JAVA_TARGETS): prerequisites_check $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg docu_clean
