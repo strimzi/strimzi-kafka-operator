@@ -1,0 +1,22 @@
+:_mod-docs-content-type: ASSEMBLY
+
+// Module included in the following assemblies:
+//
+// configuring/configuring.adoc
+
+[id='assembly-auto-rebalance-on-imbalance-{context}']
+= Auto-rebalancing clusters to fix imbalances
+
+[role="_abstract"]
+Enable automatic rebalancing of Kafka clusters when Cruise Control detects goal violations and cluster imbalances.
+This feature leverages Cruise Control's anomaly detection capabilities to identify problems like uneven partition distribution, overloaded brokers, and resource constraints, then automatically triggers rebalancing operations to restore cluster balance.
+Unlike manual rebalancing or the Cruise Control self-healing mechanism, Strimzi's auto-rebalance on imbalance keeps the Cluster Operator in full control of all rebalancing operations while respecting maintenance time windows and cluster stability.
+
+IMPORTANT: This feature is currently in *early access* and subject to change.
+Do not use in production clusters. Feedback and testing on non-production clusters are encouraged to help shape the final design.
+
+include::../../modules/cruise-control/proc-automating-rebalances.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/con-auto-rebalance-imbalance-overview.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-auto-rebalance-on-imbalance.adoc[leveloffset=+1]
