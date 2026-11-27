@@ -451,11 +451,60 @@ public class KafkaConfigurationDiffTest {
         kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
                 getCurrentConfiguration(current), getDesiredConfiguration(emptyList()), kafkaVersion, brokerNodeRef, false, true);
         assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
         assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(1));
 
         AlterConfigOp deleteOp = kcd.getConfigDiff(Scope.CLUSTER_WIDE).iterator().next();
         assertThat(deleteOp.opType(), is(AlterConfigOp.OpType.DELETE));
         assertThat(deleteOp.configEntry().source(), is(ConfigEntry.ConfigSource.DYNAMIC_BROKER_CONFIG));
+    }
+
+    @Test
+    public void testStaticBrokerConfigRemoval() {
+        List<ConfigEntry> staticCurrent = singletonList(instantiateConfigEntry("compression.type", "zstd", ConfigEntry.ConfigSource.STATIC_BROKER_CONFIG));
+
+        // Removing a static broker configuration requires a rolling restart
+        KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
+                getCurrentConfiguration(staticCurrent), getDesiredConfiguration(emptyList()), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.canBeUpdatedDynamically(), is(false));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(1));
+
+        AlterConfigOp staticDeleteOp = kcd.getConfigDiff(Scope.CLUSTER_WIDE).iterator().next();
+        assertThat(staticDeleteOp.opType(), is(AlterConfigOp.OpType.DELETE));
+        assertThat(staticDeleteOp.configEntry().name(), is("compression.type"));
+        assertThat(staticDeleteOp.configEntry().source(), is(ConfigEntry.ConfigSource.STATIC_BROKER_CONFIG));
+
+        // Explicitly changing the desired value produces a SET that can still be applied dynamically
+        kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
+                getCurrentConfiguration(staticCurrent), getDesiredConfiguration(singletonList(new ConfigEntry("compression.type", "lz4"))), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
+        assertConfig(kcd, new ConfigEntry("compression.type", "lz4"));
+
+        AlterConfigOp setOp = kcd.getConfigDiff(Scope.CLUSTER_WIDE).iterator().next();
+        assertThat(setOp.opType(), is(AlterConfigOp.OpType.SET));
+        assertThat(setOp.configEntry().source(), is(ConfigEntry.ConfigSource.STATIC_BROKER_CONFIG));
+
+        // Removing a dynamic override can still be applied dynamically
+        List<ConfigEntry> dynamicCurrent = singletonList(instantiateConfigEntry("compression.type", "zstd", ConfigEntry.ConfigSource.DYNAMIC_DEFAULT_BROKER_CONFIG));
+        kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
+                getCurrentConfiguration(dynamicCurrent), getDesiredConfiguration(emptyList()), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(1));
+
+        AlterConfigOp dynamicDeleteOp = kcd.getConfigDiff(Scope.CLUSTER_WIDE).iterator().next();
+        assertThat(dynamicDeleteOp.opType(), is(AlterConfigOp.OpType.DELETE));
+        assertThat(dynamicDeleteOp.configEntry().source(), is(ConfigEntry.ConfigSource.DYNAMIC_DEFAULT_BROKER_CONFIG));
+
+        // After restart, the broker reports the default value with DEFAULT_CONFIG source and no further change is needed
+        List<ConfigEntry> defaultCurrent = singletonList(instantiateConfigEntry("compression.type", "producer", ConfigEntry.ConfigSource.DEFAULT_CONFIG));
+        kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
+                getCurrentConfiguration(defaultCurrent), getDesiredConfiguration(emptyList()), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(0));
+        assertThat(kcd.isEmpty(), is(true));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
     }
 
     @Test
