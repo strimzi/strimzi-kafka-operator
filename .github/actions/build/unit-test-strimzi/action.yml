@@ -43,6 +43,13 @@ runs:
         TESTCONTAINERS_CHECKS_DISABLE: true
         STRIMZI_TEST_CONTAINER_LOGGING_ENABLED: false
 
+    - name: Run performance reporter builder unit test
+      shell: bash
+      run: |
+        mvn -e -V -B -DskipTests=false \
+          -Dtest=PerformanceReporterBuilderTest \
+          -pl systemtest test
+
     - name: Publish test results
       uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
       if: always()

@@ -14,7 +14,6 @@ import io.skodjob.kubetest4j.wait.WaitException;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.ConditionStatus;
@@ -45,10 +44,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestTags.TOPIC_CAPACITY;
@@ -67,8 +64,6 @@ public class TopicOperatorPerformance extends AbstractST {
     private TopicOperatorMetricsCollector topicOperatorCollector;
     private TopicOperatorMetricsCollectionScheduler topicOperatorMetricsGatherer;
     private TestLogCollector logCollector;
-
-    protected static final String REPORT_DIRECTORY = "topic-operator";
 
     protected TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
 
@@ -237,17 +232,13 @@ public class TopicOperatorPerformance extends AbstractST {
             if (this.topicOperatorMetricsGatherer != null) {
                 this.topicOperatorMetricsGatherer.stopCollecting();
 
-                final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
-
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED, successfulCreations);
-
-                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
-
-                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.capacity()
+                    .maxQueueSize(maxQueueSize)
+                    .maxBatchSize(maxBatchSize)
+                    .maxBatchLingerMs(maxBatchLingerMs)
+                    .successfulCreations(successfulCreations)
+                    .metricsHistory(this.topicOperatorMetricsGatherer.getMetricsStore())
+                    .log(this.testStorage);
             }
         }
     }
