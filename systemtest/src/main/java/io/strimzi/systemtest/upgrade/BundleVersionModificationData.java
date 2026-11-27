@@ -12,7 +12,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
     private String deployKafkaVersion;
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
-    private Map<String, String> environmentInfo;
 
     public Integer getAdditionalTopics() {
         return additionalTopics;
@@ -59,26 +58,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         return (int) client.get("continuousClientsMessages");
     }
 
-    public Map<String, String> getEnvironmentInfo() {
-        return environmentInfo;
-    }
-
-    public String getEnvMaxK8sVersion() {
-        return environmentInfo.get("maxK8sVersion");
-    }
-
-    public String getEnvStatus() {
-        return environmentInfo.get("status");
-    }
-
-    public String getEnvFlakyVariable() {
-        return environmentInfo.get("flakyEnvVariable");
-    }
-
-    public String getEnvReason() {
-        return environmentInfo.get("reason");
-    }
-
     public void setAdditionalTopics(Integer additionalTopics) {
         this.additionalTopics = additionalTopics;
     }
@@ -91,10 +70,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         this.client = client;
     }
 
-    public void setEnvironmentInfo(Map<String, String> environmentInfo) {
-        this.environmentInfo = environmentInfo;
-    }
-
     @Override
     public String toString() {
         return "\n" +
@@ -104,7 +79,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
             ", deployKafkaVersion='" + deployKafkaVersion + '\'' +
             ", imagesAfterOperations=" + imagesAfterOperations +
             ", client=" + client +
-            ", environmentInfo=" + environmentInfo +
             "\n}";
     }
 

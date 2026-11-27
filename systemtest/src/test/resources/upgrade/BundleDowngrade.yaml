@@ -19,11 +19,6 @@
 #                               In case that you want to use Kafka version unsupported in the older version of Strimzi, you will have to handle it in the test code directly.
 #  client:
 #    continuousClientsMessages: int - message count sent during upgrade
-#  environmentInfo:
-#    maxK8sVersion: String - maximal version of Kubernetes on which the upgrade test runs
-#    status: stable  String - info about stability of the testing environment
-#    flakyEnvVariable: String - name of the environmental variable which is flaky on current environment
-#    reason: String - reason why we skip / not skip the test case (information, not propagated to test itself)
 #  fromFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
 #  toFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  filePaths: path to example files for particular resources
@@ -44,11 +39,6 @@
   deployKafkaVersion: 4.3.0
   client:
     continuousClientsMessages: 400
-  environmentInfo:
-    maxK8sVersion: latest
-    status: stable
-    flakyEnvVariable: none
-    reason: Test is working on all environment used by QE.
   fromFeatureGates: ""
   toFeatureGates: ""
   filePaths:

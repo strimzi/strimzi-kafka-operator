@@ -98,15 +98,6 @@ public class StUtils {
     private StUtils() { }
 
     /**
-     * Method for check if test is allowed on specific testing environment
-     * @param envVariableForCheck environment variable which is specific for a specific environment
-     * @return true if test is allowed, false if not
-     */
-    public static boolean isAllowOnCurrentEnvironment(String envVariableForCheck) {
-        return System.getenv().get(envVariableForCheck) == null;
-    }
-
-    /**
      * The method to configure docker image to use proper docker registry, docker org and docker tag.
      * @param image Image that needs to be changed
      * @return Updated docker image with a proper registry, org, tag
@@ -266,18 +257,6 @@ public class StUtils {
             }
             return isValidJSON;
         });
-    }
-
-    /**
-     * Method for check if test is allowed on current Kubernetes version
-     * @param maxKubernetesVersion kubernetes version which test needs
-     * @return true if test is allowed, false if not
-     */
-    public static boolean isAllowedOnCurrentK8sVersion(String maxKubernetesVersion) {
-        if (maxKubernetesVersion.equals("latest")) {
-            return true;
-        }
-        return Double.parseDouble(getKubernetesClusterVersion()) < Double.parseDouble(maxKubernetesVersion);
     }
 
     /**
