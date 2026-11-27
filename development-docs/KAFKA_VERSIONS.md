@@ -52,6 +52,8 @@ Remember to remove the staging repository when the Apache Kafka release is GA.
   You will need to commit also all the files it updates before opening a PR.
 * Make sure the version is not referenced anywhere anymore (apart from the obvious places such as CHANGELOG.md)
 * Add a `CHANGELOG.md` record
+* Inside `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml`, update the `unsupportedKafkaUpgrade` with latest 
+  released Strimzi version and Kafka version you are removing.
 * Run unit tests
 * Run system tests
 

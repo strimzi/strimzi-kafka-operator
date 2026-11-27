@@ -4,20 +4,12 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import io.strimzi.systemtest.utils.TestKafkaVersion;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.List;
 import java.util.Map;
 
 public class BundleVersionModificationData extends CommonVersionModificationData {
-    private static final Logger LOGGER = LogManager.getLogger(BundleVersionModificationData.class);
     // Bundle specific
     private int additionalTopics;
-    private String defaultKafka;
     private String deployKafkaVersion;
-    private String startingKafkaVersion;
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
@@ -26,16 +18,8 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         return additionalTopics;
     }
 
-    public String getDefaultKafka() {
-        return defaultKafka;
-    }
-
     public String getDeployKafkaVersion() {
         return deployKafkaVersion;
-    }
-
-    public String getStartingKafkaVersion() {
-        return startingKafkaVersion;
     }
 
     public Map<String, String> getImagesAfterOperations() {
@@ -44,6 +28,19 @@ public class BundleVersionModificationData extends CommonVersionModificationData
 
     public String getKafkaImage() {
         return imagesAfterOperations.get("kafka");
+    }
+
+    /**
+     * Builds the expected Kafka image for the given Kafka version, reusing the registry and tag from the configured
+     * Kafka image. Scenarios sharing the same data end up on different Kafka versions - some keep the deployed one,
+     * others upgrade Kafka as part of the procedure - while the registry and the operator tag stay the same.
+     *
+     * @param kafkaVersion Kafka version the Pods are expected to run
+     *
+     * @return expected Kafka image for the given Kafka version
+     */
+    public String getKafkaImageForVersion(String kafkaVersion) {
+        return getKafkaImage().replaceFirst("-kafka-.*$", "-kafka-" + kafkaVersion);
     }
 
     public String getTopicOperatorImage() {
@@ -86,16 +83,8 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         this.additionalTopics = additionalTopics;
     }
 
-    public void setDefaultKafka(String defaultKafka) {
-        this.defaultKafka = defaultKafka;
-    }
-
     public void setDeployKafkaVersion(String deployKafkaVersion) {
         this.deployKafkaVersion = deployKafkaVersion;
-    }
-
-    public void setStartingKafkaVersion(String startingKafkaVersion) {
-        this.startingKafkaVersion = startingKafkaVersion;
     }
 
     public void setClient(Map<String, Object> client) {
@@ -106,25 +95,13 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         this.environmentInfo = environmentInfo;
     }
 
-    public String getDefaultKafkaVersionPerStrimzi() {
-        try {
-            List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl(getFromKafkaVersionsUrl());
-            return testKafkaVersions.stream().filter(TestKafkaVersion::isDefault).toList().get(0).version();
-        } catch (Exception e) {
-            LOGGER.error("Cannot parse Kafka versions from URL");
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public String toString() {
         return "\n" +
             "BundleVersionModificationData{" +
             super.toString() +
             ", additionalTopics=" + additionalTopics +
-            ", defaultKafka='" + defaultKafka + '\'' +
             ", deployKafkaVersion='" + deployKafkaVersion + '\'' +
-            ", startingKafkaVersion='" + startingKafkaVersion + '\'' +
             ", imagesAfterOperations=" + imagesAfterOperations +
             ", client=" + client +
             ", environmentInfo=" + environmentInfo +

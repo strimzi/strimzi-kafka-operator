@@ -12,7 +12,6 @@ import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -27,7 +26,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
@@ -45,7 +43,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziUpgradeST.class);
-    private final BundleVersionModificationData acrossUpgradeData = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_UPGRADE).buildDataForUpgradeAcrossVersionsForKRaft();
+    private final VersionModificationDataLoader upgradeDataLoader = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_UPGRADE);
+    private final BundleVersionModificationData acrossUpgradeData = upgradeDataLoader.buildDataForUpgradeAcrossVersionsForKRaft();
+    private final BundleVersionModificationData unsupportedKafkaUpgradeData = upgradeDataLoader.buildDataForUpgradeWithUnsupportedKafkaVersion();
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")
     @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")
@@ -65,109 +65,116 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, upgradeData, upgradeKafkaVersion);
     }
 
+    /**
+     * Upgrades the Cluster Operator above a Kafka cluster that has no `version` configured, but keeps the
+     * `metadataVersion`. Nothing in the test changes the Kafka version, so the new operator is the only thing that
+     * decides which Kafka version the cluster ends up on - its default one.
+     */
     @IsolatedTest
-    void testUpgradeKafkaWithoutVersion() throws IOException {
-        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
-        upgradeKafkaVersion.setVersion(null);
-
+    void testUpgradeWithoutKafkaVersion() throws IOException {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
+        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getDeployKafkaVersion());
+        upgradeKafkaVersion.setVersion(null);
+
+        doUpgradeWithoutKafkaVersionProcedure(testStorage, upgradeKafkaVersion);
+    }
+
+    /**
+     * Same as {@link #testUpgradeWithoutKafkaVersion()}, but the Kafka cluster is deployed with neither `version`
+     * nor `metadataVersion` configured.
+     */
+    @IsolatedTest
+    void testUpgradeWithoutKafkaAndMetadataVersions() throws IOException {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        doUpgradeWithoutKafkaVersionProcedure(testStorage, null);
+    }
+
+    /**
+     * Covers users upgrading from an old Strimzi running a Kafka version that the new Strimzi no longer supports.
+     * The Kafka cluster cannot be reconciled by the new operator until its version is raised to a supported one, so
+     * unlike the other upgrade tests this one does change the Kafka version in the Kafka CR.
+     */
+    @IsolatedTest
+    void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion() throws IOException {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        final UpgradeKafkaVersion unsupportedKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(
+            unsupportedKafkaUpgradeData.getFromKafkaVersionsUrl(), unsupportedKafkaUpgradeData.getDeployKafkaVersion());
+
+        // Setup env
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, unsupportedKafkaUpgradeData, unsupportedKafkaVersion);
+
+        // Upgrade CO. The Kafka cluster keeps running the unsupported version, so the new operator cannot roll it yet
+        changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), unsupportedKafkaUpgradeData);
+        logClusterOperatorPodImage(CO_NAMESPACE);
+
+        // Upgrade Kafka to a supported version - this is what unblocks the reconciliation and rolls the whole cluster
+        final String targetKafkaVersion = unsupportedKafkaUpgradeData.getProcedures().getVersion();
+        changeKafkaVersion(testStorage.getNamespaceName(), unsupportedKafkaUpgradeData);
+
+        // Check the TO and UO also got upgraded
+        eoPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
+
+        logComponentsPodImages(testStorage.getNamespaceName());
+        checkAllComponentsImages(testStorage.getNamespaceName(), unsupportedKafkaUpgradeData, targetKafkaVersion);
+
+        // Verify that Pods are stable
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
+
+        // Verify upgrade
+        verifyProcedure(testStorage.getNamespaceName(), unsupportedKafkaUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
+
+        assertKafkaPodsUseVersion(testStorage.getNamespaceName(), targetKafkaVersion);
+    }
+
+    /**
+     * Deploys a Kafka cluster without the `version` configured, upgrades only the Cluster Operator and verifies that
+     * the cluster ends up on the Kafka version defaulted by the new operator.
+     *
+     * @param testStorage           Test-related configuration and storage
+     * @param upgradeKafkaVersion   Kafka version details used for the initial deployment. Passing {@code null}
+     *                              removes the `metadataVersion` from the Kafka CR as well.
+     */
+    private void doUpgradeWithoutKafkaVersionProcedure(TestStorage testStorage, UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
         // Setup env
         setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion);
-
-        Map<String, String> controllerSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerSelector);
-        Map<String, String> brokerSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerSelector);
-        Map<String, String> eoSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), eoSelector);
-
-        // Make snapshots of all Pods
-        makeComponentsSnapshots(testStorage.getNamespaceName());
 
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
         logClusterOperatorPodImage(CO_NAMESPACE);
-        logComponentsPodImages(testStorage.getNamespaceName());
-
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerSnapshot);
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
-        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
-        //checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
-
-        // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
-        // Verify upgrade
-        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
-
-        String controllerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
-        String brokerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, BROKER_NODE_NAME)).get(0).getMetadata().getName();
-
-        TestKafkaVersion versionTo = TestKafkaVersion.getSpecificVersion(acrossUpgradeData.getProcedures().getVersion());
-        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName), containsString(versionTo.mavenVersion()));
-        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName), containsString(versionTo.mavenVersion()));
-    }
-
-    @IsolatedTest
-    void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion() throws IOException {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
-
-        // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion);
-
-        // Make snapshots of all Pods
-        makeComponentsSnapshots(testStorage.getNamespaceName());
-
-        // Upgrade CO
-        changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
 
         waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
 
-        logPodImages(CO_NAMESPACE, coSelector);
+        // No Kafka version is configured in the Kafka CR, so the new operator defaults it to its own default version
+        final String expectedKafkaVersion = TestKafkaVersion.getDefaultSupportedKafkaVersion();
 
-        // Upgrade kafka
-        changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData, true);
-
-        logPodImages(CO_NAMESPACE, coSelector);
-
-        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
-        //checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
+        logComponentsPodImages(testStorage.getNamespaceName());
+        checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData, expectedKafkaVersion);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
         // Verify upgrade
         verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
+
+        assertKafkaPodsUseVersion(testStorage.getNamespaceName(), expectedKafkaVersion);
     }
 
-    @IsolatedTest
-    void testUpgradeAcrossVersionsWithNoKafkaVersion() throws IOException {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+    /**
+     * Asserts that the Kafka libraries present in the controller and broker Pods belong to the expected Kafka version.
+     *
+     * @param namespaceName     Namespace where the Kafka cluster is deployed
+     * @param kafkaVersion      Kafka version the Pods are expected to run
+     */
+    private void assertKafkaPodsUseVersion(String namespaceName, String kafkaVersion) {
+        final String controllerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, KafkaComponents.getPodSetName(CLUSTER_NAME, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
+        final String brokerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, KafkaComponents.getPodSetName(CLUSTER_NAME, BROKER_NODE_NAME)).get(0).getMetadata().getName();
 
-        // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, null);
+        final String mavenVersion = TestKafkaVersion.getSpecificVersion(kafkaVersion).mavenVersion();
 
-        // Upgrade CO
-        changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
-
-        // Wait till first upgrade finished
-        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPods);
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
-
-        LOGGER.info("Rolling to new images has finished!");
-        logPodImages(CO_NAMESPACE, coSelector);
-
-        // Upgrade kafka
-        changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData);
-        logComponentsPodImages(testStorage.getNamespaceName());
-        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
-        //checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
-
-        // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
-
-        // Verify upgrade
-        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
+        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(namespaceName, controllerPodName), containsString(mavenVersion));
+        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(namespaceName, brokerPodName), containsString(mavenVersion));
     }
 
     @BeforeEach

@@ -28,7 +28,6 @@
 #  toFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  filePaths: path to example files for particular resources
 #    fromKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the downgrade
-#    toKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the downgrade
 # --- Structure ---
 - fromVersion: HEAD
   toVersion: 1.3.1
@@ -54,4 +53,3 @@
   toFeatureGates: ""
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
-    toKafka: "/examples/kafka/kafka-persistent.yaml"
