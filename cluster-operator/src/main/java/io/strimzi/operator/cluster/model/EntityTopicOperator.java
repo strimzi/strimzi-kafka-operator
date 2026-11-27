@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -93,6 +94,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     // Kafka bootstrap servers can't be specified in the JSON
     /* test */ final String kafkaBootstrapServers;
     private boolean cruiseControlEnabled;
+    private boolean cruiseControlApiAuthEnabled;
     private boolean rackAwarenessEnabled;
     private String featureGatesEnvVarValue;
     private KafkaClusterSecurityContext securityContext;
@@ -164,6 +166,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             }
             
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
+            result.cruiseControlApiAuthEnabled = result.cruiseControlEnabled && CruiseControlConfiguration.isApiAuthEnabled(kafkaAssembly.getSpec().getCruiseControl());
             result.rackAwarenessEnabled = result.cruiseControlEnabled && kafkaAssembly.getSpec().getKafka().getRack() != null;
             result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
             result.securityContext = securityContext;
@@ -228,7 +231,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_HOSTNAME, String.format("%s-cruise-control.%s.svc", cluster, namespace)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_PORT, String.valueOf(CRUISE_CONTROL_API_PORT)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_SSL_ENABLED, String.valueOf(securityContext.usesTlsEncryption())));
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED, String.valueOf(cruiseControlApiAuthEnabled)));
             // Truststore and API credentials are mounted in the container
         }
         
@@ -250,7 +253,11 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
         if (cruiseControlEnabled) {
             volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, KafkaResources.clusterCaCertificateSecretName(cluster)));
-            volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster)));
+
+            if (cruiseControlApiAuthEnabled) {
+                // The Cruise Control API credentials are used only when the Cruise Control API authentication is enabled
+                volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster)));
+            }
         }
 
         return volumeList;
@@ -268,7 +275,11 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
         if (this.cruiseControlEnabled) {
             result.add(VolumeUtils.createVolumeMount(ETO_CA_CERTS_VOLUME_NAME, ETO_CA_CERTS_VOLUME_MOUNT));
-            result.add(VolumeUtils.createVolumeMount(ETO_CC_API_VOLUME_NAME, ETO_CC_API_VOLUME_MOUNT));
+
+            if (cruiseControlApiAuthEnabled) {
+                // The Cruise Control API credentials are used only when the Cruise Control API authentication is enabled
+                result.add(VolumeUtils.createVolumeMount(ETO_CC_API_VOLUME_NAME, ETO_CC_API_VOLUME_MOUNT));
+            }
         }
 
         TemplateUtils.addAdditionalVolumeMounts(result, templateContainer);

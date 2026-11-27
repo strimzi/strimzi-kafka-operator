@@ -346,6 +346,34 @@ public class CruiseControlTest {
     }
 
     @Test
+    public void testApiAuthDisabledVolumesAndVolumeMounts() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewCruiseControl()
+                        .withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), false))
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+        KafkaClusterSecurityContext tlsSecurityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
+        CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of(), tlsSecurityContext);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+
+        assertThat(cc.isApiAuthEnabled(), is(false));
+
+        // The API Secret is not used without API authentication
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
+                VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
+                CruiseControl.TLS_CC_CERTS_VOLUME_NAME,
+                CruiseControl.TLS_CA_CERTS_VOLUME_NAME,
+                CruiseControl.CONFIG_VOLUME_NAME));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().map(VolumeMount::getName).toList(), containsInAnyOrder(
+                VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
+                CruiseControl.TLS_CC_CERTS_VOLUME_NAME,
+                CruiseControl.TLS_CA_CERTS_VOLUME_NAME,
+                CruiseControl.CONFIG_VOLUME_NAME));
+    }
+
+    @Test
     public void testServiceAccountAuthenticationVolumesAndVolumeMounts() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication());
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), securityContext);

@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverrideBuil
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals;
 import org.junit.jupiter.api.Test;
 
@@ -101,6 +102,22 @@ public class CruiseControlConfigurationTest {
         for (CruiseControlGoals goal : expected) {
             assertThat("Expected goal to be absent: " + goal, actual.contains(goal.toString()), is(false));
         }
+    }
+
+    @Test
+    public void testIsApiAuthEnabledFromSpec() {
+        // Default
+        assertThat(CruiseControlConfiguration.isApiAuthEnabled(new CruiseControlSpecBuilder().build()), is(true));
+        assertThat(CruiseControlConfiguration.isApiAuthEnabled(new CruiseControlSpecBuilder().withConfig(null).build()), is(true));
+        assertThat(CruiseControlConfiguration.isApiAuthEnabled(new CruiseControlSpecBuilder().withConfig(Map.of("some.other.option", "value")).build()), is(true));
+
+        // Boolean values
+        assertThat(CruiseControlConfiguration.isApiAuthEnabled(new CruiseControlSpecBuilder().withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), true)).build()), is(true));
+        assertThat(CruiseControlConfiguration.isApiAuthEnabled(new CruiseControlSpecBuilder().withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), false)).build()), is(false));
+
+        // String values
+        assertThat(CruiseControlConfiguration.isApiAuthEnabled(new CruiseControlSpecBuilder().withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), "true")).build()), is(true));
+        assertThat(CruiseControlConfiguration.isApiAuthEnabled(new CruiseControlSpecBuilder().withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), "false")).build()), is(false));
     }
 
     @Test

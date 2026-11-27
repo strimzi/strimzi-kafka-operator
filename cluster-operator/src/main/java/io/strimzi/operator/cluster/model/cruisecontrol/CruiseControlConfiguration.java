@@ -180,4 +180,19 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     public boolean isApiAuthEnabled() {
         return isEnabledInConfiguration(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED));
     }
+
+    /**
+     * Checks if API authentication is enabled in the Cruise Control configuration from the custom resource. This can
+     * be used by other components (such as the Topic Operator) that need to know if the Cruise Control API
+     * authentication is enabled without creating the full Cruise Control configuration.
+     *
+     * @param ccSpec    Cruise Control specification from the Kafka custom resource
+     *
+     * @return  True if API authentication is enabled. False otherwise.
+     */
+    public static boolean isApiAuthEnabled(CruiseControlSpec ccSpec) {
+        Object value = ccSpec.getConfig() != null ? ccSpec.getConfig().get(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue()) : null;
+
+        return value != null ? Boolean.parseBoolean(String.valueOf(value)) : CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED;
+    }
 }
