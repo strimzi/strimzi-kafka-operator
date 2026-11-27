@@ -41,6 +41,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.systemtest.utils.specific.CertManagerUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
@@ -72,9 +73,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * <ol>
  *   <li>A self-signed CA certificate and private key are generated and stored in a
  *       Kubernetes {@code Secret} in the cert-manager namespace.</li>
- *   <li>A {@code ClusterIssuer} ({@value SetupCertManager#CLUSTER_ISSUER_NAME}) is created,
- *       references the Secret in the cert-manager namespace so that cert-manager uses the CA key
- *       to sign end-entity certificates.</li>
+ *   <li>A {@code ClusterIssuer} is created, which references the Secret in the cert-manager
+ *       namespace so that cert-manager uses the CA key to sign end-entity certificates.</li>
  *   <li>The CA public cert is copied into the test namespace as a separate Secret,
  *       which Strimzi Cluster Operator reads via {@code certManager.caCert} to establish trust.</li>
  * </ol>
@@ -104,6 +104,8 @@ public class CertManagerST extends AbstractST {
             "Then validityDays is updated to trigger certificate renewal and the cluster must remain healthy." +
             "and a TLS-authenticated producer/consumer must be able to send and receive messages."),
         steps = {
+            @Step(value = "Create the CA Secret and ClusterIssuer in the cert-manager namespace.",
+                    expected = "CA Secret and ClusterIssuer are present in the cert-manager namespace."),
             @Step(value = "Create the CA cert Secret in the test namespace.",
                   expected = "Secret is present in the test namespace."),
             @Step(value = "Deploy Kafka with clusterCa.type=cert-manager and generateCertificateAuthority=false.",
@@ -128,7 +130,8 @@ public class CertManagerST extends AbstractST {
     void testCertManagerClusterCa() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final String certManagerCaCertSubjectDn = createOrUpdateCaCertSecret(testStorage.getNamespaceName());
+        SetupCertManager.createIssuerAndCaSecret(testStorage.getClusterName());
+        final String certManagerCaCertSubjectDn = createOrUpdateUserProvidedCaCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(
@@ -146,7 +149,7 @@ public class CertManagerST extends AbstractST {
                         .withType(CertificateManagerType.CERT_MANAGER)
                         .withNewCertManager()
                             .withNewIssuerRef()
-                                .withName(SetupCertManager.CLUSTER_ISSUER_NAME)
+                                .withName(CertManagerUtils.getCaClusterIssuer(testStorage.getClusterName()))
                                 .withKind(IssuerKind.CLUSTER_ISSUER)
                                 .withGroup("cert-manager.io")
                             .endIssuerRef()
@@ -162,6 +165,9 @@ public class CertManagerST extends AbstractST {
 
         LOGGER.info("Kafka cluster {}/{} is ready with cert-manager Cluster and Clients CA",
             testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         // Verify that cluster CA cert Secret has the expected annotations
         final Secret clusterCaCertSecret = KubeResourceManager.get().kubeClient().getClient()
@@ -263,6 +269,8 @@ public class CertManagerST extends AbstractST {
 
         final Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(
             testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        final Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(
+                testStorage.getNamespaceName(), testStorage.getEoSelector());
 
         LOGGER.info("Updating clusterCa validityDays to 334 to trigger cert-manager cert re-issuance");
 
@@ -281,6 +289,10 @@ public class CertManagerST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
             testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
 
+        LOGGER.info("Waiting for entity operator pod to roll after validityDays change");
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
+
         final String brokerCertAfterRenewal = KubeResourceManager.get().kubeClient().getClient().secrets()
             .inNamespace(testStorage.getNamespaceName())
             .withName(brokerCmSecretName).get().getData().get("tls.crt");
@@ -290,9 +302,6 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Broker rolling update completed — end-entity cert was re-issued, verifying cluster is functional");
 
         // Produce and consume messages over TLS
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
-        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
-
         KafkaProducerConsumer renewalProducerConsumer =
             new KafkaProducerConsumerBuilder()
                 .withProducerName(testStorage.getProducerName())
@@ -331,6 +340,8 @@ public class CertManagerST extends AbstractST {
             steps = {
                 @Step(value = "Deploy Kafka with default Strimzi-managed CA.",
                       expected = "Kafka cluster reaches ready state."),
+                @Step(value = "Create the CA Secret and ClusterIssuer in the cert-manager namespace.",
+                        expected = "CA Secret and ClusterIssuer are present in the cert-manager namespace."),
                 @Step(value = "Create the cert-manager CA cert Secret and edit the Kafka CR to switch cluster CA to cert-manager.",
                       expected = "Kafka CR is updated."),
                 @Step(value = "Wait for broker pods to roll twice (trust new CA, then re-issue certs).",
@@ -370,10 +381,13 @@ public class CertManagerST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         //Switch from Strimzi to cert-manager
-        final String certManagerCaCertSubjectDn = createOrUpdateCaCertSecret(testStorage.getNamespaceName());
+        SetupCertManager.createIssuerAndCaSecret(testStorage.getClusterName());
+        final String certManagerCaCertSubjectDn = createOrUpdateUserProvidedCaCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(
+                testStorage.getNamespaceName(), testStorage.getEoSelector());
 
         LOGGER.info("Editing Kafka CR to switch cluster CA from Strimzi-managed to cert-manager");
 
@@ -387,7 +401,7 @@ public class CertManagerST extends AbstractST {
                                 .withType(CertificateManagerType.CERT_MANAGER)
                                 .withNewCertManager()
                                     .withNewIssuerRef()
-                                        .withName(SetupCertManager.CLUSTER_ISSUER_NAME)
+                                        .withName(CertManagerUtils.getCaClusterIssuer(testStorage.getClusterName()))
                                         .withKind(IssuerKind.CLUSTER_ISSUER)
                                         .withGroup("cert-manager.io")
                                     .endIssuerRef()
@@ -402,10 +416,14 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Waiting for first round of rolling update (trust new cert-manager CA)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         LOGGER.info("Waiting for second round of rolling update (broker certs re-issued by cert-manager)");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // Wait for CO cert to be re-issued with the new cert-manager CA
         final String coCertSecretName = KafkaResources.clusterOperatorCertsSecretName(testStorage.getClusterName());
@@ -521,7 +539,8 @@ public class CertManagerST extends AbstractST {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // Deploy with cert-manager cluster CA
-        final String certManagerCaCertSubjectDn = createOrUpdateCaCertSecret(testStorage.getNamespaceName());
+        SetupCertManager.createIssuerAndCaSecret(testStorage.getClusterName());
+        final String certManagerCaCertSubjectDn = createOrUpdateUserProvidedCaCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
                 KafkaNodePoolTemplates.brokerPoolPersistentStorage(
@@ -538,7 +557,7 @@ public class CertManagerST extends AbstractST {
                                 .withType(CertificateManagerType.CERT_MANAGER)
                                 .withNewCertManager()
                                     .withNewIssuerRef()
-                                        .withName(SetupCertManager.CLUSTER_ISSUER_NAME)
+                                        .withName(CertManagerUtils.getCaClusterIssuer(testStorage.getClusterName()))
                                         .withKind(IssuerKind.CLUSTER_ISSUER)
                                         .withGroup("cert-manager.io")
                                     .endIssuerRef()
@@ -595,6 +614,8 @@ public class CertManagerST extends AbstractST {
 
         Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(
+                testStorage.getNamespaceName(), testStorage.getEoSelector());
 
         CrdClients.kafkaClient()
                 .inNamespace(testStorage.getNamespaceName())
@@ -613,10 +634,14 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Waiting for first round of rolling update (trust new custom CA)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         LOGGER.info("Waiting for second round of rolling update (broker certs re-issued by custom CA)");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         String brokerPodName = KubeResourceManager.get().kubeClient()
                 .listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector())
@@ -689,6 +714,8 @@ public class CertManagerST extends AbstractST {
 
         brokerPodsSnapshot = PodUtils.podSnapshot(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        eoPodSnapshot = PodUtils.podSnapshot(
+                testStorage.getNamespaceName(), testStorage.getEoSelector());
 
         CrdClients.kafkaClient()
                 .inNamespace(testStorage.getNamespaceName())
@@ -700,7 +727,7 @@ public class CertManagerST extends AbstractST {
                                 .withType(CertificateManagerType.CERT_MANAGER)
                                 .withNewCertManager()
                                     .withNewIssuerRef()
-                                        .withName(SetupCertManager.CLUSTER_ISSUER_NAME)
+                                        .withName(CertManagerUtils.getCaClusterIssuer(testStorage.getClusterName()))
                                         .withKind(IssuerKind.CLUSTER_ISSUER)
                                         .withGroup("cert-manager.io")
                                     .endIssuerRef()
@@ -715,10 +742,14 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Waiting for first round of rolling update (trust cert-manager CA again)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        eoPodSnapshot =  RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         LOGGER.info("Waiting for second round of rolling update (broker certs re-issued by cert-manager)");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         brokerPodName = KubeResourceManager.get().kubeClient()
                 .listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector())
@@ -816,7 +847,8 @@ public class CertManagerST extends AbstractST {
         final String namespace = testStorage.getNamespaceName();
 
         // Create user-provided CA cert Secret for Strimzi
-        createOrUpdateCaCertSecret(namespace);
+        SetupCertManager.createIssuerAndCaSecret(testStorage.getClusterName());
+        createOrUpdateUserProvidedCaCertSecret(namespace, testStorage.getClusterName());
 
         // Deploy Kafka cluster with cert-manager
         KubeResourceManager.get().createResourceWithWait(
@@ -834,7 +866,7 @@ public class CertManagerST extends AbstractST {
                         .withType(CertificateManagerType.CERT_MANAGER)
                         .withNewCertManager()
                             .withNewIssuerRef()
-                                .withName(SetupCertManager.CLUSTER_ISSUER_NAME)
+                                .withName(CertManagerUtils.getCaClusterIssuer(testStorage.getClusterName()))
                                 .withKind(IssuerKind.CLUSTER_ISSUER)
                                 .withGroup("cert-manager.io")
                             .endIssuerRef()
@@ -850,14 +882,19 @@ public class CertManagerST extends AbstractST {
 
         LOGGER.info("Kafka cluster {}/{} is ready with cert-manager CA", namespace, testStorage.getClusterName());
 
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+
         LOGGER.info("Replacing CA key");
 
-        final String oldCaCertWithOldKey = SetupCertManager.getCaCertBase64();
+        final String oldCaCertWithOldKey = CertManagerUtils.getCaCertBase64(testStorage.getClusterName());
         Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(namespace, testStorage.getBrokerSelector());
+        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(namespace, testStorage.getEoSelector());
+
         // Delete the CA Secret so cert-manager regenerates it with a new key
         KubeResourceManager.get().kubeClient().getClient()
                 .secrets().inNamespace(SetupCertManager.CERT_MANAGER_NAMESPACE)
-                .withName(SetupCertManager.CA_SECRET_NAME).delete();
+                .withName(CertManagerUtils.getCaSecretName(testStorage.getClusterName())).delete();
 
         // Wait for cert-manager to recreate the CA Secret with a new key
         TestUtils.waitFor("CA cert Secret to be recreated with new key",
@@ -865,7 +902,7 @@ public class CertManagerST extends AbstractST {
                 () -> {
                     Secret recreated = KubeResourceManager.get().kubeClient().getClient()
                             .secrets().inNamespace(SetupCertManager.CERT_MANAGER_NAMESPACE)
-                            .withName(SetupCertManager.CA_SECRET_NAME).get();
+                            .withName(CertManagerUtils.getCaSecretName(testStorage.getClusterName())).get();
                     return recreated != null && recreated.getData() != null
                             && !oldCaCertWithOldKey.equals(recreated.getData().get("tls.crt"));
                 });
@@ -878,15 +915,18 @@ public class CertManagerST extends AbstractST {
         // No rolling restart should happen until the user-provided CA cert Secret is updated
         LOGGER.info("Verifying no rolling restart before updating user-provided CA cert Secret");
         RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getBrokerSelector(), brokerPodsSnapshot);
+        RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getEoSelector(), eoPodSnapshot);
 
         // Update user-provided CA cert Secret with the new CA cert
         LOGGER.info("Updating user-provided CA cert Secret with new CA certificate");
-        createOrUpdateCaCertSecret(namespace);
+        createOrUpdateUserProvidedCaCertSecret(namespace, testStorage.getClusterName());
 
         // Wait for 3 rolling restarts
         LOGGER.info("Waiting for the first rolling restart (trust update)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // After 1st roll: only key generation is incremented on pod (trust update patches key gen only),
         // cert generation stays 0 because end-entity certs haven't been updated yet
@@ -908,6 +948,8 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Waiting for second round of rolling restart (cert re-issue)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // After 2nd roll: ca-cert-generation incremented on both pod and broker Secret
         brokerPod = KubeResourceManager.get().kubeClient()
@@ -925,6 +967,8 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Waiting for 3rd rolling restart (old CA certificate removal)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        // entity operator is not rolled just for old CA certificate removal
+        RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getEoSelector(), eoPodSnapshot);
 
         LOGGER.info("Verifying that CO cert to be re-issued with the new CA");
         final String coCertSecretName = KafkaResources.clusterOperatorCertsSecretName(testStorage.getClusterName());
@@ -940,9 +984,6 @@ public class CertManagerST extends AbstractST {
 
         // Verify cluster is functional after key replacement
         LOGGER.info("Verifying cluster is functional after CA key replacement");
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
-        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
-
         KafkaProducerConsumer kafkaProducerConsumer =
             new KafkaProducerConsumerBuilder()
                 .withProducerName(testStorage.getProducerName())
@@ -971,11 +1012,11 @@ public class CertManagerST extends AbstractST {
 
         LOGGER.info("Replacing CA key but not renewing end-entity certificates");
 
-        final String oldCaCertData = SetupCertManager.getCaCertBase64();
+        final String oldCaCertData = CertManagerUtils.getCaCertBase64(testStorage.getClusterName());
         // Delete the CA Secret so cert-manager regenerates it with a new key
         KubeResourceManager.get().kubeClient().getClient()
                 .secrets().inNamespace(SetupCertManager.CERT_MANAGER_NAMESPACE)
-                .withName(SetupCertManager.CA_SECRET_NAME).delete();
+                .withName(CertManagerUtils.getCaSecretName(testStorage.getClusterName())).delete();
 
         // Wait for cert-manager to recreate the CA Secret with a new key
         TestUtils.waitFor("CA cert Secret to be recreated with new key",
@@ -983,18 +1024,20 @@ public class CertManagerST extends AbstractST {
                 () -> {
                     Secret recreated = KubeResourceManager.get().kubeClient().getClient()
                             .secrets().inNamespace(SetupCertManager.CERT_MANAGER_NAMESPACE)
-                            .withName(SetupCertManager.CA_SECRET_NAME).get();
+                            .withName(CertManagerUtils.getCaSecretName(testStorage.getClusterName())).get();
                     return recreated != null && recreated.getData() != null
                             && !oldCaCertData.equals(recreated.getData().get("tls.crt"));
                 });
 
         // Update user-provided CA cert Secret with the new CA cert
-        createOrUpdateCaCertSecret(namespace);
+        createOrUpdateUserProvidedCaCertSecret(namespace, testStorage.getClusterName());
 
         // Wait for 2 rolling restarts
         LOGGER.info("Waiting for the first rolling restart (trust update)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         brokerPod = KubeResourceManager.get().kubeClient()
                 .listPods(namespace, testStorage.getBrokerSelector()).getFirst();
@@ -1011,6 +1054,8 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Waiting for second round of rolling restart (cluster-ca-cert-generation is incremented)");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        eoPodSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // After 2nd roll: ca-cert-generation incremented on the pod but not on the cert Secret because end-entity certificates are not re-issued yet
         brokerPod = KubeResourceManager.get().kubeClient()
@@ -1027,6 +1072,7 @@ public class CertManagerST extends AbstractST {
 
         LOGGER.info("Verifying cluster stability after CA key replacement without re-issuing end-entity certificates");
         RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getBrokerSelector(), brokerPodsSnapshot);
+        RollingUpdateUtils.waitForNoRollingUpdate(namespace, testStorage.getEoSelector(), eoPodSnapshot);
 
         LOGGER.info("CA key replaced without re-issuing end-entity certificates, 2 rolls, the generations are correct, cluster is stable");
 
@@ -1038,6 +1084,8 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("Waiting for 3rd rolling restart (cert reissue and old CA certificate removal)");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                testStorage.getNamespaceName(), testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         brokerSecret = KubeResourceManager.get().kubeClient().getClient()
                 .secrets().inNamespace(namespace).withName(brokerPodName).get();
@@ -1134,7 +1182,8 @@ public class CertManagerST extends AbstractST {
         final String namespace = testStorage.getNamespaceName();
 
         // Create user-provided CA cert Secret for Strimzi
-        createOrUpdateCaCertSecret(namespace);
+        SetupCertManager.createIssuerAndCaSecret(testStorage.getClusterName());
+        createOrUpdateUserProvidedCaCertSecret(namespace, testStorage.getClusterName());
 
         // Deploy Kafka cluster with cert-manager
         KubeResourceManager.get().createResourceWithWait(
@@ -1152,7 +1201,7 @@ public class CertManagerST extends AbstractST {
                                 .withType(CertificateManagerType.CERT_MANAGER)
                                 .withNewCertManager()
                                     .withNewIssuerRef()
-                                        .withName(SetupCertManager.CLUSTER_ISSUER_NAME)
+                                        .withName(CertManagerUtils.getCaClusterIssuer(testStorage.getClusterName()))
                                         .withKind(IssuerKind.CLUSTER_ISSUER)
                                         .withGroup("cert-manager.io")
                                     .endIssuerRef()
@@ -1168,16 +1217,21 @@ public class CertManagerST extends AbstractST {
 
         LOGGER.info("Kafka cluster {}/{} is ready with cert-manager CA", namespace, testStorage.getClusterName());
 
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+
         LOGGER.info("Renewing CA certificate with the same key");
 
-        final String oldCaCertData = SetupCertManager.getCaCertBase64();
+        final String oldCaCertData = CertManagerUtils.getCaCertBase64(testStorage.getClusterName());
+        Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(namespace, testStorage.getBrokerSelector());
+        Map<String, String> eoPodSnapshot = PodUtils.podSnapshot(namespace, testStorage.getEoSelector());
 
         // Set rotationPolicy to Never so cert-manager reuses the existing key on renewal,
         // and update the DNS names to trigger re-issuing of the certificate.
         KubeResourceManager.get().kubeClient().getClient()
                 .resources(Certificate.class, CertificateList.class)
                 .inNamespace(SetupCertManager.CERT_MANAGER_NAMESPACE)
-                .withName(SetupCertManager.CA_CERTIFICATE_NAME)
+                .withName(CertManagerUtils.getCaCertificate(testStorage.getClusterName()))
                 .edit(c -> new CertificateBuilder(c)
                         .editSpec()
                             .withNewPrivateKey()
@@ -1193,7 +1247,7 @@ public class CertManagerST extends AbstractST {
                 () -> {
                     Secret caSecret = KubeResourceManager.get().kubeClient().getClient()
                             .secrets().inNamespace(SetupCertManager.CERT_MANAGER_NAMESPACE)
-                            .withName(SetupCertManager.CA_SECRET_NAME).get();
+                            .withName(CertManagerUtils.getCaSecretName(testStorage.getClusterName())).get();
                     return caSecret != null && caSecret.getData() != null
                             && !oldCaCertData.equals(caSecret.getData().get("tls.crt"));
                 });
@@ -1201,13 +1255,13 @@ public class CertManagerST extends AbstractST {
         LOGGER.info("CA certificate renewed by cert-manager (same key) — updating user-provided Secret");
 
         // Update user-provided CA cert Secret with the renewed cert
-        createOrUpdateCaCertSecret(namespace);
-
-        Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(namespace, testStorage.getBrokerSelector());
+        createOrUpdateUserProvidedCaCertSecret(namespace, testStorage.getClusterName());
         // Wait for 1 rolling restart
         LOGGER.info("Waiting for single rolling restart after CA cert renewal");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
                 namespace, testStorage.getBrokerSelector(), 3, brokerPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(
+                namespace, testStorage.getEoSelector(), 1, eoPodSnapshot);
 
         // ca-cert-generation incremented but not the ca-key-generation on the pod
         Pod brokerPod = KubeResourceManager.get().kubeClient()
@@ -1220,8 +1274,6 @@ public class CertManagerST extends AbstractST {
                 is("0"));
 
         LOGGER.info("Verifying cluster is functional after CA cert renewal");
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
-        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         KafkaProducerConsumer producerConsumer =
                 new KafkaProducerConsumerBuilder()
@@ -1257,10 +1309,10 @@ public class CertManagerST extends AbstractST {
      * <p>The public cert value is retrieved from the Secret in the cert-manager namespace
      * that is used for ClusterIssuer to sign end-entity certificates.
      *
-     * @returns subject DN of the CA certificate
+     * @return subject DN of the CA certificate
      */
-    private static String createOrUpdateCaCertSecret(String namespace) {
-        String certManagerCaCertBase64 = SetupCertManager.getCaCertBase64();
+    private static String createOrUpdateUserProvidedCaCertSecret(String namespace, String clusterName) {
+        String certManagerCaCertBase64 = CertManagerUtils.getCaCertBase64(clusterName);
         final Secret secret = new SecretBuilder()
                 .withNewMetadata()
                 .withName(CA_CERT_SECRET_NAME)
@@ -1285,7 +1337,7 @@ public class CertManagerST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupCertManager.deployCertManager();
-        SetupCertManager.createIssuerAndCaSecret();
+        SetupCertManager.createSelfSignedIssuer();
         SetupClusterOperator.getInstance().install();
     }
 }

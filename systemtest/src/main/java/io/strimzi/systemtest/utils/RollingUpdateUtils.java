@@ -235,8 +235,10 @@ public class RollingUpdateUtils {
             componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
         } else if (labelSelector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL) != null) {
             componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL);
-        } else {
+        } else if (labelSelector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL)  != null) {
             componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL) + "-" + labelSelector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL);
+        } else {
+            componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL) + "-" + labelSelector.getMatchLabels().get(Labels.STRIMZI_COMPONENT_TYPE_LABEL);
         }
 
         return componentName;
