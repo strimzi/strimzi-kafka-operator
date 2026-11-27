@@ -15,7 +15,7 @@ Unlike manual rebalancing or the Cruise Control self-healing mechanism, Strimzi'
 IMPORTANT: This feature is currently in *early access* and subject to change.
 Do not use in production clusters. Feedback and testing on non-production clusters are encouraged to help shape the final design.
 
-include::../../modules/cruise-control/proc-automating-rebalances.adoc[leveloffset=+1]
+include::../../modules/cruise-control/proc-automating-rebalances.adoc[leveloffset=+1,id='proc-automating-rebalances-imbalance-{context}']
 
 include::../../modules/cruise-control/con-auto-rebalance-imbalance-overview.adoc[leveloffset=+1]
 

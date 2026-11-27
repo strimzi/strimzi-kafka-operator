@@ -38,8 +38,8 @@ Cruise Control can detect various types of anomalies, but the auto-rebalance on 
 
 When Cruise Control detects goal violations, it categorizes them as either fixable or unfixable:
 
-* **Fixable goals** - Can be resolved through partition reassignment (e.g., disk usage distribution, CPU capacity)
-* **Unfixable goals** - Require infrastructure changes (e.g., insufficient racks for rack-awareness, insufficient brokers for replica capacity)
+* **Fixable goals** - Can be resolved through partition reassignment (for example, disk usage distribution, CPU capacity)
+* **Unfixable goals** - Require infrastructure changes (for example, insufficient racks for rack-awareness, insufficient brokers for replica capacity)
 
 The operator only triggers automatic rebalancing when violations contain only fixable goals.
 If a goal violation contains unfixable goals, manual intervention is required.
@@ -467,7 +467,7 @@ If an auto-rebalance on imbalance fails (the `KafkaRebalance` transitions to `No
 
 The operator does not immediately retry a failed rebalance. Instead:
 
-* If the underlying infrastructure issue is resolved (e.g., more brokers added), Cruise Control detects the same goal violation again with a later timestamp
+* If the underlying infrastructure issue is resolved (for example, more brokers added), Cruise Control detects the same goal violation again with a later timestamp
 * The new detection triggers a fresh rebalance attempt
 * Users can monitor operator logs to track rebalance failures
 
@@ -475,7 +475,7 @@ Example failure scenario:
 ----
 # Rebalance started
 # ... rebalance processes partitions ...
-# Rebalance fails (e.g., due to broker shutdown)
+# Rebalance fails (for example, due to broker shutdown)
 # Failure recorded in tracker ConfigMap
 # Next anomaly detection triggers a fresh attempt
 ----
