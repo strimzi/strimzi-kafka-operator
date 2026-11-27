@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -21,12 +22,16 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -236,6 +241,12 @@ class CertificateUtilsTest {
         StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
         ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1, 4096);
 
+        // Generate another intermediate cert signed directly by the root cert
+        File intermediateKey3 = createTempFile("key-", ".key");
+        File intermediateCert3 = createTempFile("crt-", ".crt");
+        StrimziSubject intermediateSubject3 = new StrimziSubject.Builder().withCommonName("IntermediateCn3").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject3, intermediateKey3, intermediateCert3, notBefore, notAfter, 1, 4096);
+
         // Generate combined Pem files with CA chain in correct order
         String validCombinedPem;
         try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
@@ -260,16 +271,351 @@ class CertificateUtilsTest {
             invalidCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
         }
 
+        // Generate combined Pem file with incomplete CA chain (the first intermediate cert is missing)
+        String incompleteCombinedPem;
+        try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            incompleteCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
+        // Generate combined Pem file where the first cert is not issued by the next one (the next one is issued by the root cert)
+        String brokenChainCombinedPem;
+        try (FileInputStream int3CertFis = new FileInputStream(intermediateCert3);
+             FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(int3CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            brokenChainCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
         Map<String, String> validCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", validCombinedPem);
         assertDoesNotThrow(() -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, validCert));
 
         Map<String, String> invalidCert = Map.of("ca.crt", invalidCombinedPem);
         Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, invalidCert));
-        assertEquals("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order.", exception.getMessage());
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
 
         Map<String, String> partiallyValidCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", invalidCombinedPem);
         Exception exception1 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, partiallyValidCert));
-        assertEquals("User supplied Cluster CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order.", exception1.getMessage());
+        assertThat(exception1.getMessage(), startsWith("User supplied Cluster CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
+
+        Map<String, String> incompleteCert = Map.of("ca.crt", incompleteCombinedPem);
+        Exception exception2 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, incompleteCert));
+        assertThat(exception2.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
+
+        Map<String, String> brokenChainCert = Map.of("ca.crt", brokenChainCombinedPem);
+        Exception exception3 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, brokenChainCert));
+        assertThat(exception3.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NAME_CHAINING"));
+    }
+
+    @Test
+    @DisplayName("When the CA chain contains an expired intermediate cert then validateCaCertChain reports the expiration as the reason")
+    public void testValidateCaCertChainWithExpiredIntermediate() throws IOException {
+        Instant now = Instant.now();
+        String combinedPem = generateCaChainWithIntermediate("ExpiredIntermediateCn", now.minus(2, ChronoUnit.DAYS), now.minus(1, ChronoUnit.DAYS));
+
+        Map<String, String> expiredCert = Map.of("ca.crt", combinedPem);
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, expiredCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=ExpiredIntermediateCn"));
+        assertThat(exception.getMessage(), containsString(" expired on "));
+        assertThat(exception.getMessage(), containsString("Reason: EXPIRED"));
+        assertThat(exception.getMessage(), not(containsString("Certificates must be provided in the correct order")));
+    }
+
+    @Test
+    @DisplayName("When the CA chain contains an intermediate cert which is not valid yet then validateCaCertChain reports it as the reason")
+    public void testValidateCaCertChainWithNotYetValidIntermediate() throws IOException {
+        Instant now = Instant.now();
+        String combinedPem = generateCaChainWithIntermediate("NotYetValidIntermediateCn", now.plus(1, ChronoUnit.DAYS), now.plus(2, ChronoUnit.DAYS));
+
+        Map<String, String> notYetValidCert = Map.of("ca.crt", combinedPem);
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, notYetValidCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=NotYetValidIntermediateCn"));
+        assertThat(exception.getMessage(), containsString(" is not valid before "));
+        assertThat(exception.getMessage(), containsString("Reason: NOT_YET_VALID"));
+        assertThat(exception.getMessage(), not(containsString("Certificates must be provided in the correct order")));
+    }
+
+    @Test
+    @DisplayName("When the signature of a cert in the CA chain cannot be verified with its issuer's key then validateCaCertChain reports the invalid signature")
+    public void testValidateCaCertChainWithInvalidSignature() throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = toUtcDateTime(now);
+        ZonedDateTime notAfter = toUtcDateTime(now.plus(2, ChronoUnit.HOURS));
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File intermediateKey = createTempFile("key-", ".key");
+        File intermediateCert = createTempFile("crt-", ".crt");
+        File renewedIntermediateKey = createTempFile("key-", ".key");
+        File renewedIntermediateCert = createTempFile("crt-", ".crt");
+        File childKey = createTempFile("key-", ".key");
+        File childCert = createTempFile("crt-", ".crt");
+
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 2048);
+
+        // Two intermediate certs with the same subject but with different keys (e.g. an intermediate CA renewed with a new key)
+        StrimziSubject intermediateSubject = new StrimziSubject.Builder().withCommonName("IntermediateCn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, 0, 2048);
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, renewedIntermediateKey, renewedIntermediateCert, notBefore, notAfter, 0, 2048);
+
+        // The child cert is signed by the key of the original intermediate cert
+        StrimziSubject childSubject = new StrimziSubject.Builder().withCommonName("ChildCn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(intermediateKey, intermediateCert, childSubject, childKey, childCert, notBefore, notAfter, 0, 2048);
+
+        // The chain contains the renewed intermediate cert, which has the right subject but a different key
+        Map<String, String> invalidSignatureCert = Map.of("ca.crt", combineToBase64Pem(childCert, renewedIntermediateCert, rootCert));
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, invalidSignatureCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=ChildCn"));
+        assertThat(exception.getMessage(), containsString(" cannot be verified with the public key of its issuer "));
+        assertThat(exception.getMessage(), containsString("CN=IntermediateCn"));
+        assertThat(exception.getMessage(), containsString("Reason: INVALID_SIGNATURE"));
+    }
+
+    @Test
+    @DisplayName("When a cert in the middle of the CA chain is not a CA cert then validateCaCertChain reports that it cannot sign other certs")
+    public void testValidateCaCertChainWithNonCaIntermediate() throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = toUtcDateTime(now);
+        ZonedDateTime notAfter = toUtcDateTime(now.plus(2, ChronoUnit.HOURS));
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File leafKey = createTempFile("key-", ".key");
+        File leafCsr = createTempFile("csr-", ".csr");
+        File leafCert = createTempFile("crt-", ".crt");
+        File childKey = createTempFile("key-", ".key");
+        File childCert = createTempFile("crt-", ".crt");
+
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 2048);
+
+        // A leaf cert (not a CA cert) signed by the root cert
+        StrimziSubject leafSubject = new StrimziSubject.Builder().withCommonName("LeafCn").withOrganizationName("MyOrganization").build();
+        ssl.generateCsr(leafKey, leafCsr, leafSubject, 2048);
+        ssl.generateCert(leafCsr, rootKey, rootCert, leafCert, leafSubject, notBefore, notAfter);
+
+        // A cert signed by the leaf cert
+        StrimziSubject childSubject = new StrimziSubject.Builder().withCommonName("ChildCn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(leafKey, leafCert, childSubject, childKey, childCert, notBefore, notAfter, 0, 2048);
+
+        Map<String, String> nonCaCert = Map.of("ca.crt", combineToBase64Pem(childCert, leafCert, rootCert));
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, nonCaCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=LeafCn"));
+        // Depending on the order of the checks, the JDK reports NOT_CA_CERT or INVALID_KEY_USAGE. Both result in the same message.
+        assertThat(exception.getMessage(), containsString(" is not allowed to sign other certificates. It must be a CA certificate with the keyCertSign key usage."));
+    }
+
+    @Test
+    @DisplayName("When the CA chain is longer than the path length allowed by a CA cert then validateCaCertChain reports the path length violation")
+    public void testValidateCaCertChainWithPathTooLong() throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = toUtcDateTime(now);
+        ZonedDateTime notAfter = toUtcDateTime(now.plus(2, ChronoUnit.HOURS));
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File int1Key = createTempFile("key-", ".key");
+        File int1Cert = createTempFile("crt-", ".crt");
+        File int2Key = createTempFile("key-", ".key");
+        File int2Cert = createTempFile("crt-", ".crt");
+        File int3Key = createTempFile("key-", ".key");
+        File int3Cert = createTempFile("crt-", ".crt");
+
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 2, 2048);
+
+        // Int1 has pathlen 0 => no CA cert is allowed below it
+        StrimziSubject int1Subject = new StrimziSubject.Builder().withCommonName("Int1Cn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(rootKey, rootCert, int1Subject, int1Key, int1Cert, notBefore, notAfter, 0, 2048);
+
+        // Int2 is a CA cert below Int1 => violates the pathlen of Int1
+        StrimziSubject int2Subject = new StrimziSubject.Builder().withCommonName("Int2Cn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(int1Key, int1Cert, int2Subject, int2Key, int2Cert, notBefore, notAfter, 0, 2048);
+
+        // Int3 is needed because the JDK does not check the path length for the first cert of the chain
+        StrimziSubject int3Subject = new StrimziSubject.Builder().withCommonName("Int3Cn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(int2Key, int2Cert, int3Subject, int3Key, int3Cert, notBefore, notAfter, 0, 2048);
+
+        Map<String, String> pathTooLongCert = Map.of("ca.crt", combineToBase64Pem(int3Cert, int2Cert, int1Cert, rootCert));
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, pathTooLongCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=Int2Cn"));
+        assertThat(exception.getMessage(), containsString(" exceeds the maximum path length (pathLenConstraint) allowed by a CA certificate above it in the chain."));
+        assertThat(exception.getMessage(), containsString("Reason: PATH_TOO_LONG"));
+    }
+
+    @Test
+    @DisplayName("When a cert in the CA chain violates the name constraints of a CA cert above it then validateCaCertChain reports the name constraints violation")
+    public void testValidateCaCertChainWithInvalidName() throws IOException, InterruptedException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = toUtcDateTime(now);
+        ZonedDateTime notAfter = toUtcDateTime(now.plus(2, ChronoUnit.HOURS));
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File constrainedKey = createTempFile("key-", ".key");
+        File constrainedCert = createTempFile("crt-", ".crt");
+        File childKey = createTempFile("key-", ".key");
+        File childCert = createTempFile("crt-", ".crt");
+
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 2048);
+
+        // The constrained intermediate cert allows only subjects within O=AllowedOrganization below it
+        generateCaCertWithNameConstraints(rootKey, rootCert, "/O=MyOrganization/CN=ConstrainedCn", constrainedKey, constrainedCert, "AllowedOrganization");
+
+        // The child cert has O=MyOrganization => violates the name constraints of the constrained intermediate cert
+        StrimziSubject childSubject = new StrimziSubject.Builder().withCommonName("ChildCn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(constrainedKey, constrainedCert, childSubject, childKey, childCert, notBefore, notAfter, 0, 2048);
+
+        Map<String, String> invalidNameCert = Map.of("ca.crt", combineToBase64Pem(childCert, constrainedCert, rootCert));
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, invalidNameCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=ChildCn"));
+        assertThat(exception.getMessage(), containsString(" violates the name constraints of a CA certificate above it in the chain."));
+        assertThat(exception.getMessage(), containsString("Reason: INVALID_NAME"));
+    }
+
+    @Test
+    @DisplayName("When a cert in the CA chain uses a key size not allowed by the Java security configuration then validateCaCertChain reports the algorithm constraints violation")
+    public void testValidateCaCertChainWithAlgorithmConstrained() throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = toUtcDateTime(now);
+        ZonedDateTime notAfter = toUtcDateTime(now.plus(2, ChronoUnit.HOURS));
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File weakKey = createTempFile("key-", ".key");
+        File weakCert = createTempFile("crt-", ".crt");
+
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 2048);
+
+        // The default jdk.certpath.disabledAlgorithms security property disables RSA keys smaller than 1024 bits
+        StrimziSubject weakSubject = new StrimziSubject.Builder().withCommonName("WeakKeyCn").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(rootKey, rootCert, weakSubject, weakKey, weakCert, notBefore, notAfter, 0, 512);
+
+        Map<String, String> algorithmConstrainedCert = Map.of("ca.crt", combineToBase64Pem(weakCert, rootCert));
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, algorithmConstrainedCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=WeakKeyCn"));
+        assertThat(exception.getMessage(), containsString(" or key size that is not allowed by the Java security configuration."));
+        assertThat(exception.getMessage(), containsString("Reason: ALGORITHM_CONSTRAINED"));
+    }
+
+    /**
+     * Generates a CA cert with name constraints which allow only the subjects within the given organization.
+     * OpenSslCertIssuer does not support name constraints, so OpenSSL is called directly.
+     *
+     * @param issuerKey                 Key of the issuer CA
+     * @param issuerCert                Cert of the issuer CA
+     * @param subject                   Subject of the new CA cert in the OpenSSL format (e.g. /O=MyOrganization/CN=MyCn)
+     * @param key                       File where the key of the new CA cert will be stored
+     * @param cert                      File where the new CA cert will be stored
+     * @param permittedOrganization     Organization which is permitted by the name constraints
+     */
+    private void generateCaCertWithNameConstraints(File issuerKey, File issuerCert, String subject, File key, File cert, String permittedOrganization) throws IOException, InterruptedException {
+        File csr = createTempFile("csr-", ".csr");
+        File extensions = createTempFile("ext-", ".cnf");
+        Files.writeString(extensions.toPath(), """
+                [constrained_ca]
+                basicConstraints = critical,CA:true
+                keyUsage = critical,keyCertSign,cRLSign
+                nameConstraints = critical,permitted;dirName:permitted_dn
+
+                [permitted_dn]
+                O = %s
+                """.formatted(permittedOrganization));
+
+        runOpenSsl("req", "-new", "-newkey", "rsa:2048", "-nodes", "-keyout", key.getAbsolutePath(), "-subj", subject, "-out", csr.getAbsolutePath());
+        runOpenSsl("x509", "-req", "-in", csr.getAbsolutePath(), "-CA", issuerCert.getAbsolutePath(), "-CAkey", issuerKey.getAbsolutePath(),
+                "-set_serial", "1000", "-days", "1", "-sha256", "-extfile", extensions.getAbsolutePath(), "-extensions", "constrained_ca", "-out", cert.getAbsolutePath());
+    }
+
+    private void runOpenSsl(String... args) throws IOException, InterruptedException {
+        List<String> command = new ArrayList<>();
+        command.add("openssl");
+        command.addAll(List.of(args));
+
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        assertEquals(0, process.waitFor(), "OpenSSL command " + command + " failed: " + output);
+    }
+
+    /**
+     * Combines the given PEM files into a single Base64 encoded PEM.
+     *
+     * @param certs     PEM files with the certificates, in the order in which they should be combined
+     *
+     * @return  Base64 encoded PEM with all the certificates
+     */
+    private String combineToBase64Pem(File... certs) throws IOException {
+        StringBuilder pem = new StringBuilder();
+
+        for (File cert : certs) {
+            try (FileInputStream fis = new FileInputStream(cert)) {
+                pem.append(new String(fis.readAllBytes(), StandardCharsets.US_ASCII)).append("\n");
+            }
+        }
+
+        return Base64.getEncoder().encodeToString(pem.toString().getBytes(StandardCharsets.US_ASCII));
+    }
+
+    /**
+     * Generates a Base64 encoded CA chain in the correct order, with a valid root cert and an intermediate cert
+     * with the given validity period.
+     *
+     * @param intermediateCn    Common name of the intermediate cert
+     * @param notBefore         Start of the validity period of the intermediate cert
+     * @param notAfter          End of the validity period of the intermediate cert
+     *
+     * @return  Base64 encoded PEM with the intermediate cert followed by the root cert
+     */
+    private String generateCaChainWithIntermediate(String intermediateCn, Instant notBefore, Instant notAfter) throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File intermediateKey = createTempFile("key-", ".key");
+        File intermediateCert = createTempFile("crt-", ".crt");
+
+        // Generate a valid root cert
+        Instant now = Instant.now();
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, toUtcDateTime(now), toUtcDateTime(now.plus(2, ChronoUnit.HOURS)), 1, 2048);
+
+        // Generate the intermediate cert with the given validity period
+        StrimziSubject intermediateSubject = new StrimziSubject.Builder().withCommonName(intermediateCn).withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, toUtcDateTime(notBefore), toUtcDateTime(notAfter), 0, 2048);
+
+        // Generate combined Pem file with the CA chain in the correct order
+        try (FileInputStream intCertFis = new FileInputStream(intermediateCert);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String pem = String.join("\n",
+                    new String(intCertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            return Base64.getEncoder().encodeToString(pem.getBytes(StandardCharsets.US_ASCII));
+        }
+    }
+
+    private static ZonedDateTime toUtcDateTime(Instant instant) {
+        return instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
     }
 
     private File createTempFile(String prefix, String suffix) throws IOException {

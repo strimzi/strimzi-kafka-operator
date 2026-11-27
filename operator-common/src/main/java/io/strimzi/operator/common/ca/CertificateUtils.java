@@ -19,11 +19,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
+import java.security.cert.PKIXReason;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -136,12 +138,51 @@ public class CertificateUtils {
                         LOGGER.debugCr(reconciliation, "{} certificate {} contains a single certificate", caRole.caName(), entry.getKey());
                         return;
                     }
-                    if (!certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
-                        String errorMessage = "User supplied " + caRole.caName() + " cert chain " + entry.getKey() + " is not valid. Certificates must be provided in the correct order.";
+                    try {
+                        validateCertPath(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast());
+                    } catch (CertPathValidatorException e) {
+                        String errorMessage = "User supplied " + caRole.caName() + " cert chain " + entry.getKey() + " is not valid. " + describeValidationFailure(e);
                         LOGGER.errorCr(reconciliation, errorMessage);
                         throw new RuntimeException(errorMessage);
                     }
                 });
+    }
+
+    /**
+     * Describes why the certificate chain failed the validation.
+     *
+     * @param e     Exception thrown by the certificate chain validation
+     *
+     * @return  Description of the validation failure
+     */
+    private static String describeValidationFailure(CertPathValidatorException e) {
+        CertPathValidatorException.Reason reason = e.getReason();
+        String reasonDetails = "Reason: " + reason + " (" + e.getMessage() + ")";
+
+        if (reason == PKIXReason.NAME_CHAINING || reason == PKIXReason.NO_TRUST_ANCHOR) {
+            return "Certificates must be provided in the correct order and the chain must be complete. " + reasonDetails;
+        }
+
+        if (e.getCertPath() != null
+                && e.getIndex() >= 0
+                && e.getCertPath().getCertificates().get(e.getIndex()) instanceof X509Certificate failedCert) {
+
+            String subject = failedCert.getSubjectX500Principal().getName();
+            String description = switch (reason) {
+                case BasicReason.EXPIRED -> "Certificate " + subject + " expired on " + failedCert.getNotAfter().toInstant() + ".";
+                case BasicReason.NOT_YET_VALID -> "Certificate " + subject + " is not valid before " + failedCert.getNotBefore().toInstant() + ".";
+                case BasicReason.INVALID_SIGNATURE -> "The signature of certificate " + subject + " cannot be verified with the public key of its issuer " + failedCert.getIssuerX500Principal().getName() + ".";
+                case PKIXReason.NOT_CA_CERT, PKIXReason.INVALID_KEY_USAGE -> "Certificate " + subject + " is not allowed to sign other certificates. It must be a CA certificate with the keyCertSign key usage.";
+                case PKIXReason.PATH_TOO_LONG -> "Certificate " + subject + " exceeds the maximum path length (pathLenConstraint) allowed by a CA certificate above it in the chain.";
+                case PKIXReason.INVALID_NAME -> "Certificate " + subject + " violates the name constraints of a CA certificate above it in the chain.";
+                case BasicReason.ALGORITHM_CONSTRAINED -> "Certificate " + subject + " uses a signature algorithm (" + failedCert.getSigAlgName() + ") or key size that is not allowed by the Java security configuration.";
+                default -> "Certificate " + subject + " failed the validation.";
+            };
+
+            return description + " " + reasonDetails;
+        }
+
+        return reasonDetails;
     }
 
     /**
@@ -160,28 +201,37 @@ public class CertificateUtils {
      * @return True if the CA certificate can be used to validate the provided certificate or certificate chain. False otherwise.
      */
     public static boolean certIsTrusted(Reconciliation reconciliation, List<X509Certificate> certChainToValidate, X509Certificate caCert) {
-        CertPathValidator certPathValidator;
-        CertPath eeCertPath;
-        PKIXParameters pkixParams;
         try {
-            certPathValidator = CertPathValidator.getInstance("PKIX");
-            CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
-            pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
-            pkixParams.setRevocationEnabled(false);
-            eeCertPath = factory.generateCertPath(certChainToValidate);
-        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
-            LOGGER.errorCr(reconciliation, "Error constructing objects to validate certificate chain.", e);
-            throw new RuntimeException(e);
-        }
-        try {
-            certPathValidator.validate(eeCertPath, pkixParams);
+            validateCertPath(reconciliation, certChainToValidate, caCert);
             LOGGER.debugCr(reconciliation, "Certificate chain validated using supplied CA cert.");
             return true;
         } catch (CertPathValidatorException e) {
             LOGGER.debugCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
             return false;
-        } catch (InvalidAlgorithmParameterException e) {
+        }
+    }
+
+    /**
+     * Validates the provided cert chain using the provided CA certificate as the trust anchor.
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param certChainToValidate   Certificates to validate. Can be a single certificate or a chain of ordered certificates.
+     * @param caCert                The root CA certificate to use for validation.
+     *
+     * @throws CertPathValidatorException   When the cert chain cannot be validated. The getReason() and getIndex()
+     *                                      methods of the exception describe why and on which certificate it failed.
+     */
+    private static void validateCertPath(Reconciliation reconciliation, List<X509Certificate> certChainToValidate, X509Certificate caCert)
+            throws CertPathValidatorException {
+        try {
+            CertPathValidator certPathValidator = CertPathValidator.getInstance("PKIX");
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
+            PKIXParameters pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
+            pkixParams.setRevocationEnabled(false);
+            CertPath eeCertPath = factory.generateCertPath(certChainToValidate);
+            certPathValidator.validate(eeCertPath, pkixParams);
+        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
             LOGGER.errorCr(reconciliation, "Error validating the certificate chain.", e);
             throw new RuntimeException(e);
         }
