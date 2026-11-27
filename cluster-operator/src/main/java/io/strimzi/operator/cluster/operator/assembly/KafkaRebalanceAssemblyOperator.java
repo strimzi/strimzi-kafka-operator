@@ -207,7 +207,7 @@ public class KafkaRebalanceAssemblyOperator
      * Provides an implementation of the Cruise Control API client
      *
      * @param clusterCaCertSecret Cluster CA certificate Secret, used to trust the Cruise Control TLS server (null when SSL is not enabled)
-     * @param ccApiSecret Cruise Control API secret
+     * @param ccApiSecret Cruise Control API secret (null when API authentication is not enabled)
      * @param apiAuthEnabled if enabled, configures auth
      * @param apiSslEnabled if enabled, configures SSL
      * @return Cruise Control API client instance
@@ -1217,6 +1217,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     // Only the encryption configuration is used here, so we do not need the OIDC discovery information (used only for the service-account authentication configuration)
                     boolean usesTlsEncryption = KafkaClusterSecurityContext.fromCrd(kafka, null).usesTlsEncryption();
+                    boolean apiAuthEnabled = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet(), Map.of()).isApiAuthEnabled();
 
                     String clusterCaCertSecretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
@@ -1225,7 +1226,10 @@ public class KafkaRebalanceAssemblyOperator
                     Future<Secret> clusterCaCertSecretFuture = usesTlsEncryption
                             ? VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, clusterCaCertSecretName))
                             : Future.succeededFuture();
-                    Future<Secret> ccApiSecretFuture = VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, ccApiSecretName));
+                    // The Cruise Control API Secret is needed only to authenticate against the Cruise Control API when API authentication is enabled
+                    Future<Secret> ccApiSecretFuture = apiAuthEnabled
+                            ? VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, ccApiSecretName))
+                            : Future.succeededFuture();
 
                     return Future.join(resourcePatchFuture, clusterCaCertSecretFuture, ccApiSecretFuture)
                             .compose(compositeFuture -> {
@@ -1235,7 +1239,7 @@ public class KafkaRebalanceAssemblyOperator
                                 }
 
                                 Secret ccApiSecret = compositeFuture.resultAt(2);
-                                if (ccApiSecret == null) {
+                                if (apiAuthEnabled && ccApiSecret == null) {
                                     return Future.failedFuture(ReconcilerUtils.missingSecretException(clusterNamespace, ccApiSecretName));
                                 }
 

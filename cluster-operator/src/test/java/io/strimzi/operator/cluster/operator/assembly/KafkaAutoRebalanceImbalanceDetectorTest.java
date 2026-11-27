@@ -386,6 +386,39 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         verify(mockApi, never()).getGoalViolations(any(), any(), anyInt());
     }
 
+    @Test
+    public void testCheckForGoalViolationsWithoutAuthDoesNotNeedApiSecret() {
+        Kafka kafka = withoutEncryption(buildKafka(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), false), null));
+        GoalViolationInfo expectedInfo = new GoalViolationInfo(Instant.now(), GoalViolationInfo.Fixability.FIXABLE, List.of(), List.of());
+        CruiseControlApi mockApi = mock(CruiseControlApi.class);
+
+        // The Secrets do not exist, but they should not be needed without TLS encryption and without API authentication
+        when(supplier.secretOperations.getAsync(eq(NAMESPACE), any()))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(mockApi.getGoalViolations(any(), any(), anyInt()))
+                .thenReturn(CompletableFuture.completedFuture(expectedInfo));
+
+        AtomicReference<Secret> usedApiSecret = new AtomicReference<>();
+        AtomicBoolean usedApiAuthEnabled = new AtomicBoolean(true);
+        KafkaAutoRebalanceImbalanceDetector detector = new KafkaAutoRebalanceImbalanceDetector(RECONCILIATION, kafka, supplier) {
+            @Override
+            protected CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
+                                                                   boolean apiAuthEnabled, boolean apiSslEnabled) {
+                usedApiSecret.set(ccApiSecret);
+                usedApiAuthEnabled.set(apiAuthEnabled);
+                return mockApi;
+            }
+        };
+
+        GoalViolationInfo result = detector.checkForGoalViolations().toCompletableFuture().join();
+
+        assertThat(result, is(notNullValue()));
+        assertThat(usedApiSecret.get(), is(nullValue()));
+        assertThat(usedApiAuthEnabled.get(), is(false));
+        verify(supplier.secretOperations, never()).getAsync(eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(CLUSTER_NAME)));
+        verify(supplier.secretOperations, never()).getAsync(eq(NAMESPACE), eq(CruiseControlResources.secretName(CLUSTER_NAME)));
+    }
+
     private static Kafka withoutEncryption(Kafka kafka) {
         return new KafkaBuilder(kafka)
                 .editMetadata()

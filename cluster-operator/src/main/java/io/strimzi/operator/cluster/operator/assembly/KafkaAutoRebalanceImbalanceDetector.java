@@ -75,7 +75,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * Overriding this method can be used in tests to inject a mock client.
      *
      * @param ccSecret          Cruise Control secret (null when API SSL is not enabled)
-     * @param ccApiSecret       Cruise Control API secret
+     * @param ccApiSecret       Cruise Control API secret (null when API authentication is not enabled)
      * @param apiAuthEnabled    Whether API authentication is enabled
      * @param apiSslEnabled     Whether API SSL is enabled
      *
@@ -138,12 +138,20 @@ public class KafkaAutoRebalanceImbalanceDetector {
      */
     public CompletionStage<GoalViolationInfo> checkForGoalViolations() {
         boolean apiSslEnabled = KafkaClusterSecurityContext.fromCrd(kafkaCr, null).usesTlsEncryption();
+        Map<String, Object> ccConfigMap = kafkaCr.getSpec().getCruiseControl().getConfig();
+        boolean apiAuthEnabled = new CruiseControlConfiguration(
+                reconciliation,
+                ccConfigMap != null ? ccConfigMap.entrySet() : Map.<String, Object>of().entrySet(),
+                Map.of()).isApiAuthEnabled();
 
         // The Cruise Control certificate Secret is needed only to trust the Cruise Control API when TLS encryption is used
         CompletableFuture<Secret> ccSecretFuture = apiSslEnabled
                 ? secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name())).toCompletableFuture()
                 : CompletableFuture.completedFuture(null);
-        CompletableFuture<Secret> ccApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())).toCompletableFuture();
+        // The Cruise Control API Secret is needed only to authenticate against the Cruise Control API when API authentication is enabled
+        CompletableFuture<Secret> ccApiSecretFuture = apiAuthEnabled
+                ? secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())).toCompletableFuture()
+                : CompletableFuture.completedFuture(null);
 
         return CompletableFuture.allOf(ccSecretFuture, ccApiSecretFuture)
                 .thenCompose(ignored -> {
@@ -154,17 +162,10 @@ public class KafkaAutoRebalanceImbalanceDetector {
                         LOGGER.warnCr(reconciliation, "Cruise Control secret not found: Skipping goal violation detection this reconciliation");
                         return CompletableFuture.completedFuture(null);
                     }
-                    if (ccApiSecret == null) {
+                    if (apiAuthEnabled && ccApiSecret == null) {
                         LOGGER.warnCr(reconciliation, "Cruise Control API secret not found: Skipping goal violation detection this reconciliation");
                         return CompletableFuture.completedFuture(null);
                     }
-
-                    Map<String, Object> ccConfigMap = kafkaCr.getSpec().getCruiseControl().getConfig();
-                    CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(
-                            reconciliation,
-                            ccConfigMap != null ? ccConfigMap.entrySet() : Map.<String, Object>of().entrySet(),
-                            Map.of());
-                    boolean apiAuthEnabled = ccConfig.isApiAuthEnabled();
 
                     CruiseControlApi ccApi = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
