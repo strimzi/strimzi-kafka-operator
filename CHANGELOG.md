@@ -11,7 +11,6 @@
 * Added `spec.extraMetrics` to the `Kafka` custom resource to configure the Extra Metrics component, a JVM-based consumer lag exporter (based on [Sova](https://github.com/strimzi/sova)) that replaces the deprecated `spec.kafkaExporter`.
   It exposes the same metric names as Kafka Exporter, so existing Prometheus alerting rules and Grafana dashboards work unchanged after migration.
   The new `STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE` environment variable in the Cluster Operator controls the default Extra Metrics container image.
-  `spec.extraMetrics.config` passes Kafka Admin client options to the Extra Metrics component (for example `default.api.timeout.ms`), and `spec.extraMetrics.collectionIntervalMs` sets how often it collects metrics.
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
 * Use Java 25 as the runtime for all containers (leaving the language level at Java 21) for supporting Post-Quantum Hybrid Key Exchange
 * Add support for running an automatic rebalancing when a goal violation is detected by Cruise Control

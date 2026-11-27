@@ -55,9 +55,9 @@ public class ExtraMetricsConfigurationBuilder {
     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class names used in strings
     public ExtraMetricsConfigurationBuilder withSecurity(KafkaClusterSecurityContext securityContext) {
         boolean tls = securityContext.encryption() instanceof TlsEncryptionConfiguration;
-        boolean sasl = securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration;
+        boolean serviceAccount = securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration;
 
-        writer.println("security.protocol=" + (sasl ? "SASL_" : "") + (tls ? "SSL" : "PLAINTEXT"));
+        writer.println("security.protocol=" + (serviceAccount ? "SASL_" : "") + (tls ? "SSL" : "PLAINTEXT"));
 
         if (tls) {
             writer.println("ssl.truststore.type=PEM");
@@ -69,7 +69,7 @@ public class ExtraMetricsConfigurationBuilder {
             writer.println("ssl.keystore.type=PEM");
             writer.println("ssl.keystore.certificate.chain=" + secretPlaceholder(ExtraMetricsResources.secretName(clusterName), "extra-metrics.crt"));
             writer.println("ssl.keystore.key=" + secretPlaceholder(ExtraMetricsResources.secretName(clusterName), "extra-metrics.key"));
-        } else if (sasl) {
+        } else if (serviceAccount) {
             writer.println("sasl.mechanism=OAUTHBEARER");
             writer.println("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
             writer.println("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";");
