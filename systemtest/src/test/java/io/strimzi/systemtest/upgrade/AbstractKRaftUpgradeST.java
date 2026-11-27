@@ -260,10 +260,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         this.deployCoWithWaitForReadiness(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeData);
         this.deployKafkaClusterWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData, upgradeKafkaVersion);
-
-        if (!upgradeData.getFromVersion().equals("1.0.0")) {
-            verifyClusterSecurityStatus(testStorage.getNamespaceName());
-        }
+        verifyClusterSecurityStatus(testStorage.getNamespaceName());
 
         this.deployKafkaUserWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData);
         this.deployKafkaTopicWithWaitForReadiness(testStorage.getNamespaceName(), upgradeData);
