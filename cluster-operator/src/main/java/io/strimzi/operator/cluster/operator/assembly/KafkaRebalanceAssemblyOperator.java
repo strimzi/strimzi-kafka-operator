@@ -1236,7 +1236,7 @@ public class KafkaRebalanceAssemblyOperator
                                 CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet(), Map.of());
                                 // Only the encryption configuration is used here, so we do not need the OIDC discovery information (used only for the service-account authentication configuration)
                                 KafkaClusterSecurityContext securityContext = KafkaClusterSecurityContext.fromCrd(kafka, null);
-                                CruiseControlApi apiClient = cruiseControlClientProvider(clusterCaCertSecret, ccApiSecret, ccConfig.isApiAuthEnabled(), securityContext.usesEncryption());
+                                CruiseControlApi apiClient = cruiseControlClientProvider(clusterCaCertSecret, ccApiSecret, ccConfig.isApiAuthEnabled(), securityContext.usesTlsEncryption());
 
                                 // get latest KafkaRebalance state as it may have changed (see the patching above with "refresh" annotation)
                                 return VertxUtil.toFuture(kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))

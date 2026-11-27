@@ -228,7 +228,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_KEY_SIZE, Integer.toString(clientsCaKeySize)));
 
-        if (securityContext.usesEncryption()) {
+        if (securityContext.usesTlsEncryption()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaResources.clusterCaCertificateSecretName(cluster)));
         }
 

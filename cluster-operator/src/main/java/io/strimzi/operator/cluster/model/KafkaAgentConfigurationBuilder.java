@@ -46,7 +46,7 @@ public class KafkaAgentConfigurationBuilder {
     public KafkaAgentConfigurationBuilder withSecurity(KafkaClusterSecurityContext securityContext)   {
         printSectionHeader("Security configuration");
 
-        if (securityContext.usesEncryption()) {
+        if (securityContext.usesTlsEncryption()) {
             writer.println("namespace=" + reconciliation.namespace());
             writer.println("sslKeyStoreSecretName=" + node.podName());
         }

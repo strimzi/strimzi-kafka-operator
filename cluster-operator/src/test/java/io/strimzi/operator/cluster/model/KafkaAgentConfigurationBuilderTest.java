@@ -37,7 +37,7 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testTlsWithoutAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.usesEncryption()).thenReturn(true);
+        when(securityContext.usesTlsEncryption()).thenReturn(true);
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
@@ -53,7 +53,7 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testTlsAndServiceAccountAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.usesEncryption()).thenReturn(true);
+        when(securityContext.usesTlsEncryption()).thenReturn(true);
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
@@ -76,7 +76,7 @@ public class KafkaAgentConfigurationBuilderTest {
         OidcDiscovery oidcDiscovery = new OidcDiscovery("https://my-issuer.example.com", "https://my-issuer.example.com/keys");
 
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.usesEncryption()).thenReturn(true);
+        when(securityContext.usesTlsEncryption()).thenReturn(true);
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), oidcDiscovery));
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
@@ -97,7 +97,7 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testServiceAccountAuthenticationWithoutTls()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.usesEncryption()).thenReturn(false);
+        when(securityContext.usesTlsEncryption()).thenReturn(false);
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
@@ -116,7 +116,7 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testWithoutTlsOrAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.usesEncryption()).thenReturn(false);
+        when(securityContext.usesTlsEncryption()).thenReturn(false);
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)

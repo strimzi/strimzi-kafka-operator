@@ -160,7 +160,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
                             ccConfigMap != null ? ccConfigMap.entrySet() : Map.<String, Object>of().entrySet(),
                             Map.of());
                     boolean apiAuthEnabled = ccConfig.isApiAuthEnabled();
-                    boolean apiSslEnabled = KafkaClusterSecurityContext.fromCrd(kafkaCr, null).usesEncryption();
+                    boolean apiSslEnabled = KafkaClusterSecurityContext.fromCrd(kafkaCr, null).usesTlsEncryption();
 
                     CruiseControlApi ccApi = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 

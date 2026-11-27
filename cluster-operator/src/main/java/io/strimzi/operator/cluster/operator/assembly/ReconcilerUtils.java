@@ -136,7 +136,7 @@ public class ReconcilerUtils {
     @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     public static CompletionStage<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         // Gets the trust based on the security context
-        CompletionStage<TrustSet> trustFuture = securityContext.usesEncryption() ?
+        CompletionStage<TrustSet> trustFuture = securityContext.usesTlsEncryption() ?
                 clusterCaPemTrustSet(reconciliation, secretOperator).thenApply(t -> (TrustSet) t) : CompletableFuture.completedFuture(null);
         return trustFuture
                 .thenCompose(trustSet -> {

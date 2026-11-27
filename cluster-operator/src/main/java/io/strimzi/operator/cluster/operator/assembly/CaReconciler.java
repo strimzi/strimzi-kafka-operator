@@ -564,7 +564,7 @@ public class CaReconciler {
     @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     private Identity createCoIdentity() {
         return new Identity(
-            securityContext.usesEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
+            securityContext.usesTlsEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
             // Creates the identity based on the authentication type
             switch (securityContext.authentication()) {
                 case MtlsAuthenticationConfiguration ignored -> PemAuthIdentity.clusterOperator(coSecret);

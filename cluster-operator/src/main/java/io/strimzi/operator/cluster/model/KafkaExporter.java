@@ -276,7 +276,7 @@ public class KafkaExporter extends AbstractModel {
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
 
-        if (securityContext.usesEncryption()) {
+        if (securityContext.usesTlsEncryption()) {
             volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster)));
         }
 
@@ -295,7 +295,7 @@ public class KafkaExporter extends AbstractModel {
         List<VolumeMount> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createTempDirVolumeMount());
 
-        if (securityContext.usesEncryption()) {
+        if (securityContext.usesTlsEncryption()) {
             volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         }
 
