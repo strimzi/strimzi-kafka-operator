@@ -29,11 +29,6 @@
 #    userOperator:
 #  client:
 #    continuousClientsMessages: int - message count sent during upgrade
-#  environmentInfo:
-#    maxK8sVersion: String - maximal version of Kubernetes on which the upgrade test runs
-#    status: String - info about stability of the testing environment
-#    flakyEnvVariable:  String - name of the environmental variable which is flaky on current environment
-#    reason:  #  String - reason why we skip / not skip the test case
 #  fromFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
 #  toFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  filePaths: path to example files for particular resources
@@ -52,11 +47,6 @@ upgrades:
       userOperator: strimzi/operator:latest
     client:
       continuousClientsMessages: 400
-    environmentInfo:
-      maxK8sVersion: latest
-      status: stable
-      flakyEnvVariable: none
-      reason: Test is working on environment, where k8s server version is < 1.22
     fromFeatureGates: ""
     toFeatureGates: ""
     filePaths:
@@ -78,11 +68,6 @@ unsupportedKafkaUpgrade:
     userOperator: strimzi/operator:latest
   client:
     continuousClientsMessages: 400
-  environmentInfo:
-    maxK8sVersion: latest
-    status: stable
-    flakyEnvVariable: none
-    reason: Test is working on environment, where k8s server version is < 1.22
   fromFeatureGates: ""
   toFeatureGates: ""
   filePaths:

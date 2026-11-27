@@ -9,7 +9,6 @@ import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -22,7 +21,6 @@ import java.io.IOException;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Class for testing downgrade process of Strimzi with its components when running in KRaft mode
@@ -43,9 +41,6 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         String lowerMetadataVersion = downgradeData.getProcedures().getMetadataVersion();
 
         UpgradeKafkaVersion downgradeKafkaVersion = new UpgradeKafkaVersion(downgradeData.getDeployKafkaVersion(), lowerMetadataVersion);
-
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(downgradeData.getEnvFlakyVariable()));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(downgradeData.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running downgrade test from version {} to {} (FG: {} -> {})", from, to, fgBefore, fgAfter);
 

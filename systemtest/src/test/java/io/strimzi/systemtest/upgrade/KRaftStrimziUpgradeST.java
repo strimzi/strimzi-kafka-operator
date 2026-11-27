@@ -12,7 +12,6 @@ import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -31,7 +30,6 @@ import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Class for testing upgrade process of Strimzi with its components when running in KRaft mode
@@ -56,9 +54,6 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(upgradeData.getDeployKafkaVersion());
         // setting metadata version to null, similarly to the examples, which are not configuring metadataVersion
         upgradeKafkaVersion.setMetadataVersion(null);
-
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(upgradeData.getEnvFlakyVariable()));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(upgradeData.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})",
             fromVersion, toVersion, fgBefore, fgAfter);
