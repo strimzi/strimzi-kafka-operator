@@ -1216,13 +1216,13 @@ public class KafkaRebalanceAssemblyOperator
                     }
 
                     // Only the encryption configuration is used here, so we do not need the OIDC discovery information (used only for the service-account authentication configuration)
-                    boolean usesEncryption = KafkaClusterSecurityContext.fromCrd(kafka, null).usesTlsEncryption();
+                    boolean usesTlsEncryption = KafkaClusterSecurityContext.fromCrd(kafka, null).usesTlsEncryption();
 
                     String clusterCaCertSecretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
 
                     // The Cluster CA certificate is needed only to trust the Cruise Control API when TLS encryption is used
-                    Future<Secret> clusterCaCertSecretFuture = usesEncryption
+                    Future<Secret> clusterCaCertSecretFuture = usesTlsEncryption
                             ? VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, clusterCaCertSecretName))
                             : Future.succeededFuture();
                     Future<Secret> ccApiSecretFuture = VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, ccApiSecretName));
@@ -1230,7 +1230,7 @@ public class KafkaRebalanceAssemblyOperator
                     return Future.join(resourcePatchFuture, clusterCaCertSecretFuture, ccApiSecretFuture)
                             .compose(compositeFuture -> {
                                 Secret clusterCaCertSecret = compositeFuture.resultAt(1);
-                                if (usesEncryption && clusterCaCertSecret == null) {
+                                if (usesTlsEncryption && clusterCaCertSecret == null) {
                                     return Future.failedFuture(ReconcilerUtils.missingSecretException(clusterNamespace, clusterCaCertSecretName));
                                 }
 
@@ -1240,7 +1240,7 @@ public class KafkaRebalanceAssemblyOperator
                                 }
 
                                 CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet(), Map.of());
-                                CruiseControlApi apiClient = cruiseControlClientProvider(clusterCaCertSecret, ccApiSecret, ccConfig.isApiAuthEnabled(), usesEncryption);
+                                CruiseControlApi apiClient = cruiseControlClientProvider(clusterCaCertSecret, ccApiSecret, ccConfig.isApiAuthEnabled(), usesTlsEncryption);
 
                                 // get latest KafkaRebalance state as it may have changed (see the patching above with "refresh" annotation)
                                 return VertxUtil.toFuture(kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
