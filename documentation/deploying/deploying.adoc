@@ -48,6 +48,8 @@ include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 include::assemblies/configuring/assembly-security-providers.adoc[leveloffset=+1]
 //Scaling clusters
 include::assemblies/configuring/assembly-scaling-kafka-clusters.adoc[leveloffset=+1]
+//Auto-rebalancing on imbalance
+include::assemblies/configuring/assembly-auto-rebalance-on-imbalance.adoc[leveloffset=+1]
 //Using Cruise Control for rebalancing
 include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[leveloffset=+1]
 //Using Cruise Control for changing topic replication factor

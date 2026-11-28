@@ -1,0 +1,98 @@
+[id="con-auto-rebalance-imbalance-overview-{context}"]
+= Auto-rebalance on imbalance overview
+
+[IMPORTANT]
+====
+This feature is currently in *early access* and subject to change.
+Do not use in production clusters. Feedback and testing on non-production clusters are encouraged to help shape the final design.
+====
+
+The auto-rebalance on imbalance feature enables the Strimzi Cluster Operator to automatically rebalance Kafka clusters when imbalances are detected through Cruise Control's anomaly detection.
+This feature reduces operational overhead by eliminating the need for manual monitoring and rebalancing operations.
+
+[id="feature-motivation-{context}"]
+== Motivation
+
+In distributed systems like Kafka, clusters can become imbalanced due to:
+
+* Uneven partition distribution across brokers
+* Key skew causing load concentration on specific brokers
+* Disk usage imbalance from topic growth patterns
+* Hardware variations or performance differences between brokers
+* Broker failure recovery leading to uneven load distribution
+
+Previously, addressing these imbalances required manual intervention through the `KafkaRebalance` custom resource.
+The auto-rebalance on imbalance feature automates this process, ensuring clusters maintain optimal health and performance.
+
+[id="how-it-works-{context}"]
+== How it works
+
+The feature leverages Cruise Control's built-in anomaly detection capabilities combined with Strimzi's control over rebalancing operations:
+
+1. **Anomaly Detection** - Cruise Control continuously monitors the cluster and detects goal violations
+2. **Operator Polling** - The Strimzi Cluster Operator periodically queries Cruise Control's state endpoint to check for detected anomalies
+3. **Decision Making** - The operator determines if detected violations can be fixed through rebalancing and haven't been fixed already
+4. **Automatic Rebalancing** - When appropriate, the operator automatically creates and monitors a `KafkaRebalance` resource to fix the detected imbalance
+5. **Completion Tracking** - The operator tracks completion times to prevent duplicate rebalancing operations for already-fixed anomalies
+
+This approach gives the Strimzi Cluster Operator full control over all rebalancing operations, maintaining visibility and consistency with existing scaling operations.
+
+[id="key-concepts-{context}"]
+== Key concepts
+
+[id="anomaly-detection-concept-{context}"]
+=== Anomaly detection
+
+Cruise Control's anomaly detector runs continuously and identifies cluster problems by comparing current cluster state against configured optimization goals and capacity limits.
+It categorizes violations as fixable or unfixable based on whether they can be resolved through partition reassignment.
+
+[id="auto-rebalance-state-machine-concept-{context}"]
+=== Auto-rebalance state machine
+
+The operator uses a finite state machine to coordinate rebalancing operations:
+
+* **Idle** - No rebalancing is in progress
+* **RebalanceOnScaleUp** - Rebalancing triggered by broker addition
+* **RebalanceOnScaleDown** - Rebalancing triggered by broker removal
+* **RebalanceOnImbalance** - Rebalancing triggered by goal violations
+
+This ensures operations execute in the correct order: scale-down (highest priority), scale-up, then imbalance rebalancing (lowest priority).
+
+[id="feature-characteristics-{context}"]
+== Feature characteristics
+
+=== Opt-in feature
+
+The feature is completely opt-in. It's only active when you explicitly enable the `imbalance` mode in the `spec.cruiseControl.autoRebalance` configuration.
+
+=== Operator-controlled rebalancing
+
+Strimzi's auto-rebalance on imbalance keeps the Cluster Operator in full control of all rebalancing operations, creating explicit `KafkaRebalance` custom resources for visibility.
+
+=== Maintenance-aware
+
+Auto-rebalance on imbalance respects maintenance time windows, allowing you to schedule rebalancing during low-traffic periods.
+
+[id="getting-started-{context}"]
+== Getting started
+
+=== Basic setup
+
+Enable the feature with minimal configuration:
+
+[source,yaml]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ... broker configuration
+  cruiseControl:
+    # ... cruise control configuration
+    autoRebalance:
+      - mode: imbalance
+----
+
+For detailed configuration instructions, see xref:proc-auto-rebalance-on-imbalance-{context}[].
