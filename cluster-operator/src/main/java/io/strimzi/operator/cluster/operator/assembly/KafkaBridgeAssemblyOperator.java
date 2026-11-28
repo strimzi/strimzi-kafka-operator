@@ -123,7 +123,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.configMapName(reconciliation.name()), configMap));
             })
             .compose(i -> isPodDisruptionBudgetGeneration ? VertxUtil.toFuture(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget())) : Future.succeededFuture())
-            .compose(i -> VertxUtil.toFuture(deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets))))
+            .compose(i -> VertxUtil.toFuture(deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, imagePullPolicy, imagePullSecrets))))
             .compose(i -> VertxUtil.toFuture(deploymentOperations.scaleUp(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs)))
             .compose(i -> VertxUtil.toFuture(deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs)))
             .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : VertxUtil.toFuture(deploymentOperations.readiness(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs)))

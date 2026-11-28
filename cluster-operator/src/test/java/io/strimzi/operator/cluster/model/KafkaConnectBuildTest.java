@@ -157,7 +157,7 @@ public class KafkaConnectBuildTest {
 
         assertThat(build.baseImage, is("my-source-image:latest"));
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getMetadata().getName(), is(KafkaConnectResources.buildPodName(NAME)));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
 
@@ -216,7 +216,7 @@ public class KafkaConnectBuildTest {
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getSpec().getVolumes().size(), is(2));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(NAME)));
@@ -402,7 +402,7 @@ public class KafkaConnectBuildTest {
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getMetadata().getLabels().entrySet().containsAll(buildPodLabels.entrySet()), is(true));
         assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(buildPodAnnos.entrySet()), is(true));
         assertThat(pod.getSpec().getPriorityClassName(), is("top-priority"));
@@ -444,7 +444,7 @@ public class KafkaConnectBuildTest {
                 .build();
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
         assertThat(commands[0], containsString(expectedBuildOptions));
         assertThat(commands[1], containsString(expectedPushOptions));
@@ -516,7 +516,7 @@ public class KafkaConnectBuildTest {
                 .build();
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getSpec().getVolumes().size(), is(3));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(NAME)));
@@ -552,7 +552,7 @@ public class KafkaConnectBuildTest {
         build.securityProvider = new TestPodSecurityProvider();
         build.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Pod pod = build.generateBuilderPod(false, ImagePullPolicy.IFNOTPRESENT, null, "");
+        Pod pod = build.generateBuilderPod(ImagePullPolicy.IFNOTPRESENT, null, "");
         assertThat(pod.getSpec().getSecurityContext(), is(nullValue()));
         assertThat(pod.getSpec().getHostUsers(), is(false));
         assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));

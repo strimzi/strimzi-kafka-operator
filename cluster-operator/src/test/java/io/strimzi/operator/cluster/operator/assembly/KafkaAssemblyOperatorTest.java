@@ -886,19 +886,19 @@ public class KafkaAssemblyOperatorTest {
         when(mockDepOps.reconcile(any(), anyString(), depCaptor.capture(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         if (originalEntityOperator != null) {
-            when(mockDepOps.getAsync(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(originalEntityOperator.generateDeployment(Map.of(), true, null, null)));
+            when(mockDepOps.getAsync(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(originalEntityOperator.generateDeployment(Map.of(), null, null)));
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         }
 
         if (originalCruiseControl != null) {
-            when(mockDepOps.getAsync(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(originalCruiseControl.generateDeployment(Map.of(), true, null, null)));
+            when(mockDepOps.getAsync(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))).thenReturn(CompletableFuture.completedFuture(originalCruiseControl.generateDeployment(Map.of(), null, null)));
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         }
 
         if (metrics) {
-            when(mockDepOps.getAsync(NAMESPACE, KafkaExporterResources.componentName(CLUSTER_NAME))).thenReturn(originalKafkaExporter == null ? null : CompletableFuture.completedFuture(originalKafkaExporter.generateDeployment(Map.of(), true, null, null)));
+            when(mockDepOps.getAsync(NAMESPACE, KafkaExporterResources.componentName(CLUSTER_NAME))).thenReturn(originalKafkaExporter == null ? null : CompletableFuture.completedFuture(originalKafkaExporter.generateDeployment(Map.of(), null, null)));
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         }

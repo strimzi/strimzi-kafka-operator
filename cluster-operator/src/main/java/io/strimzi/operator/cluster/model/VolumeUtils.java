@@ -127,16 +127,12 @@ public class VolumeUtils {
      * @param name        Name of the Volume
      * @param secretName  Name of the Secret
      * @param items       contents of the Secret
-     * @param isOpenshift true if underlying cluster OpenShift
      * @return The Volume created
      */
-    public static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
+    public static Volume createSecretVolume(String name, String secretName, Map<String, String> items) {
         String validName = getValidVolumeName(name);
 
         int mode = 0444;
-        if (isOpenshift) {
-            mode = 0440;
-        }
 
         List<KeyToPath> keysPaths = new ArrayList<>();
 
@@ -166,16 +162,12 @@ public class VolumeUtils {
      *
      * @param name        Name of the Volume
      * @param secretName  Name of the Secret
-     * @param isOpenshift true if underlying cluster OpenShift
      * @return The Volume created
      */
-    public static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+    public static Volume createSecretVolume(String name, String secretName) {
         String validName = getValidVolumeName(name);
 
         int mode = 0444;
-        if (isOpenshift) {
-            mode = 0440;
-        }
 
         SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
                 .withDefaultMode(mode)

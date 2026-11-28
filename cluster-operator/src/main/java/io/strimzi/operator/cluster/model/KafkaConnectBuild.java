@@ -247,14 +247,13 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Generates builder Pod for building a new KafkaConnect container image with additional connector plugins
      *
-     * @param isOpenShift       Flag defining whether we are running on OpenShift
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      * @param newBuildRevision  Revision of the build which will be build used for annotation
      *
      * @return  Pod which will build the new container image
      */
-    public Pod generateBuilderPod(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
+    public Pod generateBuilderPod(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
         PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
 
         return WorkloadUtils.createPod(
@@ -268,7 +267,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 templatePod != null ? templatePod.getAffinity() : null,
                 null,
                 List.of(createContainer(imagePullPolicy)),
-                getVolumes(isOpenShift),
+                getVolumes(),
                 imagePullSecrets,
                 securityProvider.kafkaConnectBuildPodSecurityContext(podSecurityProviderContext),
                 securityProvider.kafkaConnectBuildHostUsers(podSecurityProviderContext));
@@ -277,11 +276,9 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Generates a list of volumes used by the builder pod
      *
-     * @param isOpenShift       Flag defining whether we are running on OpenShift
-     *
      * @return  List of volumes
      */
-    /* test */ List<Volume> getVolumes(boolean isOpenShift) {
+    /* test */ List<Volume> getVolumes() {
         List<Volume> volumes = new ArrayList<>(2);
 
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
@@ -291,7 +288,7 @@ public class KafkaConnectBuild extends AbstractModel {
             volumes.add(VolumeUtils.createEmptyDirVolume("build-context", null, null));
 
             if (output.getPushSecret() != null) {
-                volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
+                volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json")));
             }
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");

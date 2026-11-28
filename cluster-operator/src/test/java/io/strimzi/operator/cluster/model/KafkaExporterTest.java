@@ -152,7 +152,7 @@ public class KafkaExporterTest {
 
     @Test
     public void testGenerateDeployment() {
-        Deployment dep = KE.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = KE.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getMetadata().getName(), is(KafkaExporterResources.componentName(CLUSTER_NAME)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
@@ -220,7 +220,7 @@ public class KafkaExporterTest {
     public void testGenerateDeploymentWithTlsWithoutMtls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
@@ -234,7 +234,7 @@ public class KafkaExporterTest {
     public void testGenerateDeploymentWithoutTlsOrMtls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), is(List.of(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)));
@@ -246,7 +246,7 @@ public class KafkaExporterTest {
     public void testGenerateDeploymentWithTlsAndServiceAccountAuthentication() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication());
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), null, null);
 
         // The Kafka Exporter certificates are not used with Service Account authentication
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
@@ -268,7 +268,7 @@ public class KafkaExporterTest {
     public void testGenerateDeploymentWithServiceAccountAuthenticationWithoutTls() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), serviceAccountAuthentication());
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
-        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
@@ -285,10 +285,10 @@ public class KafkaExporterTest {
 
     @Test
     public void testImagePullPolicy() {
-        Deployment dep = KE.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = KE.generateDeployment(Map.of(), ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = KE.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = KE.generateDeployment(Map.of(), ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -482,7 +482,7 @@ public class KafkaExporterTest {
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         // Check Deployment
-        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
 
@@ -526,7 +526,7 @@ public class KafkaExporterTest {
                 .build();
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }
 
@@ -542,7 +542,7 @@ public class KafkaExporterTest {
         ke.securityProvider = new TestPodSecurityProvider();
         ke.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Deployment dep = ke.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = ke.generateDeployment(emptyMap(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));

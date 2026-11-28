@@ -126,13 +126,13 @@ public class VolumeUtilsTest {
 
     @Test
     public void testCreateSecretVolumeWithValidName() {
-        Volume volume = VolumeUtils.createSecretVolume("auth-my-secret", "my-secret", true);
+        Volume volume = VolumeUtils.createSecretVolume("auth-my-secret", "my-secret");
         assertThat(volume.getName(), is("auth-my-secret"));
     }
 
     @Test
     public void testCreateSecretVolumeWithInvalidName() {
-        Volume volume = VolumeUtils.createSecretVolume("auth-my.secret", "my.secret", true);
+        Volume volume = VolumeUtils.createSecretVolume("auth-my.secret", "my.secret");
         assertThat(volume.getName(), is("auth-my-secret-729fd436"));
     }
 

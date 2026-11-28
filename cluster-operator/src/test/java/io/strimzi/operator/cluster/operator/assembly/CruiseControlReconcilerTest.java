@@ -220,7 +220,7 @@ public class CruiseControlReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNotNull());
@@ -311,7 +311,7 @@ public class CruiseControlReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNull());

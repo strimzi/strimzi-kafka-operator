@@ -110,7 +110,6 @@ public class EntityOperatorReconciler {
      * The main reconciliation method which triggers the whole reconciliation pipeline. This is the method which is
      * expected to be called from the outside to trigger the reconciliation.
      *
-     * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
      * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
@@ -118,7 +117,7 @@ public class EntityOperatorReconciler {
      *
      * @return                  CompletionStage which completes when the reconciliation completes
      */
-    public CompletionStage<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
+    public CompletionStage<Void> reconcile(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return serviceAccount()
                 .thenCompose(i -> entityOperatorRole())
                 .thenCompose(i -> topicOperatorRole())
@@ -131,7 +130,7 @@ public class EntityOperatorReconciler {
                 .thenCompose(i -> userOperatorConfigMap())
                 .thenCompose(i -> topicOperatorSecret(clock))
                 .thenCompose(i -> userOperatorSecret(clock))
-                .thenCompose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
+                .thenCompose(i -> deployment(imagePullPolicy, imagePullSecrets))
                 .thenCompose(i -> waitForDeploymentReadiness());
     }
 
@@ -530,7 +529,7 @@ public class EntityOperatorReconciler {
      *
      * @return  CompletionStage which completes when the reconciliation is done
      */
-    protected CompletionStage<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    protected CompletionStage<Void> deployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (shouldInstallEntityOperator()) {
             Map<String, String> podAnnotations = new LinkedHashMap<>();
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
@@ -541,7 +540,7 @@ public class EntityOperatorReconciler {
                 podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, toApiSecretHash);
             }
 
-            Deployment deployment = entityOperator.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
+            Deployment deployment = entityOperator.generateDeployment(podAnnotations, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment)

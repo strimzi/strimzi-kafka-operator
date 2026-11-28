@@ -243,15 +243,15 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         return varList;
     }
 
-    protected List<Volume> getVolumes(PodTemplate templatePod, boolean isOpenShift) {
+    protected List<Volume> getVolumes(PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.add(VolumeUtils.createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster)));
 
         if (cruiseControlEnabled) {
-            volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, KafkaResources.clusterCaCertificateSecretName(cluster), isOpenShift));
-            volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster), isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, KafkaResources.clusterCaCertificateSecretName(cluster)));
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster)));
         }
 
         return volumeList;

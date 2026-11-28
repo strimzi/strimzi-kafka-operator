@@ -167,7 +167,7 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         assertThat(saCaptor.getAllValues().size(), is(1));
@@ -293,7 +293,7 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         assertThat(saCaptor.getAllValues().size(), is(1));
@@ -414,7 +414,7 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         assertThat(saCaptor.getAllValues().size(), is(1));
@@ -523,7 +523,7 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         assertThat(saCaptor.getAllValues().size(), is(1));
@@ -628,7 +628,7 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         assertThat(saCaptor.getAllValues().size(), is(1));
@@ -722,7 +722,7 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         assertThat(saCaptor.getAllValues().size(), is(1));
@@ -843,7 +843,7 @@ public class EntityOperatorReconcilerTest {
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         CompletionException ex = assertThrows(CompletionException.class, () ->
-                rcnclr.reconcile(false, null, null, Clock.systemUTC())
+                rcnclr.reconcile(null, null, Clock.systemUTC())
                         .toCompletableFuture().join()
         );
         Throwable error = ex.getCause();
@@ -978,7 +978,7 @@ public class EntityOperatorReconcilerTest {
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         CompletionException ex = assertThrows(CompletionException.class, () ->
-                rcnclr.reconcile(false, null, null, Clock.systemUTC())
+                rcnclr.reconcile(null, null, Clock.systemUTC())
                         .toCompletableFuture().join()
         );
         Throwable error = ex.getCause();

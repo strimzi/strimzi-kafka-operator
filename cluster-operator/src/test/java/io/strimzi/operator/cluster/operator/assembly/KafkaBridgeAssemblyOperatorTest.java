@@ -185,7 +185,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(dc, is(bridge.generateDeployment(Map.of(
                         Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
                         Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "ae3369a9"
-                        ), true, null, null)));
+                        ), null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
@@ -218,7 +218,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, BRIDGE, SHARED_ENV_PROVIDER);
 
-        when(mockDcOps.get(NAMESPACE, bridge.getComponentName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
+        when(mockDcOps.get(NAMESPACE, bridge.getComponentName())).thenReturn(bridge.generateDeployment(Map.of(), null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
@@ -297,7 +297,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(CompletableFuture.completedFuture(null));
 
-        when(mockDcOps.get(NAMESPACE, oldBridgeCluster.getComponentName())).thenReturn(oldBridgeCluster.generateDeployment(Map.of(), true, null, null));
+        when(mockDcOps.get(NAMESPACE, oldBridgeCluster.getComponentName())).thenReturn(oldBridgeCluster.generateDeployment(Map.of(), null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
@@ -351,7 +351,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(dc, is(compareTo.generateDeployment(Map.of(
                         Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
                         Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "ae3369a9"
-                ), true, null, null)));
+                ), null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
@@ -411,7 +411,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 .endSpec()
                 .build();
 
-        when(mockDcOps.get(NAMESPACE, oldBridgeCluster.getComponentName())).thenReturn(oldBridgeCluster.generateDeployment(Map.of(), true, null, null));
+        when(mockDcOps.get(NAMESPACE, oldBridgeCluster.getComponentName())).thenReturn(oldBridgeCluster.generateDeployment(Map.of(), null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
@@ -475,7 +475,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 .endSpec()
                 .build();
 
-        Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
+        Deployment dep = bridge.generateDeployment(new HashMap<>(), null, null);
         when(mockDcOps.get(NAMESPACE, bridge.getComponentName())).thenReturn(dep);
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
@@ -527,7 +527,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 .endSpec()
                 .build();
 
-        Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
+        Deployment dep = bridge.generateDeployment(new HashMap<>(), null, null);
         when(mockDcOps.get(NAMESPACE, bridge.getComponentName())).thenReturn(dep);
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
@@ -585,14 +585,14 @@ public class KafkaBridgeAssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka Bridge clusters
         Labels newLabels = Labels.forStrimziKind(KafkaBridge.RESOURCE_KIND);
         when(mockDcOps.list(eq(NAMESPACE), eq(newLabels))).thenReturn(
-                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, SHARED_ENV_PROVIDER).generateDeployment(Map.of(), true, null, null)));
+                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, SHARED_ENV_PROVIDER).generateDeployment(Map.of(), null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // providing the list Deployments for already "existing" Kafka Bridge clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(NAMESPACE), eq(barLabels))).thenReturn(
-                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, SHARED_ENV_PROVIDER).generateDeployment(Map.of(), true, null, null))
+                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, SHARED_ENV_PROVIDER).generateDeployment(Map.of(), null, null))
         );
 
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(null));

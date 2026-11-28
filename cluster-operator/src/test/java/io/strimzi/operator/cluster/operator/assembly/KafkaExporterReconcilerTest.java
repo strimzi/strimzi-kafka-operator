@@ -131,7 +131,7 @@ public class KafkaExporterReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
+        reconciler.reconcile(null, null, Clock.systemUTC()).toCompletableFuture().join();
 
         verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNotNull());
 
@@ -210,7 +210,7 @@ public class KafkaExporterReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
+        reconciler.reconcile(null, null, Clock.systemUTC()).toCompletableFuture().join();
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture());
@@ -268,7 +268,7 @@ public class KafkaExporterReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
+        reconciler.reconcile(null, null, Clock.systemUTC()).toCompletableFuture().join();
 
         verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
         verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), isNull());
@@ -317,7 +317,7 @@ public class KafkaExporterReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
+        reconciler.reconcile(null, null, Clock.systemUTC()).toCompletableFuture().join();
 
         verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
         verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), isNull());

@@ -239,7 +239,7 @@ public class CruiseControlTest {
                 .build();
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         assertThat(dep.getMetadata().getName(), is(CruiseControlResources.componentName(CLUSTER_NAME)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
@@ -316,7 +316,7 @@ public class CruiseControlTest {
     public void testTlsVolumesAndVolumeMounts() {
         KafkaClusterSecurityContext tlsSecurityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), tlsSecurityContext);
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
@@ -333,7 +333,7 @@ public class CruiseControlTest {
 
         KafkaClusterSecurityContext noTlsSecurityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), noTlsSecurityContext);
-        dep = cc.generateDeployment(Map.of(), true, null, null);
+        dep = cc.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
@@ -349,7 +349,7 @@ public class CruiseControlTest {
     public void testServiceAccountAuthenticationVolumesAndVolumeMounts() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication());
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), securityContext);
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
@@ -375,7 +375,7 @@ public class CruiseControlTest {
         // Without TLS encryption, only the Service Account token volume is added
         securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), serviceAccountAuthentication());
         cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), securityContext);
-        dep = cc.generateDeployment(Map.of(), true, null, null);
+        dep = cc.generateDeployment(Map.of(), null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
                 VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
@@ -409,10 +409,10 @@ public class CruiseControlTest {
     public void testImagePullPolicy() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
 
-        Deployment dep = cc.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = cc.generateDeployment(Map.of(), ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = cc.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = cc.generateDeployment(Map.of(), ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -605,7 +605,7 @@ public class CruiseControlTest {
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
         // Check Deployment
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         depLabels.putAll(expectedLabels());
         assertThat(dep.getMetadata().getLabels(), is(depLabels));
         assertThat(dep.getMetadata().getAnnotations(), is(depAnnotations));
@@ -667,7 +667,7 @@ public class CruiseControlTest {
                 .build();
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         Container ccContainer = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(ccContainer.getResources().getLimits(), is(limits));
         assertThat(ccContainer.getResources().getRequests(), is(requests));
@@ -708,7 +708,7 @@ public class CruiseControlTest {
                 .build();
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of(), new KafkaClusterSecurityContext(encryption, authentication));
 
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         List<EnvVar> envVarList = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertThat(envVarList.contains(e1),  is(true));
         assertThat(envVarList.contains(e2),  is(true));
@@ -735,7 +735,7 @@ public class CruiseControlTest {
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
         // checks on the main Cruise Control container
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         Container ccContainer = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(ccContainer.getImage(), is(cc.image));
         assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(123));
@@ -759,7 +759,7 @@ public class CruiseControlTest {
                 .build();
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
@@ -772,7 +772,7 @@ public class CruiseControlTest {
         cc.securityProvider = new TestPodSecurityProvider();
         cc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
@@ -838,7 +838,7 @@ public class CruiseControlTest {
                 .build();
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
                         hasProperty("name", equalTo(CruiseControl.CRUISE_CONTROL_CONTAINER_NAME)),
