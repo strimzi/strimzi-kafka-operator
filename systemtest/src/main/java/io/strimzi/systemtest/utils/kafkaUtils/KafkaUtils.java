@@ -543,6 +543,39 @@ public class KafkaUtils {
     }
 
     /**
+     * Waits until the Kafka cluster in the given namespace reaches the specified AutoRebalance mode (without broker list).
+     * Used for imbalance mode where no broker IDs are included.
+     *
+     * @param namespaceName                     The name of the Kubernetes namespace where the Kafka cluster resides.
+     * @param clusterName                       The name of the Kafka cluster.
+     * @param expectedKafkaAutoRebalanceMode    The expected {@link KafkaAutoRebalanceMode} that the Kafka cluster should reach.
+     */
+    public static void waitUntilKafkaHasExpectedAutoRebalanceMode(final String namespaceName,
+                                                                  final String clusterName,
+                                                                  final KafkaAutoRebalanceMode expectedKafkaAutoRebalanceMode) {
+        TestUtils.waitFor(
+            String.format("Kafka cluster %s/%s and KafkaRebalance mode '%s'",
+                namespaceName, clusterName, expectedKafkaAutoRebalanceMode),
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                final Kafka kafka = kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+                if (kafka == null || kafka.getStatus() == null || kafka.getStatus().getAutoRebalance() == null) {
+                    return false;
+                }
+
+                final List<KafkaAutoRebalanceStatusBrokers> autoRebalanceModeBrokersList = kafka.getStatus().getAutoRebalance().getModes();
+                if (autoRebalanceModeBrokersList == null) {
+                    return false;
+                }
+
+                return autoRebalanceModeBrokersList.stream()
+                    .anyMatch(modeBrokers -> modeBrokers.getMode().equals(expectedKafkaAutoRebalanceMode));
+            }
+        );
+    }
+
+    /**
      * Waits until the Kafka cluster in the given namespace reaches the specified AutoRebalance mode and brokers.
      *
      * @param namespaceName                     The name of the Kubernetes namespace where the Kafka cluster resides.
@@ -562,7 +595,7 @@ public class KafkaUtils {
             () -> {
                 final Kafka kafka = kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
                 if (kafka == null || kafka.getStatus() == null || kafka.getStatus().getAutoRebalance() == null) {
-                    return false; // Kafka cluster, its status, or AutoRebalance status is not available
+                    return false;
                 }
 
                 final List<KafkaAutoRebalanceStatusBrokers> autoRebalanceModeBrokersList = kafka.getStatus().getAutoRebalance().getModes();

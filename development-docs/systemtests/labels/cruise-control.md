@@ -11,6 +11,10 @@ Ensuring the correctness of Cruise Control behavior under different configuratio
 **Tests:**
 - [testAutoCreationOfCruiseControlTopicsWithResources](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testAutoKafkaRebalanceScaleUpScaleDown](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
+- [testAutoRebalanceOnImbalanceCrashRecovery](../io.strimzi.systemtest.cruisecontrol.AutoRebalanceOnImbalanceST.md)
+- [testAutoRebalanceOnImbalanceIgnoredDuringScaleOperation](../io.strimzi.systemtest.cruisecontrol.AutoRebalanceOnImbalanceST.md)
+- [testAutoRebalanceOnImbalanceMaintenanceWindow](../io.strimzi.systemtest.cruisecontrol.AutoRebalanceOnImbalanceST.md)
+- [testAutoRebalanceOnImbalanceSuccessful](../io.strimzi.systemtest.cruisecontrol.AutoRebalanceOnImbalanceST.md)
 - [testClusterSecurityConfiguration](../io.strimzi.systemtest.security.ClusterSecurityST.md)
 - [testConfigurationUpdate](../io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST.md)
 - [testCruiseControlAPIUsers](../io.strimzi.systemtest.cruisecontrol.CruiseControlApiST.md)
