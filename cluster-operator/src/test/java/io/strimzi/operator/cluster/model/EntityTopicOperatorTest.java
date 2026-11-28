@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -30,6 +31,7 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticatio
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.Test;
 
@@ -375,6 +377,39 @@ public class EntityTopicOperatorTest {
             "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
             EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT,
             EntityTopicOperator.ETO_CC_API_VOLUME_NAME, EntityTopicOperator.ETO_CC_API_VOLUME_MOUNT
+        )));
+    }
+
+    @Test
+    public void testSetupWithCruiseControlEnabledWithoutApiAuth() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                    .endEntityOperator()
+                    .withNewCruiseControl()
+                        .withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), false))
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        EnvVar cruiseControlAuthEnvVar = entityTopicOperator.getEnvVars().stream()
+                .filter(envVar -> EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED.equals(envVar.getName()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(cruiseControlAuthEnvVar.getValue(), is(Boolean.toString(false)));
+
+        // The Cruise Control API credentials are not mounted without the Cruise Control API authentication
+        assertThat(entityTopicOperator.getVolumes(null).stream().map(Volume::getName).toList().contains(EntityTopicOperator.ETO_CC_API_VOLUME_NAME), is(false));
+
+        Container container = entityTopicOperator.createContainer(null);
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
+            VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME, "/var/run/secrets/kubernetes.io/serviceaccount",
+            EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
+            "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
+            EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT
         )));
     }
 

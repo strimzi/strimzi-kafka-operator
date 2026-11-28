@@ -38,11 +38,13 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
@@ -338,8 +340,12 @@ public class EntityOperatorReconcilerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = { true, false })
-    public void reconcileWithToOnly(boolean cruiseControlEnabled) {
+    @CsvSource({
+        "true, true",
+        "true, false",
+        "false, false"
+    })
+    public void reconcileWithToOnly(boolean cruiseControlEnabled, boolean cruiseControlApiAuthEnabled) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -356,7 +362,7 @@ public class EntityOperatorReconcilerTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
-        if (cruiseControlEnabled) {
+        if (cruiseControlApiAuthEnabled) {
             Secret toApiSecret = mock(Secret.class);
             doReturn(Map.of(TOPIC_OPERATOR_USERNAME_KEY, Util.encodeToBase64(TOPIC_OPERATOR_USERNAME), TOPIC_OPERATOR_PASSWORD_KEY, Util.encodeToBase64("changeit"))).when(toApiSecret).getData();
             when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)))).thenReturn(CompletableFuture.completedFuture(toApiSecret));
@@ -403,7 +409,9 @@ public class EntityOperatorReconcilerTest {
                 .build();
 
         if (cruiseControlEnabled) {
-            kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder().build());
+            kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder()
+                    .withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), cruiseControlApiAuthEnabled))
+                    .build());
         }
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
@@ -447,6 +455,15 @@ public class EntityOperatorReconcilerTest {
         assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
         assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
         assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
+
+        // The Cruise Control API Secret for the Topic Operator is used only when the Cruise Control API authentication is enabled
+        if (cruiseControlApiAuthEnabled) {
+            assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is(notNullValue()));
+            verify(mockSecretOps, times(1)).getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)));
+        } else {
+            assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is(nullValue()));
+            verify(mockSecretOps, never()).getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)));
+        }
 
         assertThat(pdbCaptor.getAllValues().size(), is(1));
         assertThat(pdbCaptor.getValue(), is(notNullValue()));

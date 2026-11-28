@@ -262,6 +262,90 @@ public class CruiseControlReconcilerTest {
         verify(clusterCa, never()).cleanupEndEntityCert(eq(CruiseControlResources.secretName(NAME)));
     }
 
+    /**
+     * Tests that the Cruise Control API Secrets are not created (and are deleted) when the Cruise Control API
+     * authentication is disabled. The Topic Operator is enabled to check that its Cruise Control API Secret is also
+     * not created.
+     */
+    @Test
+    public void reconcileEnabledCruiseControlWithoutApiAuth() {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PasswordGenerator mockPasswordGenerator = new PasswordGenerator(10, "a", "a");
+        PodDisruptionBudgetOperator mockPodDisruptionBudget = supplier.podDisruptionBudgetOperator;
+
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNull())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNull())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateServerCerts(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewCruiseControl()
+                        .withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), false))
+                    .endCruiseControl()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        CruiseControlReconciler rcnclr = new CruiseControlReconciler(
+                Reconciliation.DUMMY_RECONCILIATION,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
+                mockPasswordGenerator,
+                kafka,
+                VERSIONS,
+                NODES,
+                Map.of("mixed", STORAGE),
+                Map.of(),
+                clusterCa,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        rcnclr.reconcile(null, null, Clock.systemUTC())
+                .toCompletableFuture().join();
+
+        // The API Secrets are deleted and never read
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNull());
+        verify(mockSecretOps, never()).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNotNull());
+        verify(mockSecretOps, never()).getAsync(eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)));
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNull());
+        verify(mockSecretOps, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNotNull());
+        verify(mockSecretOps, never()).getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)));
+
+        // The rest of Cruise Control is still deployed
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNotNull());
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), isNotNull());
+
+        // The Deployment does not use the API Secret
+        ArgumentCaptor<Deployment> deployCaptor = ArgumentCaptor.forClass(Deployment.class);
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), deployCaptor.capture());
+        Deployment dep = deployCaptor.getValue();
+        assertThat(dep, is(notNullValue()));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is(""));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().noneMatch(v -> CruiseControlResources.apiSecretName(NAME).equals(v.getSecret() != null ? v.getSecret().getSecretName() : null)), is(true));
+    }
+
     @Test
     public void reconcileDisabledCruiseControl() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);

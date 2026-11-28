@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -62,6 +63,7 @@ public class EntityOperatorReconciler {
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final boolean isCruiseControlEnabled;
+    private final boolean isCruiseControlApiAuthEnabled;
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
 
     private String toCertificateHash = "";
@@ -93,6 +95,7 @@ public class EntityOperatorReconciler {
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.isCruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
+        this.isCruiseControlApiAuthEnabled = isCruiseControlEnabled && CruiseControlConfiguration.isApiAuthEnabled(kafkaAssembly.getSpec().getCruiseControl());
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         this.isEntityOperatorWatchedNamespaceEnabled = config.isEntityOperatorWatchedNamespaceEnabled();
 
@@ -446,7 +449,7 @@ public class EntityOperatorReconciler {
                                 return null;
                             }))
                     .thenCompose(i -> {
-                        if (isCruiseControlEnabled) {
+                        if (isCruiseControlApiAuthEnabled) {
                             return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
                                     .thenApply(secret -> {
                                         toApiSecretHash = ReconcilerUtils.hashSecretContent(secret);
@@ -536,7 +539,7 @@ public class EntityOperatorReconciler {
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
             podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, toCertificateHash + uoCertificateHash);
 
-            if (entityOperator.topicOperator() != null && isCruiseControlEnabled) {
+            if (entityOperator.topicOperator() != null && isCruiseControlApiAuthEnabled) {
                 podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, toApiSecretHash);
             }
 

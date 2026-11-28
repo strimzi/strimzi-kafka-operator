@@ -262,12 +262,13 @@ public class CruiseControlReconciler {
      * Manages the Topic Operator Cruise Control API Secret.
      * This secret contains credentials for the Topic Operator to access Cruise Control's REST API.
      * It is generated here so that the secret exists before Cruise Control reads it in {@link #apiSecret()}.
+     * The Secret is needed only when the Cruise Control API authentication is enabled. Otherwise, it is deleted.
      *
      * @return  CompletionStage which completes when the reconciliation is done
      */
     protected CompletionStage<Void> topicOperatorCruiseControlApiSecret() {
         String toApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
-        if (isTopicOperatorEnabled && cruiseControl != null) {
+        if (isTopicOperatorEnabled && cruiseControl != null && cruiseControl.isApiAuthEnabled()) {
             return secretOperator.getAsync(reconciliation.namespace(), toApiSecretName)
                     .thenCompose(oldSecret -> {
                         Secret newSecret = cruiseControl.apiCredentials().generateTopicOperatorApiSecret(oldSecret);
@@ -300,10 +301,12 @@ public class CruiseControlReconciler {
      *
      * Strimzi maintains a hash of the centralized Cruise Control API secret content to detect changes that require a pod restart.
      *
+     * The API secret is needed only when the Cruise Control API authentication is enabled. Otherwise, it is deleted.
+     *
      * @return CompletionStage which completes when the reconciliation is done.
      */
     protected CompletionStage<Void> apiSecret() {
-        if (cruiseControl != null) {
+        if (cruiseControl != null && cruiseControl.isApiAuthEnabled()) {
             CompletableFuture<Secret> ccApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())).toCompletableFuture();
             CompletableFuture<Secret> userManagedApiSecretFuture = cruiseControl.apiCredentials().getUserManagedApiSecretName() != null
                     ? secretOperator.getAsync(reconciliation.namespace(), cruiseControl.apiCredentials().getUserManagedApiSecretName()).toCompletableFuture()

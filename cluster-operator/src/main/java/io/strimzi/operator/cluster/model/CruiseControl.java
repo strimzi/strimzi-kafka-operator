@@ -351,7 +351,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             volumes.add(VolumeUtils.createStrimziAuthenticationTokenProjection(saAuthentication.audience(), saAuthentication.expirationSeconds()));
         }
 
-        volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster)));
+        if (isApiAuthEnabled()) {
+            // The API Secret is used only when the API authentication is enabled
+            volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster)));
+        }
+
         volumes.add(VolumeUtils.createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
 
         TemplateUtils.addAdditionalVolumes(templatePod, volumes);
@@ -375,7 +379,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             volumeMounts.add(VolumeUtils.createStrimziAuthenticationTokenVolumeMount());
         }
 
-        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
+        if (isApiAuthEnabled()) {
+            // The API Secret is used only when the API authentication is enabled
+            volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
+        }
+
         volumeMounts.add(VolumeUtils.createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);
@@ -551,6 +559,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 ownerReference,
                 rules
         );
+    }
+
+    /**
+     * Indicates whether the Cruise Control API authentication is enabled.
+     *
+     * @return  True if the API authentication is enabled. False otherwise.
+     */
+    public boolean isApiAuthEnabled() {
+        return configuration.isApiAuthEnabled();
     }
 
     /**
