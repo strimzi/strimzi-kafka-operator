@@ -9,6 +9,10 @@ clean:
 	rm -rf binaries
 	rm -rf kafka-thirdparty-libs/*/target
 
+clean_third_party_conflicts:
+	rm -rf kafka-thirdparty-libs/*/target
+	rm -rf binaries/kafka-thirdparty-libs/
+
 java_build:
 	./build.sh
 

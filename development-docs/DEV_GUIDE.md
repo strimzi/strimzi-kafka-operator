@@ -20,6 +20,7 @@ This document gives a detailed breakdown of the various build processes and opti
    - [Build customization](#build-customization)
    - [Local build on Minikube](#local-build-on-minikube)
    - [Local build on Kind](#local-build-on-kind)
+   - [Cleaning up third party library conflicts](#cleaning-up-third-party-library-conflicts)
 - [Helm Chart](#helm-chart)
 - [Running system tests](#running-system-tests)
 - [DCO Signoff](#dco-signoff)
@@ -480,6 +481,19 @@ This builds all Java artifacts and Docker images, then tags and pushes them to t
 Update `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` to use your local
 registry. 
 Replace image references from `quay.io/strimzi/...` to `${DOCKER_REGISTRY}/strimzi/...`.
+
+### Cleaning up third party library conflicts
+
+After bumping a dependency in the Kafka third party libraries (for example the Metrics Reporter), the build can bundle duplicate library versions into the Kafka images.
+A full `make clean` fixes this, but it also deletes the downloaded Apache Kafka binaries, which are slow to download again for older versions.
+
+Use `clean_third_party_conflicts` instead.
+It clears only the third party libraries and combined artifacts, keeping the Kafka binaries in place:
+
+```
+make clean_third_party_conflicts
+make all
+```
 
 ## Helm Chart
 
