@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -50,7 +49,6 @@ import java.util.List;
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends CustomResource<P, S>,
         L extends KubernetesResourceList<T>, R extends Resource<T>, P extends Spec, S extends Status>
     extends AbstractOperator<T, P, S, AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R>> {
-    protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;
     protected final CertIssuer certIssuer;
     protected final PasswordGenerator passwordGenerator;
@@ -67,22 +65,20 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * Constructs a new AbstractAssemblyOperator.
      *
-     * @param vertx The Vertx instance
-     * @param pfa Properties with features availability
-     * @param kind The kind of watched resource
-     * @param certIssuer Certificate issuer
+     * @param vertx             The Vertx instance
+     * @param kind              The kind of watched resource
+     * @param certIssuer        Certificate issuer
      * @param passwordGenerator Password generator
-     * @param resourceOperator For operating on the desired resource
-     * @param supplier Supplies the operators for different resources
-     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param resourceOperator  For operating on the desired resource
+     * @param supplier          Supplies the operators for different resources
+     * @param config            ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
-    protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
+    protected AbstractAssemblyOperator(Vertx vertx, String kind,
                                        CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                        AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
         super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
-        this.pfa = pfa;
         this.certIssuer = certIssuer;
         this.passwordGenerator = passwordGenerator;
         this.secretOperations = supplier.secretOperations;

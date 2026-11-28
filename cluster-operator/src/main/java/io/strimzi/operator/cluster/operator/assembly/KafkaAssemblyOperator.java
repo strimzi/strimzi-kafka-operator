@@ -101,6 +101,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     private final KafkaAssemblyOperatorMetricsHolder metrics;
 
+    private final PlatformFeaturesAvailability pfa;
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
 
@@ -122,8 +123,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                  CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                  ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-        super(vertx, pfa, Kafka.RESOURCE_KIND, certIssuer, passwordGenerator,
-                supplier.kafkaOperator, supplier, config);
+        super(vertx, Kafka.RESOURCE_KIND, certIssuer, passwordGenerator, supplier.kafkaOperator, supplier, config);
+        this.pfa = pfa;
         this.config = config;
         this.supplier = supplier;
 
