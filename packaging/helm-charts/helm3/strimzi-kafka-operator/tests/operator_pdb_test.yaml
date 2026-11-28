@@ -1,0 +1,46 @@
+suite: strimzi operator pod disruption budget
+release:
+  name: strimzi-test
+  namespace: strimzi-test-namespace
+templates:
+  - 051-PodDisruptionBudget-strimzi-cluster-operator.yaml
+tests:
+  - it: should not render the PodDisruptionBudget by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should use minAvailable by default
+    set:
+      podDisruptionBudget.enabled: true
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: spec.minAvailable
+          value: 1
+      - notExists:
+          path: spec.maxUnavailable
+
+  - it: should use only maxUnavailable when it is set
+    set:
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.maxUnavailable: 1
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+      - notExists:
+          path: spec.minAvailable
+
+  - it: should use only maxUnavailable when both are set
+    set:
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.minAvailable: 2
+      podDisruptionBudget.maxUnavailable: 25%
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 25%
+      - notExists:
+          path: spec.minAvailable
