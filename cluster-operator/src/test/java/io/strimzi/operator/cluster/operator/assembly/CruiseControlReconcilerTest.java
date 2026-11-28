@@ -322,7 +322,7 @@ public class CruiseControlReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+        rcnclr.reconcile(null, null, Clock.systemUTC())
                 .toCompletableFuture().join();
 
         // The API Secrets are deleted and never read

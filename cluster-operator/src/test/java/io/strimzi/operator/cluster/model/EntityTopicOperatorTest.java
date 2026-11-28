@@ -402,7 +402,7 @@ public class EntityTopicOperatorTest {
         assertThat(cruiseControlAuthEnvVar.getValue(), is(Boolean.toString(false)));
 
         // The Cruise Control API credentials are not mounted without the Cruise Control API authentication
-        assertThat(entityTopicOperator.getVolumes(null, false).stream().map(Volume::getName).toList().contains(EntityTopicOperator.ETO_CC_API_VOLUME_NAME), is(false));
+        assertThat(entityTopicOperator.getVolumes(null).stream().map(Volume::getName).toList().contains(EntityTopicOperator.ETO_CC_API_VOLUME_NAME), is(false));
 
         Container container = entityTopicOperator.createContainer(null);
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(

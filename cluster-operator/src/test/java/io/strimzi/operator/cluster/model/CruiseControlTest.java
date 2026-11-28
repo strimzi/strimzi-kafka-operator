@@ -356,7 +356,7 @@ public class CruiseControlTest {
                 .build();
         KafkaClusterSecurityContext tlsSecurityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of(), tlsSecurityContext);
-        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), null, null);
 
         assertThat(cc.isApiAuthEnabled(), is(false));
 
