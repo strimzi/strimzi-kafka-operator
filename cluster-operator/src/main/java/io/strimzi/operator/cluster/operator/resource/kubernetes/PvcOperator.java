@@ -6,126 +6,28 @@ package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
-import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.regex.Pattern;
 
 /**
  * Operations for {@code PersistentVolumeClaim}s.
  */
 public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PvcOperator.class);
-    private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/metadata/managedFields" +
-                    "|/metadata/annotations/pv.kubernetes.io~1.*" +
-                    "|/metadata/annotations/volume.beta.kubernetes.io~1.*" +
-                    "|/metadata/annotations/volume.kubernetes.io~1.*" +
-                    "|/metadata/finalizers" +
-                    "|/metadata/creationTimestamp" +
-                    "|/metadata/deletionTimestamp" +
-                    "|/metadata/deletionGracePeriodSeconds" +
-                    "|/metadata/resourceVersion" +
-                    "|/metadata/generation" +
-                    "|/metadata/uid" +
-                    "|/status)$");
-
-
     /**
      * Constructor
      * @param asyncExecutor         Executor to use for asynchronous subroutines
      * @param client                The Kubernetes client
-     * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public PvcOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
-        super(asyncExecutor, client, "PersistentVolumeClaim", useServerSideApply);
+    public PvcOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "PersistentVolumeClaim", true);
     }
 
     @Override
     protected MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> operation() {
         return client.persistentVolumeClaims();
-    }
-
-    /**
-     * Gets the pattern for matching paths which can be ignored in the PVC resource diff.
-     *
-     * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
-     */
-    @Override
-    protected Pattern ignorablePaths() {
-        return IGNORABLE_PATHS;
-    }
-
-    /**
-     * Patches the resource with the given namespace and name to match the given desired resource
-     * and completes the given future accordingly.
-     *
-     * PvcOperator needs to patch the volumeName field in spec which is immutable and which should contain the same value as the existing resource.
-     *
-     * @param reconciliation The reconciliation
-     * @param namespace Namespace of the pvc
-     * @param name      Name of the pvc
-     * @param current   Current pvc
-     * @param desired   Desired pvc
-     *
-     * @return  Future with reconciliation result
-     */
-    @Override
-    protected CompletionStage<ReconcileResult<PersistentVolumeClaim>> internalUpdate(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
-        try {
-            if (current.getSpec() != null && desired.getSpec() != null)   {
-                revertImmutableChanges(current, desired);
-                configureNormalizedStorageSizeIfEqual(current, desired);
-            }
-
-            return super.internalUpdate(reconciliation, namespace, name, current, desired);
-        } catch (Exception e) {
-            LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    /**
-     * Reverts the changes to immutable fields in PVCs spec section. The values for these fields in the current resource
-     * are often not set by us but by Kubernetes alone (e.g. volume ID, default storage class etc.). So our Model
-     * classes are nto aware of them and cannot set them properly. Therefore we are reverting these values here.
-     *
-     * @param current   Existing PVC
-     * @param desired   Desired PVC
-     */
-    protected void revertImmutableChanges(PersistentVolumeClaim current, PersistentVolumeClaim desired)   {
-        desired.getSpec().setVolumeName(current.getSpec().getVolumeName());
-        desired.getSpec().setStorageClassName(current.getSpec().getStorageClassName());
-        desired.getSpec().setAccessModes(current.getSpec().getAccessModes());
-        desired.getSpec().setSelector(current.getSpec().getSelector());
-        desired.getSpec().setDataSource(current.getSpec().getDataSource());
-    }
-
-    /**
-     * Method for configuring the normalized volume size to "desired" PVC from the "current" one.
-     * Used in situations when f.e. "1024Gi" is configured in the "desired" PVC, however Kubernetes during creation/update
-     * of PVC normalize it to "1Ti". In the {@link io.strimzi.operator.common.operator.resource.ResourceDiff} we assume that
-     * the values are different (because the String values are different), and we need to patch the PVC,
-     * however it's not needed -> so we skip unnecessary patches.
-     *
-     * @param current  Existing PVC
-     * @param desired  Desired PVC
-     */
-    protected void configureNormalizedStorageSizeIfEqual(PersistentVolumeClaim current, PersistentVolumeClaim desired) {
-        Quantity currentQuantity = current.getSpec().getResources().getRequests().get("storage");
-        Quantity desiredQuantity = desired.getSpec().getResources().getRequests().get("storage");
-
-        if (currentQuantity.equals(desiredQuantity) && !currentQuantity.getAmount().equals(desiredQuantity.getAmount())) {
-            desired.getSpec().getResources().getRequests().put("storage", currentQuantity);
-        }
     }
 }

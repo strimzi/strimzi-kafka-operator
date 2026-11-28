@@ -10,86 +10,27 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
 
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.function.Predicate;
 
 /**
  * Operations for {@code Ingress}es.
  */
 public class IngressOperator extends AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
     /**
-     * List of predicates that allows existing ingress annotations to be retained while reconciling the resources.
-     */
-    private static final List<Predicate<String>> INGRESS_ANNOTATION_IGNORELIST = List.of(
-            // field.cattle.io annotations are used by Rancher. For ignore them to avoid conflicts.
-            annotation -> annotation.startsWith("field.cattle.io")
-    );
-
-    /**
      * Constructor
      * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
-     * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public IngressOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
-        super(asyncExecutor, client, "Ingress", useServerSideApply);
+    public IngressOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "Ingress", true);
     }
 
     @Override
     protected MixedOperation<Ingress, IngressList, Resource<Ingress>> operation() {
         return client.network().v1().ingresses();
-    }
-
-    /**
-     * Patches the resource with the given namespace and name to match the given desired resource
-     * and completes the given future accordingly.
-     *
-     * IngressOperator needs its own version of this method to patch the Ingress Class name when the default class is
-     * used. When the default IngressClass is used, the class name in the Kafka CR should not be set at all and the
-     * Ingress resources will be created without it. The default Kubernetes Nginx Ingress will then pick up the Ingress
-     * resource and inject the class name into it. So when patching the Ingress resource, we need to set the IngressClass
-     * name in the desired object to match the current. This needs to be done in order to:
-     *     - Avoid unnecessary patching
-     *     - Because if you change the class, the Kubernetes Nginx Ingress controller will not pick it up again, and it
-     *       will stop working
-     *
-     * This is done only when the IngressClass set in Kafka CR is null. If it is set to some specific class, it will be
-     * of course kept.
-     *
-     * @param reconciliation    The reconciliation
-     * @param namespace         Namespace of the Ingress resource
-     * @param name              Name of the Ingress resource
-     * @param current           Current Ingress resource
-     * @param desired           Desired Ingress resource
-     *
-     * @return  Future with reconciliation result
-     */
-    @Override
-    protected CompletionStage<ReconcileResult<Ingress>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
-        patchIngressClassName(current, desired);
-        KubernetesResourceOperatorUtils.patchAnnotations(current, desired, INGRESS_ANNOTATION_IGNORELIST);
-
-        return super.internalUpdate(reconciliation, namespace, name, current, desired);
-    }
-
-    /**
-     * Patches the IngressClass name from the current to the desired Ingress resource. The patching is only done if the
-     * desired IngressClass name is not set.
-     *
-     * @param current           Current Ingress resource
-     * @param desired           Desired Ingress resource
-     */
-    /* test */ void patchIngressClassName(Ingress current, Ingress desired) {
-        if (desired.getSpec() != null
-                && current.getSpec() != null
-                && desired.getSpec().getIngressClassName() == null)   {
-            desired.getSpec().setIngressClassName(current.getSpec().getIngressClassName());
-        }
     }
 
     /**

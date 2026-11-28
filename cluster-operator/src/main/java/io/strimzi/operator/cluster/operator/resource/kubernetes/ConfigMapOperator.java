@@ -9,64 +9,26 @@ import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code ConfigMap}s.
  */
 public class ConfigMapOperator extends AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
-
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConfigMapOperator.class);
-
     /**
      * Constructor
      *
      * @param asyncExecutor         Executor to use for asynchronous subroutines
      * @param client                The Kubernetes client
-     * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public ConfigMapOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
-        super(asyncExecutor, client, "ConfigMap", useServerSideApply);
+    public ConfigMapOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "ConfigMap", true);
     }
 
     @Override
     protected MixedOperation<ConfigMap, ConfigMapList, Resource<ConfigMap>> operation() {
         return client.configMaps();
-    }
-
-    @Override
-    protected CompletionStage<ReconcileResult<ConfigMap>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ConfigMap current, ConfigMap desired) {
-        try {
-            if (compareObjects(current.getData(), desired.getData())
-                    && compareObjects(current.getMetadata().getName(), desired.getMetadata().getName())
-                    && compareObjects(current.getMetadata().getNamespace(), desired.getMetadata().getNamespace())
-                    && compareObjects(current.getMetadata().getAnnotations(), desired.getMetadata().getAnnotations())
-                    && compareObjects(current.getMetadata().getLabels(), desired.getMetadata().getLabels())) {
-                // Checking some metadata. We cannot check entire metadata object because it contains
-                // timestamps which would cause restarting loop
-                LOGGER.debugCr(reconciliation, "{} {} in namespace {} has not been patched because resources are equal", resourceKind, name, namespace);
-                return CompletableFuture.completedFuture(ReconcileResult.noop(current));
-            } else {
-                return super.internalUpdate(reconciliation, namespace, name, current, desired);
-            }
-        } catch (Exception e) {
-            LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private boolean compareObjects(Object a, Object b) {
-        if (a == null && b instanceof Map && ((Map) b).size() == 0)
-            return true;
-        return !(a instanceof Map ^ b instanceof Map) && Objects.equals(a, b);
     }
 }

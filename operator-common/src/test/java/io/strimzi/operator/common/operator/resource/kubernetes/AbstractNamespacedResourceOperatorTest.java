@@ -42,6 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -79,14 +80,30 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     }
 
     /**
+     * Returns if resource uses SSA only.
+     * This is used in {@link #useServerSideApplyCombinations()} and then in test cases that are only for SSA.
+     *
+     * @return  boolean value determining if resource uses only SSA.
+     */
+    protected boolean alwaysUsesServerSideApply() {
+        return false;
+    }
+
+    /**
      * Returns combinations for parameterized test cases for Server Side Apply.
-     * In case that {@link #supportsServerSideApply()} returns `true`, both of the combinations for SSA disabled
-     * and enabled is returned. Otherwise, just the disabled is returned.
+     * In case that {@link #alwaysUsesServerSideApply()} returns `true`, only enabled case is returned.
+     * If it returns `false` and {@link #supportsServerSideApply()} returns `true`, both of the combinations for SSA disabled
+     * and enabled is returned.
+     * Otherwise, just the disabled is returned.
      *
      * @return  combinations for parameterized test cases for Server Side Apply.
      */
     protected Stream<Arguments> useServerSideApplyCombinations() {
-        if (supportsServerSideApply()) {
+        if (alwaysUsesServerSideApply()) {
+            return Stream.of(
+                Arguments.of(true)
+            );
+        } else if (supportsServerSideApply()) {
             return Stream.of(
                 Arguments.of(false),
                 Arguments.of(true)
@@ -212,6 +229,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
     @Test
     public void testCreateWhenExistsWithoutChangeIsNotAPatch() {
+        // resources that always use SSA are not going through the `internalUpdate` branch
+        // because this test is testing this branch, it should be skipped for resources that use SSA only
+        assumeFalse(alwaysUsesServerSideApply());
         testCreateWhenExistsWithoutChangeIsNotAPatch(true);
     }
 
@@ -714,7 +734,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     @Test
     @SuppressWarnings("unchecked")
     void testModifyWithForceServerSideApply() {
-        assumeTrue(supportsServerSideApply());
+        assumeTrue(supportsServerSideApply() || alwaysUsesServerSideApply());
 
         T resource = resource();
         R mockResource = (R) mock(resourceType());
