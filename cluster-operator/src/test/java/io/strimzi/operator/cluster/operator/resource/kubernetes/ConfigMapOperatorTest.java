@@ -19,8 +19,13 @@ import static org.mockito.Mockito.when;
 public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
 
     @Override
-    protected boolean supportsServerSideApply() {
+    protected boolean alwaysUsesServerSideApply() {
         return true;
+    }
+
+    @Override
+    protected boolean supportsServerSideApply() {
+        return alwaysUsesServerSideApply();
     }
 
     @Override
@@ -30,12 +35,7 @@ public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorTes
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(KubernetesClient mockClient) {
-        return new ConfigMapOperator(asyncExecutor, mockClient, false);
-    }
-
-    @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(KubernetesClient mockClient, boolean useServerSideApply) {
-        return new ConfigMapOperator(asyncExecutor, mockClient, useServerSideApply);
+        return new ConfigMapOperator(asyncExecutor, mockClient);
     }
 
     @Override

@@ -9,82 +9,66 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ServiceAccountResource;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperatorIT;
-import io.strimzi.test.TestUtils;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperatorServerSideApplyIT;
+
+import java.util.Map;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
+public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperatorServerSideApplyIT<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
     @Override
     public AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> operator() {
-        return new ServiceAccountOperator(asyncExecutor, client, false);
+        return new ServiceAccountOperator(asyncExecutor, client);
     }
 
     @Override
     public ServiceAccount getOriginal()  {
         return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(resourceName)
-                    .withNamespace(namespace)
-                    .withLabels(singletonMap("foo", "bar"))
-                .endMetadata()
-                .build();
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
+                .withLabels(singletonMap("foo", "bar"))
+            .endMetadata()
+            .build();
     }
 
     @Override
-    public ServiceAccount getModified()  {
+    public ServiceAccount getModified() {
         return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(resourceName)
-                    .withNamespace(namespace)
-                    .withLabels(singletonMap("foo2", "bar2"))
-                .endMetadata()
-                .build();
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
+                .withLabels(Map.of("foo", "bar", "foo2", "bar2"))
+            .endMetadata()
+            .withAutomountServiceAccountToken()
+            .build();
     }
 
-    @Test
     @Override
-    public void testCreateModifyDelete()    {
-        ServiceAccountOperator op = new ServiceAccountOperator(asyncExecutor, client, false);
+    public ServiceAccount getNonConflicting() {
+        return new ServiceAccountBuilder()
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
+                .withAnnotations(singletonMap("my-annotation2", "my-value2"))
+            .endMetadata()
+            .withAutomountServiceAccountToken(false)
+            .build();
+    }
 
-        ServiceAccount newResource = getOriginal();
-        ServiceAccount modResource = getModified();
-
-        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
-                .whenComplete((rrCreated, error) -> {
-                    assertNull(error);
-                    ServiceAccount created = op.get(namespace, resourceName);
-
-                    assertThat(created, Matchers.is(notNullValue()));
-                    assertResources(newResource, created);
-                })
-                .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
-                .whenComplete((rrModified, error) -> {
-                    assertNull(error);
-                    ServiceAccount modified = op.get(namespace, resourceName);
-
-                    assertThat(modified, Matchers.is(notNullValue()));
-                    assertResources(modResource, modified);
-                })
-                .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
-                .whenComplete(TestUtils::assertSuccessful)
-                .thenCompose(rr -> resourceSupport.waitFor(
-                        Reconciliation.DUMMY_RECONCILIATION,
-                        "resource deletion " + resourceName,
-                        "deleted",
-                        1000,
-                        30_000,
-                        () -> op.get(namespace, resourceName) == null))
-                .thenRun(() -> assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()))));
+    @Override
+    public ServiceAccount getConflicting() {
+        return new ServiceAccountBuilder()
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
+                .withLabels(singletonMap("foo", "bar"))
+            .endMetadata()
+            .withAutomountServiceAccountToken(false)
+            .build();
     }
 
     @Override
@@ -92,5 +76,6 @@ public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperator
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getAutomountServiceAccountToken(), is(expected.getAutomountServiceAccountToken()));
     }
 }

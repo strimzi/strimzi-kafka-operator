@@ -11,189 +11,28 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 
 /**
  * Operations for {@code Service}s.
  */
 public class ServiceOperator extends AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceOperator.class);
-    private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/metadata/managedFields" +
-                    "|/metadata/creationTimestamp" +
-                    "|/metadata/deletionTimestamp" +
-                    "|/metadata/deletionGracePeriodSeconds" +
-                    "|/metadata/resourceVersion" +
-                    "|/metadata/generation" +
-                    "|/metadata/uid" +
-                    "|/spec/sessionAffinity" +
-                    "|/spec/clusterIP" +
-                    "|/spec/clusterIPs" +
-                    "|/spec/ipFamilies" + // Immutable field
-                    "|/spec/internalTrafficPolicy" + // Set by Kubernetes to Cluster as default (not configurable through Strimzi as it does nto seem to make much sense for us, so we ignore it)
-                    "|/status)$");
-
-    /**
-     * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
-     */
-    private static final List<Predicate<String>> LOADBALANCER_ANNOTATION_IGNORELIST = List.of(
-            // cattle.io and field.cattle.io annotations are used by Rancher. For ignore them to avoid conflicts.
-            annotation -> annotation.startsWith("cattle.io/"),
-            annotation -> annotation.startsWith("field.cattle.io")
-    );
-
     /**
      * Constructor
      *
      * @param asyncExecutor         Executor to use for asynchronous subroutines
      * @param client                The Kubernetes client
-     * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public ServiceOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
-        super(asyncExecutor, client, "Service", useServerSideApply);
+    public ServiceOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "Service", true);
     }
 
     @Override
     protected MixedOperation<Service, ServiceList, ServiceResource<Service>> operation() {
         return client.services();
-    }
-
-    /**
-     * Gets the pattern for matching paths which can be ignored in the Service resource diff.
-     *
-     * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
-     */
-    protected Pattern ignorablePaths() {
-        return IGNORABLE_PATHS;
-    }
-
-    /**
-     * Patches the resource with the given namespace and name to match the given desired resource
-     * and completes the given future accordingly.
-     *
-     * ServiceOperator needs its own version of this method to patch the NodePorts for NodePort and LoadBalancer type Services.
-     * Patching the service with service definition without the NodePort would cause regenerating the node port
-     * which triggers rolling update.
-     *
-     * @param reconciliation The reconciliation
-     * @param namespace Namespace of the service
-     * @param name      Name of the service
-     * @param current   Current service
-     * @param desired   Desired Service
-     *
-     * @return  Future with reconciliation result
-     */
-    @Override
-    protected CompletionStage<ReconcileResult<Service>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
-        try {
-            if (current.getSpec() != null && desired.getSpec() != null) {
-                if (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
-                        || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType())))   {
-                    patchNodePorts(current, desired);
-                    patchHealthCheckPorts(current, desired);
-                    KubernetesResourceOperatorUtils.patchAnnotations(current, desired, LOADBALANCER_ANNOTATION_IGNORELIST);
-                    patchLoadBalancerClass(current, desired);
-                }
-
-                patchDualStackNetworking(current, desired);
-            }
-
-            return super.internalUpdate(reconciliation, namespace, name, current, desired);
-        } catch (Exception e) {
-            LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    /**
-     * Finds out if corresponding port from desired service also exists in current service.
-     * If it exists, it will copy the node port.
-     * That will make sure the node port doesn't change with every reconciliation.
-     *
-     * @param current   Current Service
-     * @param desired   Desired Service
-     */
-    protected void patchNodePorts(Service current, Service desired) {
-        for (ServicePort desiredPort : desired.getSpec().getPorts())    {
-            String portName = desiredPort.getName();
-
-            for (ServicePort currentPort : current.getSpec().getPorts())    {
-                if (desiredPort.getNodePort() == null && portName.equals(currentPort.getName()) && currentPort.getNodePort() != null) {
-                    desiredPort.setNodePort(currentPort.getNodePort());
-                }
-            }
-        }
-    }
-
-    /**
-     * When a dedicated health check port is used by the current service, this method will patch it in the desired
-     * service to avoid the health check port changing with every reconciliation. Similarly to the generated node ports,
-     * the health check port is set by Kubernetes in the spec section and needs to be manually reconciled to avoid issues.
-     *
-     * @param current   Current Service
-     * @param desired   Desired Service
-     */
-    protected void patchHealthCheckPorts(Service current, Service desired) {
-        if (current.getSpec().getHealthCheckNodePort() != null
-                && desired.getSpec().getHealthCheckNodePort() == null) {
-            desired.getSpec().setHealthCheckNodePort(current.getSpec().getHealthCheckNodePort());
-        }
-    }
-
-    /**
-     * DualStack Kubernetes clusters (https://kubernetes.io/docs/concepts/services-networking/dual-stack/) specify
-     * ipFamilyPolicy and ipFamilies fields of the Service spec section. This fields indicates whether IPv4 or IPv6
-     * should be used. Kubernetes have different defaults for these fields depending on the environment. So when they
-     * are not set by us / Strimzi user, we just copy the default set by Kubernetes. In addition, the ipFamilies field
-     * is immutable and cannot be changed. This method is used to patch the service and set the value from the current
-     * resource in the desired to allow to patch / reconcile the Service. Without this the reconciliation would fail.
-     *
-     * @param current   Current Service
-     * @param desired   Desired Service
-     */
-    protected void patchDualStackNetworking(Service current, Service desired) {
-        desired.getSpec().setIpFamilies(current.getSpec().getIpFamilies());
-
-        if (desired.getSpec().getIpFamilyPolicy() == null) {
-            desired.getSpec().setIpFamilyPolicy(current.getSpec().getIpFamilyPolicy());
-        }
-    }
-
-    /**
-     * In some environments, the loadBalancerClass field of a LoadBalancer type service gets set automatically. When
-     * patching the service, we keep the original class set by the infrastructure instead of overriding it.
-     *
-     * @param current   Current Service
-     * @param desired   Desired Service
-     */
-    protected void patchLoadBalancerClass(Service current, Service desired) {
-        if (current.getSpec().getLoadBalancerClass() != null
-                && desired.getSpec().getLoadBalancerClass() == null) {
-            desired.getSpec().setLoadBalancerClass(current.getSpec().getLoadBalancerClass());
-        }
-    }
-
-    /**
-     * Deletes the resource with the given namespace and name and completes the given future accordingly.
-     * This method will do a cascading delete.
-     *
-     * @param reconciliation The reconciliation
-     * @param namespace Namespace of the resource which should be deleted
-     * @param name Name of the resource which should be deleted
-     *
-     * @return Future with result of the reconciliation
-     */
-    protected CompletionStage<ReconcileResult<Service>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
-        return internalDelete(reconciliation, namespace, name, true);
     }
 
     /**
