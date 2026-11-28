@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
@@ -96,6 +98,7 @@ public class MockCruiseControl {
 
     private static final String KEYSTORE_PASSWORD = "changeit";
     private final WireMockServer server;
+    private final boolean requireAuth;
 
     /**
      * Sets up and returns a Cruise Control mock HTTP server.
@@ -103,6 +106,18 @@ public class MockCruiseControl {
      * @param serverPort The port number the server should listen on.
      */
     public MockCruiseControl(int serverPort) {
+        this(serverPort, true);
+    }
+
+    /**
+     * Sets up and returns a Cruise Control mock HTTP server.
+     *
+     * @param serverPort    The port number the server should listen on.
+     * @param requireAuth   When true, the mocked endpoints require the Authorization header. When false, the mocked
+     *                      endpoints require the Authorization header to be absent (API authentication disabled).
+     */
+    public MockCruiseControl(int serverPort, boolean requireAuth) {
+        this.requireAuth = requireAuth;
         this.server = new WireMockServer(WireMockConfiguration.options().port(serverPort));
         this.server.start();
     }
@@ -115,6 +130,8 @@ public class MockCruiseControl {
      * @param tlsCrtFile   File containing the certificate in PEM format.
      */
     public MockCruiseControl(int serverPort, File tlsKeyFile, File tlsCrtFile) {
+        this.requireAuth = true;
+
         try {
             // Create a PKCS12 keystore from PEM files for WireMock
             File keystoreFile = createKeystoreFromPem(tlsKeyFile, tlsCrtFile);
@@ -191,12 +208,22 @@ public class MockCruiseControl {
         return ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + fileName);
     }
 
-    private MappingBuilder stateRequestMatcher(boolean requireAuth) {
+    /**
+     * Creates the pattern for matching the Authorization header. When the API authentication is required, the header
+     * has to match the expected credentials. Otherwise, the header has to be absent.
+     *
+     * @return  Pattern for matching the Authorization header
+     */
+    private StringValuePattern authHeaderPattern() {
+        return requireAuth ? equalTo(AUTH_HEADER_VALUE) : absent();
+    }
+
+    private MappingBuilder stateRequestMatcher(boolean checkAuth) {
         MappingBuilder builder = get(urlPathEqualTo(CruiseControlEndpoints.STATE.toString()))
                 .withQueryParam(CruiseControlParameters.JSON.toString(), matching("true|false"));
 
-        if (requireAuth) {
-            builder.withHeader("Authorization", equalTo(AUTH_HEADER_VALUE));
+        if (checkAuth) {
+            builder.withHeader("Authorization", authHeaderPattern());
         }
         return builder;
     }
@@ -280,7 +307,7 @@ public class MockCruiseControl {
                 .withQueryParam(CruiseControlParameters.JSON.toString(), equalTo("true"))
                 .withQueryParam(CruiseControlParameters.FETCH_COMPLETE.toString(), equalTo("true"))
                 .withQueryParam(CruiseControlParameters.USER_TASK_IDS.toString(), equalTo(userTaskId))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE));
+                .withHeader("Authorization", authHeaderPattern());
     }
 
     /**
@@ -308,7 +335,7 @@ public class MockCruiseControl {
         MappingBuilder request = post(urlPathEqualTo(endpoint.toString()))
                 .withQueryParam(CruiseControlParameters.JSON.toString(), equalTo("true"))
                 .withQueryParam(CruiseControlParameters.DRY_RUN.toString(), matching("true|false"))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE));
+                .withHeader("Authorization", authHeaderPattern());
 
         if (verbose != null) {
             request.withQueryParam(CruiseControlParameters.VERBOSE.toString(), equalTo(String.valueOf(verbose)));
@@ -491,7 +518,7 @@ public class MockCruiseControl {
                 .withQueryParam(CruiseControlParameters.VERBOSE.toString(), matching("true|false"))
                 .withQueryParam(CruiseControlParameters.GOALS.toString(), matching(".+"))
                 .withQueryParam(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.toString(), equalTo("false"))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE))
+                .withHeader("Authorization", authHeaderPattern())
                 .willReturn(aResponse()
                         .withStatus(500)
                         .withHeader("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID)
@@ -504,7 +531,7 @@ public class MockCruiseControl {
                 .withQueryParam(CruiseControlParameters.VERBOSE.toString(), matching("true|false"))
                 .withQueryParam(CruiseControlParameters.GOALS.toString(), matching(".+"))
                 .withQueryParam(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.toString(), equalTo("true"))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE))
+                .withHeader("Authorization", authHeaderPattern())
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID)
@@ -581,7 +608,7 @@ public class MockCruiseControl {
         server.stubFor(get(urlPathEqualTo(CruiseControlEndpoints.USER_TASKS.toString()))
                 .withQueryParam(CruiseControlParameters.JSON.toString(), equalTo("true"))
                 .withQueryParam(CruiseControlParameters.FETCH_COMPLETE.toString(), equalTo("true"))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE))
+                .withHeader("Authorization", authHeaderPattern())
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID)
@@ -594,7 +621,7 @@ public class MockCruiseControl {
         server.stubFor(get(urlPathEqualTo(CruiseControlEndpoints.USER_TASKS.toString()))
                 .withQueryParam(CruiseControlParameters.JSON.toString(), equalTo("true"))
                 .withQueryParam(CruiseControlParameters.FETCH_COMPLETE.toString(), equalTo("true"))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE))
+                .withHeader("Authorization", authHeaderPattern())
                 .willReturn(aResponse()
                         .withStatus(statusCode)
                         .withBody(errorJson)));
@@ -609,7 +636,7 @@ public class MockCruiseControl {
         server.stubFor(get(urlPathEqualTo(CruiseControlEndpoints.USER_TASKS.toString()))
                 .withQueryParam(CruiseControlParameters.JSON.toString(), equalTo("true"))
                 .withQueryParam(CruiseControlParameters.FETCH_COMPLETE.toString(), equalTo("true"))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE))
+                .withHeader("Authorization", authHeaderPattern())
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID)
@@ -624,7 +651,7 @@ public class MockCruiseControl {
 
         server.stubFor(post(urlPathEqualTo(CruiseControlEndpoints.STOP.toString()))
                 .withQueryParam(CruiseControlParameters.JSON.toString(), matching("true|false"))
-                .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE))
+                .withHeader("Authorization", authHeaderPattern())
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("User-Task-ID", "stopped")

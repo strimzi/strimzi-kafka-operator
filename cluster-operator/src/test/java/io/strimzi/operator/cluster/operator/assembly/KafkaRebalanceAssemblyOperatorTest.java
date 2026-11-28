@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
@@ -34,6 +35,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -185,6 +187,89 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                         context.failNow(result.cause());
                     }
                 });
+    }
+
+    /**
+     * Tests that the Cruise Control API Secret is not required when the API authentication is disabled. Neither the
+     * Cruise Control API Secret nor the Cluster CA certificate Secret are created, but the rebalance should still move
+     * to the ProposalReady state.
+     */
+    @Test
+    public void testCruiseControlClientWithoutAuthAndWithoutApiSecret(VertxTestContext context) {
+        int httpPort = TestUtils.getFreePort();
+        // The mock server requires the Authorization header to be absent
+        MockCruiseControl httpCruiseControlServer = new MockCruiseControl(httpPort, false);
+        httpCruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/internal-cluster-security", "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"none\"}}")
+                .endMetadata()
+                .editSpec()
+                    .editCruiseControl()
+                        .withConfig(Map.of(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), false))
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka(kafka);
+        // No Secrets are created => they should not be needed without TLS and without API authentication
+
+        AtomicReference<Secret> usedApiSecret = new AtomicReference<>();
+        AtomicBoolean usedApiAuthEnabled = new AtomicBoolean(true);
+        KafkaRebalanceAssemblyOperator httpKrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig(), httpPort) {
+            @Override
+            public String cruiseControlHost(String clusterName, String clusterNamespace) {
+                return HOST;
+            }
+
+            @Override
+            public CruiseControlApi cruiseControlClientProvider(Secret clusterCaCertSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
+                usedApiSecret.set(ccApiSecret);
+                usedApiAuthEnabled.set(apiAuthEnabled);
+                return new CruiseControlApiImpl(1, clusterCaCertSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+            }
+        };
+
+        Checkpoint checkpoint = context.checkpoint();
+        httpKrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(result -> {
+                    httpCruiseControlServer.stop();
+
+                    if (result.succeeded()) {
+                        context.verify(() -> {
+                            assertThat(usedApiSecret.get(), is(nullValue()));
+                            assertThat(usedApiAuthEnabled.get(), is(false));
+                        });
+                        assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady);
+                        checkpoint.flag();
+                    } else {
+                        context.failNow(result.cause());
+                    }
+                });
+    }
+
+    /**
+     * Tests that the Cruise Control API Secret is required when the API authentication is enabled. The Cruise Control
+     * API Secret is not created, so the reconciliation should fail.
+     */
+    @Test
+    public void testCruiseControlClientWithAuthAndWithoutApiSecret(VertxTestContext context) {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka();
+        // Only the Cluster CA certificate Secret is created => the missing API Secret should cause an error
+        crdCreateClusterCaCertSecret();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertThat(e.getMessage(), is("Secret " + namespace + "/" + CruiseControlResources.apiSecretName(CLUSTER_NAME) + " does not exist"));
+                    checkpoint.flag();
+                })));
     }
 
     /**
