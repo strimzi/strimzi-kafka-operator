@@ -178,6 +178,22 @@ public class MetricsUtils {
         return collector.collectSpecificMetric(pattern);
     }
 
+    /**
+     * Waits until every scraped Extra Metrics Pod has finished at least one successful collection cycle. Extra Metrics
+     * is Ready as soon as its HTTP server is up, independently of whether it can connect to Kafka. So only a successful
+     * collection proves that it can connect and authenticate to Kafka. Every scraped Pod must have collected, so that
+     * a terminating old Pod cannot satisfy the wait.
+     *
+     * @param collector     Metrics collector for the Extra Metrics Pods
+     */
+    public static void waitForExtraMetricsSuccessfulCollection(BaseMetricsCollector collector) {
+        TestUtils.waitFor("successful Extra Metrics collection cycle", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
+            collector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+            final List<Double> timestamps = createPatternAndCollectWithoutWait(collector, "sova_last_successful_collection_timestamp_seconds");
+            return !timestamps.isEmpty() && timestamps.stream().allMatch(value -> value > 0);
+        });
+    }
+
     public static Double getDoubleMetricValueBasedOnType(Metric metric) {
         if (metric instanceof Gauge gauge) {
             return gauge.getValue();

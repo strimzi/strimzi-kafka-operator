@@ -8,6 +8,9 @@
 * Use ubi9-micro as a base image for operators, kafka-based, and maven-builder images.
 * Strimzi Drain Cleaner updated to 1.8.0 (included in the Strimzi installation files)
 * Add support for Strimzi-native configurable RSA key sizes
+* Added `spec.extraMetrics` to the `Kafka` custom resource to configure the Extra Metrics component, a JVM-based consumer lag exporter (based on [Sova](https://github.com/strimzi/sova)) that replaces the deprecated `spec.kafkaExporter`.
+  It exposes the same metric names as Kafka Exporter, so existing Prometheus alerting rules and Grafana dashboards work unchanged after migration.
+  The new `STRIMZI_DEFAULT_EXTRA_METRICS_IMAGE` environment variable in the Cluster Operator controls the default Extra Metrics container image.
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
 * Use Java 25 as the runtime for all containers (leaving the language level at Java 21) for supporting Post-Quantum Hybrid Key Exchange
 * Add support for running an automatic rebalancing when a goal violation is detected by Cruise Control
@@ -17,6 +20,11 @@
 ### Major changes, deprecations, and removals
 
 * Delegation token options (`delegation.token.` prefix) are now forbidden in the Kafka broker configuration, because Strimzi does not support delegation tokens and these options did never work properly.
+* **`spec.kafkaExporter` is deprecated.** Use `spec.extraMetrics` instead.
+  Migrate by moving your `kafkaExporter` fields to `extraMetrics` using the field mapping described in the documentation.
+  Note that the regular expressions for topics and consumer groups now have to match the whole name, not just a part of it.
+  For example, `topicRegex: orders` matched topics `orders` and `orders-eu` in Kafka Exporter, but matches only the topic `orders` in Extra Metrics.
+  To keep matching both topics, use `topicRegex: orders.*`.
 * The Prometheus JMX Exporter configuration from the metrics `ConfigMap` is now parsed as YAML 1.2 (using the Core schema) instead of YAML 1.1.
   Unquoted `yes`, `no`, `on`, and `off` values are not converted to booleans anymore and are passed to the JMX Exporter as strings.
   The JMX Exporter fails to start when these values are used for boolean options such as `lowercaseOutputName`, which prevents the container from starting.

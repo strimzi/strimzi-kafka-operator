@@ -36,6 +36,11 @@ public class TestPodSecurityProvider extends RestrictedPodSecurityProvider {
     }
 
     @Override
+    public Boolean extraMetricsHostUsers(PodSecurityProviderContext context) {
+        return false;
+    }
+
+    @Override
     public Boolean cruiseControlHostUsers(PodSecurityProviderContext context) {
         return false;
     }

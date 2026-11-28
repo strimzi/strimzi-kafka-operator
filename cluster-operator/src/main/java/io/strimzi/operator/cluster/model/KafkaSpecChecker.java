@@ -74,6 +74,7 @@ public class KafkaSpecChecker {
         checkInterBrokerProtocolVersionInKRaft(warnings);
         checkLogMessageFormatVersionInKRaft(warnings);
         checkIngressListeners(warnings);
+        checkKafkaExporterAndExtraMetrics(warnings);
 
         return warnings;
     }
@@ -212,6 +213,21 @@ public class KafkaSpecChecker {
         if (ListenersUtils.hasIngressListener(kafkaCluster.getListeners())) {
             warnings.add(StatusUtils.buildWarningCondition("DeprecatedObjects",
                     "ingress type listeners are deprecated."));
+        }
+    }
+
+    /**
+     * Checks if both kafkaExporter and extraMetrics are configured in KafkaSpec. When both are configured,
+     * adds a status warning that scraping both at the same time might result in duplicate or conflicting metrics.
+     * The deprecation of kafkaExporter itself is reported automatically through the {@code @DeprecatedProperty} annotation.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    @SuppressWarnings("deprecation")
+    private void checkKafkaExporterAndExtraMetrics(List<Condition> warnings) {
+        if (kafkaSpec.getKafkaExporter() != null && kafkaSpec.getExtraMetrics() != null) {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaExporterAndExtraMetrics",
+                    "Both spec.kafkaExporter and spec.extraMetrics are configured. They export metrics with the same names, so scraping both at the same time might result in duplicate or conflicting metrics."));
         }
     }
 }

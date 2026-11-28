@@ -1,0 +1,399 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.systemtest.metrics;
+
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.common.InlineLoggingBuilder;
+import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsSpec;
+import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+
+import java.util.Map;
+
+import static io.strimzi.systemtest.TestTags.METRICS;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.resources.types.KafkaType.kafkaClient;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNotNull;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.createPatternAndCollect;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.createPatternAndCollectWithoutWait;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.waitForExtraMetricsSuccessfulCollection;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
+@Tag(REGRESSION)
+@Tag(METRICS)
+@SuiteDoc(
+    description = @Desc("This test suite verifies the Extra Metrics consumer lag exporter configured through `spec.extraMetrics` in the Kafka custom resource. A single small Kafka cluster is shared by all test cases. Each test case only changes the ExtraMetrics configuration, and the default Extra Metrics configuration is restored after each test case."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed."),
+        @Step(value = "Deploy Kafka with Extra Metrics enabled and a scraper Pod.", expected = "Kafka and Extra Metrics are deployed."),
+        @Step(value = "Create three topics and exchange messages on each of them with three consumer groups.", expected = "Topics and consumer groups exist and Extra Metrics exposes the first metrics.")
+    },
+    afterTestSteps = {
+        @Step(value = "Restore the default Extra Metrics configuration after each test case if it was changed.", expected = "Extra Metrics runs with the default configuration and has collected the metrics."),
+        @Step(value = "Common cleaning of all resources created by this test class.", expected = "All resources deleted.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.METRICS),
+    }
+)
+public class ExtraMetricsST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(ExtraMetricsST.class);
+
+    private static final String TOPIC_CHECKOUT = "sova-checkout";
+    private static final String TOPIC_PAYMENTS = "sova-payments";
+    private static final String TOPIC_AUDIT = "sova-audit";
+
+    private static final String GROUP_ORDERS = "sova-orders";
+    private static final String GROUP_BILLING = "sova-billing";
+    private static final String GROUP_AUDIT = "sova-audit";
+
+    private TestStorage testStorage;
+    private BaseMetricsCollector extraMetricsCollector;
+
+    @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test case checks that the group and topic regular expressions are applied to the whole name and that the exclude expressions win over the include ones."),
+        steps = {
+            @Step(value = "Set `groupRegex` to `sova-or.*` and `topicRegex` to `sova-checkout` and wait for the Extra Metrics rolling update.", expected = "Only group `sova-orders` and topic `sova-checkout` are exposed."),
+            @Step(value = "Set `topicRegex` to `sova` (a prefix of the topic names, not a full match).", expected = "No topic is exposed, because the expression must match the whole name."),
+            @Step(value = "Set `groupRegex` to `sova-.*` with `groupExcludeRegex` `sova-audit` and `topicRegex` to `sova-.*` with `topicExcludeRegex` `sova-audit`.", expected = "Group and topic `sova-audit` are not exposed, the others are.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.METRICS),
+        }
+    )
+    void testRegexFilters() {
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String extraMetricsName = ExtraMetricsResources.componentName(clusterName);
+        Map<String, String> snapshot = DeploymentUtils.depSnapshot(namespaceName, extraMetricsName);
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
+            kafka.getSpec().getExtraMetrics().setGroupRegex("sova-or.*");
+            kafka.getSpec().getExtraMetrics().setTopicRegex(TOPIC_CHECKOUT);
+        });
+        snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, extraMetricsName, 1, snapshot);
+        waitForCollectionAfterRoll();
+        waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_ORDERS + "\".*\\}", true);
+        waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_BILLING + "\".*\\}", false);
+        waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}", true);
+        waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_PAYMENTS + "\"\\}", false);
+
+        // "sova" is only a prefix of the topic names, so with a full match nothing should be exposed
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setTopicRegex("sova"));
+        snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, extraMetricsName, 1, snapshot);
+        waitForCollectionAfterRoll();
+        waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}", false);
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
+            kafka.getSpec().getExtraMetrics().setGroupRegex("sova-.*");
+            kafka.getSpec().getExtraMetrics().setGroupExcludeRegex(GROUP_AUDIT);
+            kafka.getSpec().getExtraMetrics().setTopicRegex("sova-.*");
+            kafka.getSpec().getExtraMetrics().setTopicExcludeRegex(TOPIC_AUDIT);
+        });
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, extraMetricsName, 1, snapshot);
+        waitForCollectionAfterRoll();
+        waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_BILLING + "\".*\\}", true);
+        waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_AUDIT + "\".*\\}", false);
+        waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_PAYMENTS + "\"\\}", true);
+        waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_AUDIT + "\"\\}", false);
+    }
+
+    @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test case checks that Extra Metrics can be disabled and enabled again by removing and adding `spec.extraMetrics`."),
+        steps = {
+            @Step(value = "Remove `spec.extraMetrics` from the Kafka custom resource.", expected = "Extra Metrics Deployment is deleted."),
+            @Step(value = "Add `spec.extraMetrics` back.", expected = "Extra Metrics Deployment is created and exposes the metrics again.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.METRICS),
+        }
+    )
+    void testEnableDisable() {
+        final String extraMetricsName = ExtraMetricsResources.componentName(testStorage.getClusterName());
+
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().setExtraMetrics(null));
+        DeploymentUtils.waitForDeploymentDeletion(testStorage.getNamespaceName(), extraMetricsName);
+
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().setExtraMetrics(new ExtraMetricsSpec()));
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), extraMetricsName, 1);
+
+        // The Pod was recreated, so the metrics have to be collected again from the new Pod
+        extraMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+        assertMetricValueNotNull(extraMetricsCollector, "kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}");
+
+        // Collection health is reported through metrics, while the Kafka custom resource stays Ready
+        assertMetricValueNotNull(extraMetricsCollector, "sova_collection_failures_total");
+        assertMetricValueNotNull(extraMetricsCollector, "sova_collection_duration_seconds");
+        assertThat("Kafka is not Ready", KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName()), is(true));
+    }
+
+    @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test case checks that `collectionIntervalMs` and the Kafka Admin client options in `config` are passed to Extra Metrics."),
+        steps = {
+            @Step(value = "Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 60000 and wait for the Extra Metrics rolling update.", expected = "Extra Metrics starts with a 10 second collection interval and the Admin client configuration contains the timeout."),
+            @Step(value = "Wait for the first collection cycle of the new Pod.", expected = "Extra Metrics exposes freshly collected metrics.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.METRICS),
+        }
+    )
+    void testCollectionTuning() {
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String extraMetricsName = ExtraMetricsResources.componentName(clusterName);
+        Map<String, String> snapshot = DeploymentUtils.depSnapshot(namespaceName, extraMetricsName);
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
+            kafka.getSpec().getExtraMetrics().setCollectionIntervalMs(10_000L);
+            // The Admin client refuses a default.api.timeout.ms lower than request.timeout.ms (30000 by default)
+            kafka.getSpec().getExtraMetrics().setConfig(Map.of("default.api.timeout.ms", 60000));
+        });
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, extraMetricsName, 1, snapshot);
+
+        final String podName = PodUtils.getPodNameByPrefix(namespaceName, extraMetricsName);
+        assertThat("Collection interval is not applied",
+            StUtils.getLogFromPodByTime(namespaceName, podName, extraMetricsName, "10m"), containsString("collect.interval=10000ms"));
+
+        final String adminClientConfiguration = KubeResourceManager.get().kubeClient().getClient().apps().deployments()
+            .inNamespace(namespaceName).withName(extraMetricsName).get()
+            .getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+            .filter(env -> "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION".equals(env.getName()))
+            .map(EnvVar::getValue)
+            .findFirst()
+            .orElse("");
+        assertThat("Admin client option from config is missing", adminClientConfiguration, containsString("default.api.timeout.ms=60000"));
+
+        waitForCollectionAfterRoll();
+    }
+
+    @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test case checks that the memory limit and `jvmOptions` are passed to the Extra Metrics JVM."),
+        steps = {
+            @Step(value = "Set a memory limit of 256Mi and wait for the Extra Metrics rolling update.", expected = "Extra Metrics starts with the heap derived from the memory limit (-Xmx set)."),
+            @Step(value = "Set `jvmOptions` with `-Xmx` of 128m and `-XX` option `MaxMetaspaceSize` of 128m.", expected = "Extra Metrics starts with the configured options.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.METRICS),
+        }
+    )
+    void testJvmAndMemoryOptions() {
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String extraMetricsName = ExtraMetricsResources.componentName(clusterName);
+        Map<String, String> snapshot = DeploymentUtils.depSnapshot(namespaceName, extraMetricsName);
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setResources(
+            new ResourceRequirementsBuilder()
+                .addToLimits("memory", new Quantity("256Mi"))
+                .addToRequests("memory", new Quantity("256Mi"))
+                .build()));
+        snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, extraMetricsName, 1, snapshot);
+
+        String podName = PodUtils.getPodNameByPrefix(namespaceName, extraMetricsName);
+        assertThat("Heap is not derived from the memory limit",
+            StUtils.getLogFromPodByTime(namespaceName, podName, extraMetricsName, "10m"), containsString("-Xmx"));
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
+            kafka.getSpec().getExtraMetrics().setResources(null);
+            kafka.getSpec().getExtraMetrics().setJvmOptions(new JvmOptionsBuilder()
+                .withXmx("128m")
+                .withXx(Map.of("MaxMetaspaceSize", "128m"))
+                .build());
+        });
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, extraMetricsName, 1, snapshot);
+
+        podName = PodUtils.getPodNameByPrefix(namespaceName, extraMetricsName);
+        String startLog = StUtils.getLogFromPodByTime(namespaceName, podName, extraMetricsName, "10m");
+        assertThat("Xmx from jvmOptions is missing", startLog, containsString("-Xmx128m"));
+        assertThat("XX option from jvmOptions is missing", startLog, containsString("-XX:MaxMetaspaceSize=128m"));
+    }
+
+    @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test case checks that a change of the Extra Metrics logging is applied without rolling the Extra Metrics Pod."),
+        steps = {
+            @Step(value = "Change the root logger level to DEBUG using inline logging.", expected = "The Extra Metrics Pod is not rolled."),
+            @Step(value = "Wait for the logging configuration to be reloaded.", expected = "Extra Metrics prints DEBUG messages."),
+            @Step(value = "Remove the logging configuration.", expected = "The Extra Metrics Pod is not rolled.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.METRICS),
+        }
+    )
+    void testLoggingChange() {
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String extraMetricsName = ExtraMetricsResources.componentName(clusterName);
+        final Map<String, String> snapshot = DeploymentUtils.depSnapshot(namespaceName, extraMetricsName);
+        final String podName = PodUtils.getPodNameByPrefix(namespaceName, extraMetricsName);
+
+        assertThat("DEBUG is logged before the change",
+            StUtils.getLogFromPodByTime(namespaceName, podName, extraMetricsName, "30s").contains(" DEBUG "),
+            is(false));
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setLogging(
+            new InlineLoggingBuilder()
+                .withLoggers(Map.of("rootLogger.level", "DEBUG"))
+                .build()));
+
+        // Log4j2 checks the configuration every 30 seconds, the Pod is not restarted
+        TestUtils.waitFor("DEBUG logs from Extra Metrics", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
+            () -> StUtils.getLogFromPodByTime(namespaceName, podName, extraMetricsName, "30s").contains(" DEBUG "));
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setLogging(null));
+        // Wait until the Cluster Operator reconciled the change, otherwise the check below could pass before any roll started
+        KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
+        assertThat("Extra Metrics Pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, extraMetricsName), is(snapshot));
+    }
+
+    /**
+     * Waits until the current Extra Metrics Pod has finished its first successful collection cycle. Extra Metrics is Ready as soon as
+     * its HTTP server is up and serves an empty snapshot until then, so checks that a metric is absent would pass
+     * trivially on a freshly rolled Pod without this wait.
+     */
+    private void waitForCollectionAfterRoll() {
+        waitForExtraMetricsSuccessfulCollection(extraMetricsCollector);
+    }
+
+    /**
+     * Waits until the metric is present (or absent). Absence is checked on freshly collected metrics, because Extra Metrics
+     * removes metrics of filtered out topics and groups on the next collection cycle.
+     */
+    private void waitForMetric(String metric, boolean shouldBePresent) {
+        if (shouldBePresent) {
+            createPatternAndCollect(extraMetricsCollector, metric);
+        } else {
+            TestUtils.waitFor("metric " + metric + " to disappear", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
+                extraMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+                return createPatternAndCollectWithoutWait(extraMetricsCollector, metric).isEmpty();
+            });
+            assertThat("Metric " + metric + " should not be exposed", createPatternAndCollectWithoutWait(extraMetricsCollector, metric), is(empty()));
+        }
+    }
+
+    /**
+     * All test cases share one Kafka cluster, so the default Extra Metrics configuration is restored after each test case. This
+     * happens also when the test case fails, so the following test cases always start from the default configuration.
+     */
+    @AfterEach
+    void restoreDefaultExtraMetricsConfiguration() {
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String extraMetricsName = ExtraMetricsResources.componentName(clusterName);
+        final ExtraMetricsSpec current = kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getExtraMetrics();
+
+        // Check whether current config is the same as default used for the test class
+        if (new ExtraMetricsSpec().equals(current)) {
+            LOGGER.debug("Current Extra Metrics configuration in Kafka: {}/{} is the same as default one, no need to restore it", namespaceName, clusterName);
+            return;
+        }
+
+        LOGGER.info("Restoring the default Extra Metrics configuration in Kafka: {}/{}", namespaceName, clusterName);
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().setExtraMetrics(new ExtraMetricsSpec()));
+        KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, extraMetricsName, 1);
+        waitForCollectionAfterRoll();
+    }
+
+    @BeforeAll
+    void setup() {
+        assumeFalse(Environment.isNamespaceRbacScope());
+
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
+
+        testStorage = new TestStorage(KubeResourceManager.get().getTestContext(), Environment.TEST_SUITE_NAMESPACE);
+        final String scraperName = testStorage.getClusterName() + "-" + TestConstants.SCRAPER_NAME;
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+                .editSpec()
+                    .withNewExtraMetrics()
+                    .endExtraMetrics()
+                .endSpec()
+                .build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), scraperName).build()
+        );
+
+        for (String topic : new String[]{TOPIC_CHECKOUT, TOPIC_PAYMENTS, TOPIC_AUDIT}) {
+            KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topic, testStorage.getClusterName()).build());
+        }
+
+        exchangeMessages(TOPIC_CHECKOUT, GROUP_ORDERS, "orders");
+        exchangeMessages(TOPIC_PAYMENTS, GROUP_BILLING, "billing");
+        exchangeMessages(TOPIC_AUDIT, GROUP_AUDIT, "audit");
+
+        extraMetricsCollector = new BaseMetricsCollector.Builder()
+            .withScraperPodName(KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), scraperName).get(0).getMetadata().getName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withComponent(ExtraMetricsMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .build();
+        extraMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+    }
+
+    private void exchangeMessages(String topicName, String consumerGroup, String clientSuffix) {
+        final KafkaProducerConsumer clients = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName() + "-" + clientSuffix)
+            .withConsumerName(testStorage.getConsumerName() + "-" + clientSuffix)
+            .withConsumerGroup(consumerGroup)
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(topicName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(100)
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob(), clients.getConsumer().getJob());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName() + "-" + clientSuffix,
+            testStorage.getProducerName() + "-" + clientSuffix, 100, false);
+    }
+}

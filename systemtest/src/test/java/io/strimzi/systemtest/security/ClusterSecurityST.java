@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
@@ -31,6 +32,8 @@ import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
+import io.strimzi.systemtest.metrics.ExtraMetricsMetricsComponent;
+import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -44,8 +47,10 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.ClusterSecuritySTUtils;
+import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.junit.jupiter.api.BeforeAll;
@@ -98,7 +103,8 @@ class ClusterSecurityST extends AbstractST {
     @TestDoc(
         description = @Desc("Test a Kafka cluster that uses different combinations of authentication and encryption for internal communication."),
         steps = {
-            @Step(value = "Deploy Kafka with specified encryption and authentication (including Entity Operator and Cruise Control).", expected = "The cluster is ready with the requested security configuration."),
+            @Step(value = "Deploy Kafka with specified encryption and authentication (including Entity Operator, Cruise Control and Extra Metrics).", expected = "The cluster is ready with the requested security configuration."),
+            @Step(value = "Verify that Extra Metrics connects to Kafka using the requested security configuration.", expected = "The Extra Metrics Deployment is ready and Extra Metrics reports a successful collection from Kafka."),
             @Step(value = "Create a TLS user with ACLs and send and consume messages over mTLS.", expected = "The messages are authorized, sent, and consumed successfully."),
             @Step(value = "Change dynamic Kafka configuration.", expected = "The configuration is applied without rolling the Kafka pods."),
             @Step(value = "Change read-only Kafka configuration.", expected = "The Kafka controllers and brokers roll and remain functional."),
@@ -126,6 +132,8 @@ class ClusterSecurityST extends AbstractST {
                             .addToAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation(encryption, authentication))
                         .endMetadata()
                         .editSpec()
+                            .withNewExtraMetrics()
+                            .endExtraMetrics()
                             .editKafka()
                                 .withNewKafkaAuthorizationSimple()
                                     .withSuperUsers("ANONYMOUS") // Required for the scraper pod => tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/13112
@@ -157,6 +165,16 @@ class ClusterSecurityST extends AbstractST {
 
         // Assert security status
         ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, encryption, authentication);
+
+        // Extra Metrics is Ready as soon as its HTTP server is up. Only a successful collection from Kafka verifies the whole
+        // security setup (config provider, Role, certificates, token)
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), ExtraMetricsResources.componentName(testStorage.getClusterName()), 1);
+        BaseMetricsCollector extraMetricsCollector = new BaseMetricsCollector.Builder()
+            .withScraperPodName(PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getScraperName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withComponent(ExtraMetricsMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .build();
+        MetricsUtils.waitForExtraMetricsSuccessfulCollection(extraMetricsCollector);
 
         // Test message producing and consuming
         KafkaProducerConsumer clients = new KafkaProducerConsumerBuilder()

@@ -2167,6 +2167,11 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             Future<ReconciliationState> reconcileKafkaExporter(Clock clock)    {
                 return Future.succeededFuture(this);
             }
+
+            @Override
+            Future<ReconciliationState> reconcileExtraMetrics(Clock clock)    {
+                return Future.succeededFuture(this);
+            }
         }
     }
 

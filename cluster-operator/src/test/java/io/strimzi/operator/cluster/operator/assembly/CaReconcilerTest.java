@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthentic
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.extrametrics.ExtraMetricsResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -31,6 +32,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
+import io.strimzi.operator.cluster.model.ExtraMetrics;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -179,7 +181,7 @@ public class CaReconcilerTest {
         long countWithPodStuck = mockCaReconciler.kafkaRestartReasons.values().stream().filter(r -> r.contains(RestartReason.POD_STUCK)).count();
         assertThat("Mutating one pod's restart reasons must not affect other pods", countWithPodStuck, is(1L));
 
-        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
+        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(4));
         mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
                 assertThat("Deployment restart reason for " + deploymentName, restartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote())));
 
@@ -292,7 +294,7 @@ public class CaReconcilerTest {
             }
         });
 
-        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
+        assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(4));
         mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
                 assertThat("Deployment restart reason for " + deploymentName, restartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote())));
 
@@ -641,7 +643,8 @@ public class CaReconcilerTest {
         return Stream.of(Arguments.of(CruiseControlResources.secretName(NAME), CruiseControl.COMPONENT_TYPE),
                 Arguments.of(KafkaResources.entityTopicOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
                 Arguments.of(KafkaResources.entityUserOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
-                Arguments.of(KafkaExporterResources.secretName(NAME), KafkaExporter.COMPONENT_TYPE));
+                Arguments.of(KafkaExporterResources.secretName(NAME), KafkaExporter.COMPONENT_TYPE),
+                Arguments.of(ExtraMetricsResources.secretName(NAME), ExtraMetrics.COMPONENT_TYPE));
     }
 
     @ParameterizedTest
@@ -751,6 +754,7 @@ public class CaReconcilerTest {
         deps.put("my-cluster-entity-operator", deploymentWithName("my-cluster-entity-operator"));
         deps.put("my-cluster-cruise-control", deploymentWithName("my-cluster-cruise-control"));
         deps.put("my-cluster-kafka-exporter", deploymentWithName("my-cluster-kafka-exporter"));
+        deps.put("my-cluster-extra-metrics", deploymentWithName("my-cluster-extra-metrics"));
         DeploymentOperator depsOperator = supplier.deploymentOperations;
         when(depsOperator.getAsync(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(deps.get(i.getArgument(1, String.class))));
     }

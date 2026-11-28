@@ -208,6 +208,11 @@ jobs:
           restore-keys: |
             kafka-binaries-
 
+      - name: Install ORAS
+        uses: strimzi/github-actions/.github/actions/dependencies/install-oras@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
+        with:
+          version: "1.3.6"
+
       # Build Strimzi without images => used when running the STs against releases or release candidates where the images
       # are already built, and we need only the Java build
       - name: Build Strimzi Java code

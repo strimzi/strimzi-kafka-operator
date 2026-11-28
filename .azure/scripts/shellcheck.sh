@@ -9,6 +9,7 @@ kafka-init/scripts/*.sh
 docker-images/kafka-based/kafka/scripts/*.sh
 docker-images/kafka-based/kafka/cruise-control-scripts/*.sh
 docker-images/kafka-based/kafka/exporter-scripts/*.sh
+docker-images/kafka-based/kafka/sova-scripts/*.sh
 tools/*.sh"
 
 for SCRIPTS in $SCRIPT_DIRS; do
