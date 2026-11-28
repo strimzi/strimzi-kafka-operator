@@ -222,6 +222,10 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
                 result = false;
                 LOGGER.infoCr(reconciliation, "Configuration can't be updated dynamically because its scope is ready only: {}", entry);
                 break;
+            } else if (entry.opType() == AlterConfigOp.OpType.DELETE && entry.configEntry().source() == ConfigEntry.ConfigSource.STATIC_BROKER_CONFIG) {
+                result = false;
+                LOGGER.infoCr(reconciliation, "Configuration can't be updated dynamically because removing a static broker configuration requires a restart: {}", entry);
+                break;
             }
         }
         return result;
